@@ -1,20 +1,17 @@
-export default function handler(req, res) {
-  // Vérification pour le build statique
-  if (!res || typeof res.status !== 'function') {
-    return new Response(JSON.stringify({ results: [] }), {
-      headers: { 'Content-Type': 'application/json' }
-    });
-  }
+// Configuration pour indiquer que c'est une API route
+export const config = {
+  api: {
+    bodyParser: true,
+  },
+};
 
-  // Autoriser GET et POST pour les tests
-  if (req.method !== 'POST' && req.method !== 'GET') {
+export default function handler(req, res) {
+  if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const body = req.body || {};
-  const { city, propertyType, priceMax, bedrooms } = body;
+  const { city, propertyType, priceMax, bedrooms } = req.body || {};
 
-  // Données de démonstration
   const demoResults = [
     {
       id: 1,
