@@ -1,13 +1,28 @@
+const APIFY_API_TOKEN = process.env.APIFY_API_TOKEN;
+const APIFY_ACTOR_ID = process.env.APIFY_ACTOR_ID;
+
 exports.handler = async (event, context) => {
-  // Vérifier la méthode
+  // Headers CORS
+  const headers = {
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type',
+  };
+
+  // Gérer les requêtes OPTIONS (CORS preflight)
+  if (event.httpMethod === 'OPTIONS') {
+    return { statusCode: 200, headers, body: '' };
+  }
+
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
+      headers,
       body: JSON.stringify({ error: 'Method not allowed' })
     };
   }
 
-  // Parser le body
+  // Parser les critères de recherche
   let body = {};
   try {
     body = JSON.parse(event.body || '{}');
@@ -17,102 +32,73 @@ exports.handler = async (event, context) => {
 
   const { city, propertyType, priceMax, bedrooms } = body;
 
-  const demoResults = [
-    {
-      id: 1,
-      title: 'Căn hộ cao cấp Quận 1',
-      price: 5000000000,
-      pricePerSqm: 62500000,
-      city: 'Hồ Chí Minh',
-      district: 'Quận 1',
-      address: '123 Nguyễn Huệ',
-      floorArea: 80,
-      bedrooms: 2,
-      imageUrl: 'https://via.placeholder.com/300x200?text=Property+1',
-      url: '#',
-      score: 95,
-      hasUrgentKeyword: true,
-      isNew: true
-    },
-    {
-      id: 2,
-      title: 'Nhà phố Quận 2',
-      price: 8000000000,
-      pricePerSqm: 53333333,
-      city: 'Hồ Chí Minh',
-      district: 'Quận 2',
-      address: '456 Thảo Điền',
-      floorArea: 150,
-      bedrooms: 3,
-      imageUrl: 'https://via.placeholder.com/300x200?text=Property+2',
-      url: '#',
-      score: 88,
-      hasUrgentKeyword: false,
-      isNew: false
-    },
-    {
-      id: 3,
-      title: 'Biệt thự Quận 7',
-      price: 15000000000,
-      pricePerSqm: 50000000,
-      city: 'Hồ Chí Minh',
-      district: 'Quận 7',
-      address: '789 Phú Mỹ Hưng',
-      floorArea: 300,
-      bedrooms: 5,
-      imageUrl: 'https://via.placeholder.com/300x200?text=Property+3',
-      url: '#',
-      score: 75,
-      hasUrgentKeyword: true,
-      isNew: false
-    },
-    {
-      id: 4,
-      title: 'Căn hộ Bình Thạnh',
-      price: 3500000000,
-      pricePerSqm: 58333333,
-      city: 'Hồ Chí Minh',
-      district: 'Bình Thạnh',
-      address: '321 Điện Biên Phủ',
-      floorArea: 60,
-      bedrooms: 2,
-      imageUrl: 'https://via.placeholder.com/300x200?text=Property+4',
-      url: '#',
-      score: 82,
-      hasUrgentKeyword: false,
-      isNew: true
-    },
-    {
-      id: 5,
-      title: 'Penthouse Quận 3',
-      price: 12000000000,
-      pricePerSqm: 80000000,
-      city: 'Hồ Chí Minh',
-      district: 'Quận 3',
-      address: '555 Võ Văn Tần',
-      floorArea: 150,
-      bedrooms: 4,
-      imageUrl: 'https://via.placeholder.com/300x200?text=Property+5',
-      url: '#',
-      score: 70,
-      hasUrgentKeyword: false,
-      isNew: false
+  try {
+    // Récupérer le dernier dataset de l'Actor Apify
+    const datasetUrl = `https://api.apify.com/v2/acts/${APIFY_ACTOR_ID}/runs/last/dataset/items?token=${APIFY_API_TOKEN}`;
+    
+    const response = await fetch(datasetUrl);
+    
+    if (!response.ok) {
+      throw new Error(`Apify API error: ${response.status}`);
     }
-  ];
 
-  return {
-    statusCode: 200,
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      success: true,
-      results: demoResults,
-      stats: {
-        lowestPrice: 3500000000,
-        highestPrice: 15000000000,
-        totalResults: 5
-      }
-    })
-  };
+    let results = await response.json();
+
+    // Filtrer les résultats selon les critères
+    if (priceMax) {
+      results = results.filter(item => item.price <= parseInt(priceMax));
+    }
+    if (bedrooms) {
+      results = results.filter(item => item.bedrooms >= parseInt(bedrooms));
+    }
+
+    // Mapper les données au format attendu par le frontend
+    const mappedResults = results.slice(0, 50).map((item, index) => ({
+      id: item.id || index,
+      title: item.title || 'Sans titre',
+      price: item.price || 0,
+      pricePerSqm: item.floorAreaSqm ? Math.round(item.price / item.floorAreaSqm) : 0,
+      city: city || 'Vietnam',
+      district: item.address || '',
+      address: item.address || '',
+      floorArea: item.floorAreaSqm || 0,
+      bedrooms: item.bedrooms || 0,
+      imageUrl: item.thumbnail || item.images?.[0] || 'https://via.placeholder.com/300x200?text=No+Image',
+      url: item.url || '#',
+      score: Math.floor(Math.random() * 30) + 70, // Score temporaire
+      hasUrgentKeyword: item.title?.toLowerCase().includes('urgent') || false,
+      isNew: item.postedOn?.includes('Dec 2025') || false
+    }));
+
+    // Calculer les stats
+    const prices = mappedResults.map(r => r.price).filter(p => p > 0);
+    const stats = {
+      lowestPrice: prices.length > 0 ? Math.min(...prices) : 0,
+      highestPrice: prices.length > 0 ? Math.max(...prices) : 0,
+      totalResults: mappedResults.length
+    };
+
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({
+        success: true,
+        results: mappedResults,
+        stats
+      })
+    };
+
+  } catch (error) {
+    console.error('Error:', error);
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({
+        success: false,
+        error: error.message,
+        results: [],
+        stats: { lowestPrice: 0, highestPrice: 0, totalResults: 0 }
+      })
+    };
+  }
 };
