@@ -2,14 +2,12 @@ const APIFY_API_TOKEN = process.env.APIFY_API_TOKEN;
 const APIFY_ACTOR_ID = process.env.APIFY_ACTOR_ID;
 
 exports.handler = async (event, context) => {
-  // Headers CORS
   const headers = {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type',
   };
 
-  // Gérer les requêtes OPTIONS (CORS preflight)
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 200, headers, body: '' };
   }
@@ -22,7 +20,6 @@ exports.handler = async (event, context) => {
     };
   }
 
-  // Parser les critères de recherche
   let body = {};
   try {
     body = JSON.parse(event.body || '{}');
@@ -33,7 +30,6 @@ exports.handler = async (event, context) => {
   const { city, propertyType, priceMax, bedrooms } = body;
 
   try {
-    // Récupérer le dernier dataset de l'Actor Apify
     const datasetUrl = `https://api.apify.com/v2/acts/${APIFY_ACTOR_ID}/runs/last/dataset/items?token=${APIFY_API_TOKEN}`;
     
     const response = await fetch(datasetUrl);
@@ -44,20 +40,26 @@ exports.handler = async (event, context) => {
 
     let results = await response.json();
 
-    // Filtrer les résultats selon les critères
+    // Filtrer les résultats sans prix
+    results = results.filter(item => item.price && item.price > 0);
+
+    // Filtrer par prix max (convertir Tỷ en VND)
     if (priceMax) {
-      results = results.filter(item => item.price <= parseInt(priceMax));
+      const priceMaxVND = parseFloat(priceMax) * 1000000000;
+      results = results.filter(item => item.price <= priceMaxVND);
     }
+
+    // Filtrer par nombre de chambres
     if (bedrooms) {
       results = results.filter(item => item.bedrooms >= parseInt(bedrooms));
     }
 
-    // Mapper les données au format attendu par le frontend
+    // Mapper les données au format frontend
     const mappedResults = results.slice(0, 50).map((item, index) => ({
       id: item.id || index,
       title: item.title || 'Sans titre',
       price: item.price || 0,
-      pricePerSqm: item.floorAreaSqm ? Math.round(item.price / item.floorAreaSqm) : 0,
+      pricePerSqm: item.floorAreaSqm && item.price ? Math.round(item.price / item.floorAreaSqm) : 0,
       city: city || 'Vietnam',
       district: item.address || '',
       address: item.address || '',
@@ -65,12 +67,11 @@ exports.handler = async (event, context) => {
       bedrooms: item.bedrooms || 0,
       imageUrl: item.thumbnail || item.images?.[0] || 'https://via.placeholder.com/300x200?text=No+Image',
       url: item.url || '#',
-      score: Math.floor(Math.random() * 30) + 70, // Score temporaire
-      hasUrgentKeyword: item.title?.toLowerCase().includes('urgent') || false,
-      isNew: item.postedOn?.includes('Dec 2025') || false
+      score: Math.floor(Math.random() * 30) + 70,
+      hasUrgentKeyword: item.title?.toLowerCase().includes('gấp') || item.title?.toLowerCase().includes('urgent') || false,
+      isNew: item.postedOn?.includes('hôm nay') || item.postedOn?.includes('today') || false
     }));
 
-    // Calculer les stats
     const prices = mappedResults.map(r => r.price).filter(p => p > 0);
     const stats = {
       lowestPrice: prices.length > 0 ? Math.min(...prices) : 0,
