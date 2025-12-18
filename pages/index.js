@@ -840,5 +840,6 @@ const sortResults = (results) => {
           </div>
         </div>
       )}
+</div>
   );
 }
