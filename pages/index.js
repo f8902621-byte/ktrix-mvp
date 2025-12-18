@@ -66,7 +66,7 @@ export default function Home() {
       selectType: 'Chọn loại BDS',
       allDistricts: 'Tất cả quận/huyện',
       buy: 'Mua',
-      sell: 'Bán'
+      sell: 'Bán',
       sortBy: 'Sắp xếp theo',
       sortScore: 'Điểm phù hợp',
       sortPriceAsc: 'Giá tăng dần',
