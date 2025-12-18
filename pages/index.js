@@ -16,10 +16,12 @@ export default function Home() {
     city: '',
     district: '',
     propertyType: '',
+    priceMin: '',
     priceMax: '',
     livingAreaMin: '',
     livingAreaMax: '',
     bedrooms: '',
+    daysListed: '',
     keywords: [],
     numSites: 5
   });
@@ -33,10 +35,13 @@ export default function Home() {
       city: 'Thành phố',
       district: 'Quận/Huyện',
       propertyType: 'Loại BDS',
+      priceMin: 'Giá tối thiểu',
       priceMax: 'Giá tối đa',
       livingArea: 'Diện tích (m²)',
       bedrooms: 'Phòng ngủ',
-      keywords: 'Từ khóa QUAN TRỌNG',
+      daysListed: 'Đăng trong (ngày)',
+      keywords: 'Từ khóa Khẩn cấp (QUAN TRỌNG)',
+      keywordsDesc: 'Những từ này cho thấy người bán gấp = cơ hội đàm phán tốt nhất!',
       search: 'Tìm kiếm',
       results: 'Kết quả',
       score: 'Điểm phù hợp',
@@ -50,7 +55,13 @@ export default function Home() {
       loading: 'Đang tìm kiếm...',
       min: 'Tối thiểu',
       max: 'Tối đa',
-      required: '3 tham số bắt buộc: Thành phố - Loại BDS - Giá tối đa'
+      required: 'Trường bắt buộc: Thành phố - Loại BDS - Giá tối thiểu - Giá tối đa',
+      selectCity: 'Chọn thành phố',
+      selectDistrict: 'Chọn quận/huyện',
+      selectType: 'Chọn loại BDS',
+      allDistricts: 'Tất cả quận/huyện',
+      buy: 'Mua',
+      sell: 'Bán'
     },
     en: {
       menu: 'Menu',
@@ -60,10 +71,13 @@ export default function Home() {
       city: 'City',
       district: 'District',
       propertyType: 'Property Type',
+      priceMin: 'Min Price',
       priceMax: 'Max Price',
       livingArea: 'Living Area (m²)',
       bedrooms: 'Bedrooms',
-      keywords: 'IMPORTANT Keywords',
+      daysListed: 'Listed within (days)',
+      keywords: 'Urgent Keywords (IMPORTANT)',
+      keywordsDesc: 'These words indicate desperate sellers = best negotiation opportunity!',
       search: 'Search',
       results: 'Results',
       score: 'Match Score',
@@ -77,7 +91,13 @@ export default function Home() {
       loading: 'Searching...',
       min: 'Min',
       max: 'Max',
-      required: '3 required: City - Property Type - Max Price'
+      required: 'Required: City - Property Type - Min Price - Max Price',
+      selectCity: 'Select city',
+      selectDistrict: 'Select district',
+      selectType: 'Select type',
+      allDistricts: 'All districts',
+      buy: 'Buy',
+      sell: 'Sell'
     },
     fr: {
       menu: 'Menu',
@@ -87,10 +107,13 @@ export default function Home() {
       city: 'Ville',
       district: 'District',
       propertyType: 'Type de Bien',
+      priceMin: 'Prix Min',
       priceMax: 'Prix Max',
       livingArea: 'Surface (m²)',
       bedrooms: 'Chambres',
-      keywords: 'Mots-clés',
+      daysListed: 'Publié depuis (jours)',
+      keywords: 'Mots-clés Urgents (IMPORTANT)',
+      keywordsDesc: 'Ces mots indiquent un vendeur pressé = meilleure opportunité de négociation!',
       search: 'Rechercher',
       results: 'Résultats',
       score: 'Score',
@@ -104,35 +127,85 @@ export default function Home() {
       loading: 'Recherche...',
       min: 'Min',
       max: 'Max',
-      required: '3 requis: Ville - Type - Prix Max'
+      required: 'Requis: Ville - Type - Prix Min - Prix Max',
+      selectCity: 'Choisir ville',
+      selectDistrict: 'Choisir district',
+      selectType: 'Choisir type',
+      allDistricts: 'Tous les districts',
+      buy: 'Achat',
+      sell: 'Vente'
     }
   }[language];
 
   const urgentKeywords = [
-    { vn: 'Bán gấp', en: 'Urgent Sale', fr: 'Urgent' },
-    { vn: 'Kẹt tiền', en: 'Need Money', fr: 'Besoin Argent' },
-    { vn: 'Cần tiền', en: 'Need Cash', fr: 'Liquidités' },
+    { vn: 'Bán gấp', en: 'Urgent Sale', fr: 'Vente Urgente' },
     { vn: 'Bán nhanh', en: 'Quick Sale', fr: 'Vente Rapide' },
-    { vn: 'Thanh lý', en: 'Liquidation', fr: 'Liquidation' }
+    { vn: 'Cần bán nhanh', en: 'Need Quick Sale', fr: 'Besoin Vente Rapide' },
+    { vn: 'Thanh lý rẻ', en: 'Cheap Liquidation', fr: 'Liquidation Pas Cher' },
+    { vn: 'Bất ngờ', en: 'Unexpected', fr: 'Inattendu' },
+    { vn: 'Kẹt tiền', en: 'Need Money', fr: 'Besoin Argent' },
+    { vn: 'Ra đi', en: 'Must Go', fr: 'Doit Partir' },
+    { vn: 'Cần tiền', en: 'Need Cash', fr: 'Besoin Cash' },
+    { vn: 'Lỗ', en: 'Loss', fr: 'Perte' },
+    { vn: 'Cần nhượng lại', en: 'Need to Transfer', fr: 'Besoin Céder' },
+    { vn: 'Giá rẻ', en: 'Cheap Price', fr: 'Prix Bas' },
+    { vn: 'Ngộp bank', en: 'Bank Pressure', fr: 'Pression Banque' }
   ];
 
   const propertyTypes = [
     { vn: 'Căn hộ chung cư', en: 'Apartment', fr: 'Appartement' },
+    { vn: 'Căn hộ nghỉ dưỡng', en: 'Resort Apartment', fr: 'Appartement Vacances' },
     { vn: 'Nhà ở', en: 'House', fr: 'Maison' },
     { vn: 'Nhà biệt thự', en: 'Villa', fr: 'Villa' },
+    { vn: 'Nhà nghỉ dưỡng', en: 'Resort House', fr: 'Maison Vacances' },
+    { vn: 'Các loại nhà bán', en: 'All Houses', fr: 'Toutes Maisons' },
+    { vn: 'Tất cả nhà đất', en: 'All Properties', fr: 'Tous Biens' },
     { vn: 'Studio', en: 'Studio', fr: 'Studio' },
+    { vn: 'Mặt bằng', en: 'Commercial Space', fr: 'Local Commercial' },
     { vn: 'Shophouse', en: 'Shophouse', fr: 'Shophouse' },
-    { vn: 'Đất', en: 'Land', fr: 'Terrain' }
+    { vn: 'Văn phòng', en: 'Office', fr: 'Bureau' },
+    { vn: 'Cửa hàng', en: 'Shop', fr: 'Boutique' },
+    { vn: 'Kho, nhà xưởng', en: 'Warehouse', fr: 'Entrepôt' },
+    { vn: 'Đất', en: 'Land', fr: 'Terrain' },
+    { vn: 'Đất nghỉ dưỡng', en: 'Resort Land', fr: 'Terrain Vacances' },
+    { vn: 'Bất động sản khác', en: 'Other', fr: 'Autre' }
   ];
 
   const vietnamCities = [
-    { vn: 'Hồ Chí Minh', en: 'Ho Chi Minh', fr: 'Hô-Chi-Minh-Ville' },
+    { vn: 'Hồ Chí Minh', en: 'Ho Chi Minh City', fr: 'Hô-Chi-Minh-Ville' },
     { vn: 'Hà Nội', en: 'Hanoi', fr: 'Hanoï' },
-    { vn: 'Đà Nẵng', en: 'Da Nang', fr: 'Da Nang' }
+    { vn: 'Đà Nẵng', en: 'Da Nang', fr: 'Da Nang' },
+    { vn: 'Bình Dương', en: 'Binh Duong', fr: 'Binh Duong' },
+    { vn: 'Đồng Nai', en: 'Dong Nai', fr: 'Dong Nai' },
+    { vn: 'Khánh Hòa', en: 'Khanh Hoa', fr: 'Khanh Hoa' },
+    { vn: 'Hải Phòng', en: 'Hai Phong', fr: 'Hai Phong' },
+    { vn: 'Cần Thơ', en: 'Can Tho', fr: 'Can Tho' },
+    { vn: 'Bà Rịa - Vũng Tàu', en: 'Ba Ria - Vung Tau', fr: 'Ba Ria - Vung Tau' },
+    { vn: 'Quảng Ninh', en: 'Quang Ninh', fr: 'Quang Ninh' },
+    { vn: 'Lâm Đồng', en: 'Lam Dong', fr: 'Lam Dong' },
+    { vn: 'Thừa Thiên Huế', en: 'Thua Thien Hue', fr: 'Thua Thien Hue' }
   ];
 
+  const districtsByCity = {
+    'Hồ Chí Minh': [
+      'Quận 1', 'Quận 2', 'Quận 3', 'Quận 4', 'Quận 5', 'Quận 6', 'Quận 7', 'Quận 8',
+      'Quận 9', 'Quận 10', 'Quận 11', 'Quận 12', 'Bình Thạnh', 'Gò Vấp', 'Phú Nhuận',
+      'Tân Bình', 'Tân Phú', 'Thủ Đức', 'Bình Tân', 'Nhà Bè', 'Hóc Môn', 'Củ Chi', 'Cần Giờ'
+    ],
+    'Hà Nội': [
+      'Ba Đình', 'Hoàn Kiếm', 'Hai Bà Trưng', 'Đống Đa', 'Tây Hồ', 'Cầu Giấy',
+      'Thanh Xuân', 'Hoàng Mai', 'Long Biên', 'Nam Từ Liêm', 'Bắc Từ Liêm', 'Hà Đông'
+    ],
+    'Đà Nẵng': [
+      'Hải Châu', 'Thanh Khê', 'Sơn Trà', 'Ngũ Hành Sơn', 'Liên Chiểu', 'Cẩm Lệ', 'Hòa Vang'
+    ],
+    'Bình Dương': [
+      'Thủ Dầu Một', 'Dĩ An', 'Thuận An', 'Tân Uyên', 'Bến Cát', 'Bàu Bàng'
+    ]
+  };
+
   const handleSearch = async () => {
-    if (!searchParams.city || !searchParams.propertyType || !searchParams.priceMax) {
+    if (!searchParams.city || !searchParams.propertyType || !searchParams.priceMin || !searchParams.priceMax) {
       setError(t.required);
       return;
     }
@@ -166,7 +239,8 @@ export default function Home() {
 
   const formatPrice = (price) => {
     if (currency === 'VND') {
-      return `${(price / 1000000000).toFixed(1)} Tỷ`;
+      const ty = (price / 1000000000).toFixed(1).replace('.', ',');
+      return `${ty} Tỷ`;
     }
     return `$${(price / 23000).toFixed(0)}`;
   };
@@ -202,6 +276,13 @@ export default function Home() {
     a.download = `traxhome_${new Date().toISOString()}.csv`;
     a.click();
   };
+
+  const getPriceUnit = () => {
+    if (currency === 'VND') return 'Tỷ';
+    return 'USD';
+  };
+
+  const currentDistricts = districtsByCity[searchParams.city] || [];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -251,131 +332,184 @@ export default function Home() {
       {showSearch && (
         <div className="max-w-6xl mx-auto px-4 py-6">
           <div className="bg-white rounded-xl shadow-lg p-6 space-y-6">
+            {/* Mode Achat/Vente */}
             <div className="flex gap-4">
               <button
                 onClick={() => setMode('buy')}
-                className={`px-6 py-3 rounded-lg font-medium ${
+                className={`px-6 py-3 rounded-lg font-medium flex items-center gap-2 ${
                   mode === 'buy' ? 'bg-blue-600 text-white' : 'bg-gray-100'
                 }`}
               >
-                🏠 Achat
+                🏠 {t.buy}
               </button>
               <button
                 onClick={() => setMode('sell')}
-                className={`px-6 py-3 rounded-lg font-medium ${
+                className={`px-6 py-3 rounded-lg font-medium flex items-center gap-2 ${
                   mode === 'sell' ? 'bg-green-600 text-white' : 'bg-gray-100'
                 }`}
               >
-                💰 Vente
+                💰 {t.sell}
               </button>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">
-                  {t.city} <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={searchParams.city}
-                  onChange={(e) => setSearchParams({...searchParams, city: e.target.value})}
-                  className="w-full px-4 py-2 border rounded-lg"
-                >
-                  <option value="">Chọn thành phố</option>
-                  {vietnamCities.map((c, i) => (
-                    <option key={i} value={c.vn}>{c[language]}</option>
-                  ))}
-                </select>
-              </div>
+            {/* Section: Vị trí & Loại BDS */}
+            <div className="border-b pb-4">
+              <h3 className="text-sm font-semibold text-gray-500 mb-3">📍 {language === 'vn' ? 'Vị trí & Loại BDS' : language === 'fr' ? 'Localisation & Type' : 'Location & Type'}</h3>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">
+                    {t.city} <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={searchParams.city}
+                    onChange={(e) => setSearchParams({...searchParams, city: e.target.value, district: ''})}
+                    className="w-full px-4 py-2 border rounded-lg"
+                  >
+                    <option value="">{t.selectCity}</option>
+                    {vietnamCities.map((c, i) => (
+                      <option key={i} value={c.vn}>{c[language]}</option>
+                    ))}
+                  </select>
+                </div>
 
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">
-                  {t.propertyType} <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={searchParams.propertyType}
-                  onChange={(e) => setSearchParams({...searchParams, propertyType: e.target.value})}
-                  className="w-full px-4 py-2 border rounded-lg"
-                >
-                  <option value="">Chọn loại</option>
-                  {propertyTypes.map((pt, i) => (
-                    <option key={i} value={pt.vn}>{pt[language]}</option>
-                  ))}
-                </select>
-              </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">
+                    {t.district}
+                  </label>
+                  <select
+                    value={searchParams.district}
+                    onChange={(e) => setSearchParams({...searchParams, district: e.target.value})}
+                    className="w-full px-4 py-2 border rounded-lg"
+                    disabled={!searchParams.city}
+                  >
+                    <option value="">{t.allDistricts}</option>
+                    {currentDistricts.map((d, i) => (
+                      <option key={i} value={d}>{d}</option>
+                    ))}
+                  </select>
+                </div>
 
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">
-                  {t.priceMax} <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  value={searchParams.priceMax}
-                  onChange={(e) => setSearchParams({...searchParams, priceMax: e.target.value})}
-                  className="w-full px-4 py-2 border rounded-lg"
-                  placeholder="5000000000"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm text-gray-700 mb-2">{t.district}</label>
-                <input
-                  type="text"
-                  value={searchParams.district}
-                  onChange={(e) => setSearchParams({...searchParams, district: e.target.value})}
-                  className="w-full px-4 py-2 border rounded-lg"
-                  placeholder="Quận 1"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">{t.livingArea}</label>
-                <div className="flex gap-2">
-                  <input
-                    type="number"
-                    value={searchParams.livingAreaMin}
-                    onChange={(e) => setSearchParams({...searchParams, livingAreaMin: e.target.value})}
-                    className="w-full px-3 py-2 border rounded-lg"
-                    placeholder={t.min}
-                  />
-                  <input
-                    type="number"
-                    value={searchParams.livingAreaMax}
-                    onChange={(e) => setSearchParams({...searchParams, livingAreaMax: e.target.value})}
-                    className="w-full px-3 py-2 border rounded-lg"
-                    placeholder={t.max}
-                  />
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-bold text-gray-700 mb-2">
+                    {t.propertyType} <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={searchParams.propertyType}
+                    onChange={(e) => setSearchParams({...searchParams, propertyType: e.target.value})}
+                    className="w-full px-4 py-2 border rounded-lg"
+                  >
+                    <option value="">{t.selectType}</option>
+                    {propertyTypes.map((pt, i) => (
+                      <option key={i} value={pt.vn}>{pt[language]}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
+            </div>
 
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">{t.bedrooms}</label>
-                <input
-                  type="number"
-                  value={searchParams.bedrooms}
-                  onChange={(e) => setSearchParams({...searchParams, bedrooms: e.target.value})}
-                  className="w-full px-4 py-2 border rounded-lg"
-                  placeholder="2"
-                />
+            {/* Section: Prix */}
+            <div className="border-b pb-4">
+              <h3 className="text-sm font-semibold text-gray-500 mb-3">💰 {language === 'vn' ? 'Giá & Tính năng Cơ bản' : language === 'fr' ? 'Prix & Caractéristiques' : 'Price & Features'}</h3>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">
+                    {t.priceMin} <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={searchParams.priceMin}
+                      onChange={(e) => setSearchParams({...searchParams, priceMin: e.target.value})}
+                      className="w-full px-4 py-2 border rounded-lg pr-12"
+                      placeholder="0"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">
+                      {getPriceUnit()}
+                    </span>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">
+                    {t.priceMax} <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={searchParams.priceMax}
+                      onChange={(e) => setSearchParams({...searchParams, priceMax: e.target.value})}
+                      className="w-full px-4 py-2 border rounded-lg pr-12"
+                      placeholder="10"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">
+                      {getPriceUnit()}
+                    </span>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">{t.livingArea}</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      value={searchParams.livingAreaMin}
+                      onChange={(e) => setSearchParams({...searchParams, livingAreaMin: e.target.value})}
+                      className="w-full px-3 py-2 border rounded-lg"
+                      placeholder={t.min}
+                    />
+                    <input
+                      type="number"
+                      value={searchParams.livingAreaMax}
+                      onChange={(e) => setSearchParams({...searchParams, livingAreaMax: e.target.value})}
+                      className="w-full px-3 py-2 border rounded-lg"
+                      placeholder={t.max}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">{t.bedrooms}</label>
+                    <input
+                      type="number"
+                      value={searchParams.bedrooms}
+                      onChange={(e) => setSearchParams({...searchParams, bedrooms: e.target.value})}
+                      className="w-full px-4 py-2 border rounded-lg"
+                      placeholder="2"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">{t.daysListed}</label>
+                    <input
+                      type="number"
+                      value={searchParams.daysListed}
+                      onChange={(e) => setSearchParams({...searchParams, daysListed: e.target.value})}
+                      className="w-full px-4 py-2 border rounded-lg"
+                      placeholder="30"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 
+            {/* Section: Mots-clés urgents */}
             <div>
-              <label className="block text-sm font-bold text-red-600 mb-2">
+              <label className="block text-sm font-bold text-red-600 mb-1">
                 🔥 {t.keywords}
               </label>
+              <p className="text-xs text-gray-500 mb-3">{t.keywordsDesc}</p>
               <div className="bg-red-50 border-2 border-red-200 rounded-lg p-4">
                 <div className="flex flex-wrap gap-2">
                   {urgentKeywords.map((kw, i) => (
                     <button
                       key={i}
                       onClick={() => toggleKeyword(kw)}
-                      class
-                        className={`px-4 py-2 rounded-full text-sm font-medium transition ${
+                      className={`px-3 py-1.5 rounded-full text-sm font-medium transition ${
                         searchParams.keywords.includes(kw[language])
                           ? 'bg-red-600 text-white'
-                          : 'bg-white text-red-600 border border-red-300'
+                          : 'bg-white text-red-600 border border-red-300 hover:bg-red-50'
                       }`}
                     >
                       {kw[language]}
@@ -385,6 +519,7 @@ export default function Home() {
               </div>
             </div>
 
+            {/* Erreur */}
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center gap-2 text-red-700">
                 <AlertCircle className="w-5 h-5" />
@@ -392,12 +527,16 @@ export default function Home() {
               </div>
             )}
 
-            <div className="flex justify-between items-center pt-4 border-t">
-              <p className="text-sm text-gray-600">{t.required}</p>
+            {/* Footer avec bouton recherche */}
+            <div className="flex justify-between items-center pt-4 border-t bg-red-50 -mx-6 -mb-6 px-6 py-4 rounded-b-xl">
+              <div>
+                <p className="text-sm font-semibold text-red-600">⚠️ {language === 'vn' ? 'Trường bắt buộc:' : language === 'fr' ? 'Champs requis:' : 'Required fields:'}</p>
+                <p className="text-sm text-red-600">• {t.city} • {t.propertyType} • {t.priceMin} • {t.priceMax}</p>
+              </div>
               <button
                 onClick={handleSearch}
                 disabled={loading}
-                className="px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg font-bold text-lg hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 flex items-center gap-2"
+                className="px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg font-bold text-lg hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 flex items-center gap-2 shadow-lg"
               >
                 {loading ? <Loader className="w-6 h-6 animate-spin" /> : <Search className="w-6 h-6" />}
                 {loading ? t.loading : t.search}
@@ -410,8 +549,7 @@ export default function Home() {
       {!showSearch && (
         <div className="max-w-7xl mx-auto px-4 py-6">
           {loading ? (
-            <div className="flex flex-col items-center justify-ce
-        nter py-20">
+            <div className="flex flex-col items-center justify-center py-20">
               <Loader className="w-16 h-16 text-blue-600 animate-spin mb-4" />
               <p className="text-xl text-gray-600">{t.loading}</p>
             </div>
@@ -512,7 +650,7 @@ export default function Home() {
           ) : (
             <div className="text-center py-20">
               <AlertCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <p className="text-xl text-gray-600">Aucun résultat trouvé</p>
+              <p className="text-xl text-gray-600">{language === 'vn' ? 'Không tìm thấy kết quả' : language === 'fr' ? 'Aucun résultat trouvé' : 'No results found'}</p>
             </div>
           )}
         </div>
