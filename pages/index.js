@@ -13,6 +13,8 @@ export default function Home() {
   const [expandedPhoto, setExpandedPhoto] = useState(null);
   const [sortBy, setSortBy] = useState('score');
   const [selectedProperty, setSelectedProperty] = useState(null);
+  const [savedSearches, setSavedSearches] = useState([]);
+const [showSavedSearches, setShowSavedSearches] = useState(false);
   const [searchParams, setSearchParams] = useState({
     city: '',
     district: '',
@@ -80,6 +82,12 @@ area: 'Diện tích',
 rooms: 'Phòng ngủ',
 bathrooms: 'Phòng tắm',
 viewOriginal: 'Xem bài gốc',
+      saveSearch: 'Lưu tìm kiếm',
+savedSearches: 'Tìm kiếm đã lưu',
+noSavedSearches: 'Chưa có tìm kiếm nào được lưu',
+loadSearch: 'Tải',
+deleteSearch: 'Xóa',
+searchSaved: 'Đã lưu tìm kiếm!',
     },
     en: {
       menu: 'Menu',
@@ -133,6 +141,12 @@ area: 'Area',
 rooms: 'Bedrooms',
 bathrooms: 'Bathrooms',
 viewOriginal: 'View Original',
+      saveSearch: 'Save Search',
+savedSearches: 'Saved Searches',
+noSavedSearches: 'No saved searches yet',
+loadSearch: 'Load',
+deleteSearch: 'Delete',
+searchSaved: 'Search saved!',
     },
     fr: {
       menu: 'Menu',
@@ -186,6 +200,12 @@ area: 'Surface',
 rooms: 'Chambres',
 bathrooms: 'Salle de bain',
 viewOriginal: 'Voir annonce originale',
+      saveSearch: 'Sauvegarder',
+savedSearches: 'Recherches sauvegardées',
+noSavedSearches: 'Aucune recherche sauvegardée',
+loadSearch: 'Charger',
+deleteSearch: 'Supprimer',
+searchSaved: 'Recherche sauvegardée!',
     }
   }[language];
 
@@ -336,6 +356,40 @@ viewOriginal: 'Voir annonce originale',
 
   const currentDistricts = districtsByCity[searchParams.city] || [];
 const sortResults = (results) => {
+  // Charger les recherches sauvegardées au démarrage
+useState(() => {
+  if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem('traxhome_searches');
+    if (saved) {
+      setSavedSearches(JSON.parse(saved));
+    }
+  }
+}, []);
+
+const saveCurrentSearch = () => {
+  const searchName = `${searchParams.city} - ${searchParams.propertyType} - ${searchParams.priceMax} Tỷ`;
+  const newSearch = {
+    id: Date.now(),
+    name: searchName,
+    params: { ...searchParams },
+    date: new Date().toLocaleDateString()
+  };
+  const updated = [...savedSearches, newSearch];
+  setSavedSearches(updated);
+  localStorage.setItem('traxhome_searches', JSON.stringify(updated));
+  alert(t.searchSaved);
+};
+
+const loadSavedSearch = (search) => {
+  setSearchParams(search.params);
+  setShowSavedSearches(false);
+};
+
+const deleteSavedSearch = (id) => {
+  const updated = savedSearches.filter(s => s.id !== id);
+  setSavedSearches(updated);
+  localStorage.setItem('traxhome_searches', JSON.stringify(updated));
+};
   const sorted = [...results];
   switch (sortBy) {
     case 'priceAsc':
@@ -375,6 +429,12 @@ const sortResults = (results) => {
             >
               <Search className="w-4 h-4" />
               {t.searchParams}
+            </button>
+            <button
+              onClick={() => setShowSavedSearches(!showSavedSearches)}
+              className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 font-medium flex items-center gap-2"
+            >
+              ⭐ {t.savedSearches} ({savedSearches.length})
             </button>
           </div>
           <div className="flex items-center gap-4">
@@ -610,6 +670,13 @@ const sortResults = (results) => {
               >
                 {loading ? <Loader className="w-6 h-6 animate-spin" /> : <Search className="w-6 h-6" />}
                 {loading ? t.loading : t.search}
+              </button>
+              <button
+                onClick={saveCurrentSearch}
+                disabled={!searchParams.city || !searchParams.propertyType || !searchParams.priceMax}
+                className="px-4 py-4 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 disabled:opacity-50"
+              >
+                ⭐ {t.saveSearch}
               </button>
             </div>
           </div>
