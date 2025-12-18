@@ -835,11 +835,11 @@ const sortResults = (results) => {
                 >
                   {t.close}
                 </button>
-              </div>
-            </div>
+</div>
           </div>
         </div>
+      </div>
       )}
-</div>
+    </div>
   );
 }
