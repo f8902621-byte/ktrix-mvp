@@ -37,7 +37,8 @@ exports.handler = async (event, context) => {
     livingAreaMax,
     bedrooms,
     daysListed,
-    keywords 
+    keywords,
+    sources
   } = body;
 
   try {
@@ -90,7 +91,18 @@ exports.handler = async (event, context) => {
         return address.includes(cityLower) || title.includes(cityLower);
       });
     }
-
+// Filtrer par sources (extraire le domaine de l'URL)
+    if (sources && sources.length > 0) {
+      results = results.filter(item => {
+        if (!item.url) return false;
+        try {
+          const domain = new URL(item.url).hostname.replace('www.', '');
+          return sources.some(s => domain.includes(s.replace('www.', '')));
+        } catch {
+          return false;
+        }
+      });
+    }
     // Filtrer par district
     if (district) {
       const districtLower = district.toLowerCase();
@@ -189,6 +201,18 @@ exports.handler = async (event, context) => {
       return Math.min(100, Math.max(0, score));
     };
 
+        // Filtrer par sources
+    if (sources && sources.length > 0) {
+      results = results.filter(item => {
+        if (!item.url) return false;
+        try {
+          const domain = new URL(item.url).hostname.replace('www.', '');
+          return sources.some(s => domain.includes(s.replace('www.', '')));
+        } catch {
+          return false;
+        }
+      });
+    }
     // Mapper les données au format frontend
     const mappedResults = results.slice(0, 100).map((item, index) => ({
       id: item.id || index,
@@ -204,6 +228,7 @@ exports.handler = async (event, context) => {
       imageUrl: item.thumbnail || item.images?.[0] || 'https://via.placeholder.com/300x200?text=No+Image',
       images: item.images || [],
       url: item.url || '#',
+      source: item.url ? new URL(item.url).hostname.replace('www.', '') : 'unknown',
       score: calculateScore(item),
       hasUrgentKeyword: /gấp|nhanh|kẹt tiền|cần tiền|thanh lý|lỗ|ngộp/i.test(item.title || ''),
       isNew: /hôm nay|today/i.test(item.postedOn || ''),
