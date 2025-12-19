@@ -25,6 +25,7 @@ export default function Home() {
     livingAreaMax: '',
     bedrooms: '',
     daysListed: '',
+    legalStatus: '',
     keywords: [],
     numSites: 5
   });
@@ -52,6 +53,11 @@ export default function Home() {
       livingArea: 'Diện tích (m²)',
       bedrooms: 'Phòng ngủ',
       daysListed: 'Đăng trong (ngày)',
+      legalStatus: 'Pháp lý',
+legalAll: 'Tất cả',
+legalSoHong: 'Sổ Hồng',
+legalSoDo: 'Sổ Đỏ',
+legalNone: 'Chưa có sổ',
       keywords: 'Từ khóa Khẩn cấp (QUAN TRỌNG)',
       keywordsDesc: 'Những từ này cho thấy người bán gấp = cơ hội đàm phán tốt nhất!',
       search: 'Tìm kiếm',
@@ -107,6 +113,11 @@ export default function Home() {
       livingArea: 'Living Area (m²)',
       bedrooms: 'Bedrooms',
       daysListed: 'Listed within (days)',
+      legalStatus: 'Legal Status',
+legalAll: 'All',
+legalSoHong: 'Pink Book',
+legalSoDo: 'Red Book',
+legalNone: 'No documents',
       keywords: 'Urgent Keywords (IMPORTANT)',
       keywordsDesc: 'These words indicate desperate sellers = best negotiation opportunity!',
       search: 'Search',
@@ -162,6 +173,11 @@ export default function Home() {
       livingArea: 'Surface (m²)',
       bedrooms: 'Chambres',
       daysListed: 'Publié depuis (jours)',
+      legalStatus: 'Statut légal',
+legalAll: 'Tous',
+legalSoHong: 'Carnet Rose',
+legalSoDo: 'Carnet Rouge',
+legalNone: 'Sans document',
       keywords: 'Mots-clés Urgents (IMPORTANT)',
       keywordsDesc: 'Ces mots indiquent un vendeur pressé = meilleure opportunité de négociation!',
       search: 'Rechercher',
@@ -646,6 +662,19 @@ export default function Home() {
                       placeholder="30"
                     />
                   </div>
+                </div>
+                        <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">{t.legalStatus}</label>
+                  <select
+                    value={searchParams.legalStatus}
+                    onChange={(e) => setSearchParams({...searchParams, legalStatus: e.target.value})}
+                    className="w-full px-4 py-2 border rounded-lg"
+                  >
+                    <option value="">{t.legalAll}</option>
+                    <option value="sohong">{t.legalSoHong}</option>
+                    <option value="sodo">{t.legalSoDo}</option>
+                    <option value="none">{t.legalNone}</option>
+                  </select>
                 </div>
               </div>
             </div>
