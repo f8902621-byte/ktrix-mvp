@@ -541,23 +541,30 @@ comingSoon: 'Bientôt',
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {availableSources.map((source) => (
-                    <button
-                      key={source.id}
-                      type="button"
-                      onClick={() => {
-                        const newSources = searchParams.sources.includes(source.id)
-                          ? searchParams.sources.filter(s => s !== source.id)
-                          : [...searchParams.sources, source.id];
-                        setSearchParams({ ...searchParams, sources: newSources });
-                      }}
-                      className={`px-3 py-1 rounded-full text-sm ${
-                        searchParams.sources.includes(source.id)
-                          ? 'bg-purple-600 text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      {source.name}
-                    </button>
+ <button
+                  key={source.id}
+                  type="button"
+                  onClick={() => {
+                    if (!source.active) return; // Bloquer le clic si inactif
+                    const newSources = searchParams.sources.includes(source.id)
+                      ? searchParams.sources.filter(s => s !== source.id)
+                      : [...searchParams.sources, source.id];
+                    setSearchParams({ ...searchParams, sources: newSources });
+                  }}
+                  className={`px-3 py-1 rounded-full text-sm relative ${
+                    !source.active
+                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                      : searchParams.sources.includes(source.id)
+                        ? 'bg-purple-600 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                  disabled={!source.active}
+                >
+                  {source.name}
+                  {!source.active && (
+                    <span className="ml-1 text-xs">(Sắp ra mắt)</span>
+                  )}
+                </button>
                   ))}
                 </div>
               </div>
