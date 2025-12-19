@@ -26,6 +26,7 @@ export default function Home() {
     bedrooms: '',
     daysListed: '',
     legalStatus: '',
+    customKeyword: '',
     keywords: [],
     numSites: 5
   });
@@ -58,6 +59,8 @@ legalAll: 'Tất cả',
 legalSoHong: 'Sổ Hồng',
 legalSoDo: 'Sổ Đỏ',
 legalNone: 'Chưa có sổ',
+      customKeyword: 'Thêm từ khóa',
+customKeywordPlaceholder: 'Nhập từ khóa khác...',
       keywords: 'Từ khóa Khẩn cấp (QUAN TRỌNG)',
       keywordsDesc: 'Những từ này cho thấy người bán gấp = cơ hội đàm phán tốt nhất!',
       search: 'Tìm kiếm',
@@ -118,6 +121,8 @@ legalAll: 'All',
 legalSoHong: 'Pink Book',
 legalSoDo: 'Red Book',
 legalNone: 'No documents',
+      customKeyword: 'Add keyword',
+customKeywordPlaceholder: 'Enter custom keyword...',
       keywords: 'Urgent Keywords (IMPORTANT)',
       keywordsDesc: 'These words indicate desperate sellers = best negotiation opportunity!',
       search: 'Search',
@@ -178,6 +183,8 @@ legalAll: 'Tous',
 legalSoHong: 'Carnet Rose',
 legalSoDo: 'Carnet Rouge',
 legalNone: 'Sans document',
+      customKeyword: 'Ajouter mot-clé',
+customKeywordPlaceholder: 'Entrer un mot-clé...',
       keywords: 'Mots-clés Urgents (IMPORTANT)',
       keywordsDesc: 'Ces mots indiquent un vendeur pressé = meilleure opportunité de négociation!',
       search: 'Rechercher',
@@ -684,6 +691,32 @@ legalNone: 'Sans document',
                 🔥 {t.keywords}
               </label>
               <p className="text-xs text-gray-500 mb-3">{t.keywordsDesc}</p>
+                <div className="mb-3">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={searchParams.customKeyword}
+                    onChange={(e) => setSearchParams({...searchParams, customKeyword: e.target.value})}
+                    className="flex-1 px-4 py-2 border rounded-lg"
+                    placeholder={t.customKeywordPlaceholder}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (searchParams.customKeyword.trim()) {
+                        setSearchParams(prev => ({
+                          ...prev,
+                          keywords: [...prev.keywords, prev.customKeyword.trim()],
+                          customKeyword: ''
+                        }));
+                      }
+                    }}
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
               <div className="bg-red-50 border-2 border-red-200 rounded-lg p-4">
                 <div className="flex flex-wrap gap-2">
                   {urgentKeywords.map((kw, i) => (
