@@ -127,18 +127,26 @@ exports.handler = async (event, context) => {
   } = body;
 
   try {
-    const datasetUrl = `https://api.apify.com/v2/acts/${APIFY_ACTOR_ID}/runs/last/dataset/items?token=${APIFY_API_TOKEN}`;
+    let results = [];
     
-    const response = await fetch(datasetUrl);
-    
-    if (!response.ok) {
-      throw new Error(`Apify API error: ${response.status}`);
+    // ============================================
+    // APPELER BATDONGSAN SEULEMENT SI SÉLECTIONNÉ
+    // ============================================
+    if (sources && sources.includes('batdongsan')) {
+      try {
+        const datasetUrl = `https://api.apify.com/v2/acts/${APIFY_ACTOR_ID}/runs/last/dataset/items?token=${APIFY_API_TOKEN}`;
+        const response = await fetch(datasetUrl);
+        
+        if (response.ok) {
+          const batdongsanResults = await response.json();
+          results = batdongsanResults.filter(item => item.price && item.price > 0);
+        } else {
+          console.error('Batdongsan API error:', response.status);
+        }
+      } catch (error) {
+        console.error('Batdongsan error:', error);
+      }
     }
-
-    let results = await response.json();
-
-    // Filtrer les résultats sans prix
-    results = results.filter(item => item.price && item.price > 0);
 
     // Filtrer par prix min (convertir Tỷ en VND)
     if (priceMin) {
