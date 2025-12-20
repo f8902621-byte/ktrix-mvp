@@ -52,7 +52,7 @@ async function fetchChotot(params) {
 async function fetchNhadat247(params) {
   const { city, propertyType, priceMin, priceMax } = params;
   
-  const NHADAT247_ACTOR_ID = 'outlandish_bookcases/nhadat247-scraper';
+  const NHADAT247_ACTOR_ID = 'outlandish_bookcases~nhadat247-scraper';
   
   try {
     const datasetUrl = `https://api.apify.com/v2/acts/${NHADAT247_ACTOR_ID}/runs/last/dataset/items?token=${APIFY_API_TOKEN}`;
