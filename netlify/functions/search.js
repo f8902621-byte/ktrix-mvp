@@ -357,31 +357,35 @@ function applyFilters(results, filters) {
 }
 
 // ============================================
-// DÉDUPLICATION
+// DÉDUPLICATION AMÉLIORÉE
 // ============================================
 function deduplicateResults(results) {
   const seenIds = new Set();
-  const seenTitles = new Set();
+  const seenKeys = new Set();
   
   return results.filter(item => {
-    // Dédupliquer par ID exact
+    // Par ID
     if (item.id && seenIds.has(item.id)) return false;
     if (item.id) seenIds.add(item.id);
     
-    // Dédupliquer par titre + prix (même bien sur différentes sources)
-    const normalizedTitle = (item.title || '')
-      .toLowerCase()
-      .replace(/[^a-z0-9àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/g, '')
-      .substring(0, 40);
-    const titleKey = `${normalizedTitle}_${item.price}`;
+    // Par adresse extraite du titre + prix
+    const title = (item.title || '').toLowerCase();
+    // Extraire "q8 ta quang buu 31m2" du titre
+    const addressMatch = title.match(/q\.?\s*(\d+)|quận\s*(\d+)|(\d+)\s*m2|tạ quang bửu|nguyễn|lê|trần|phạm|võ|bùi|hoàng/gi);
+    const addressKey = addressMatch ? addressMatch.join('_').toLowerCase() : '';
     
-    if (seenTitles.has(titleKey)) return false;
-    seenTitles.add(titleKey);
+    const priceRounded = Math.round((item.price || 0) / 500000000); // Arrondi à 500M
+    const key = `${addressKey}_${priceRounded}`;
+    
+    if (addressKey && seenKeys.has(key)) {
+      console.log(`Doublon supprimé: ${item.title.substring(0, 50)}`);
+      return false;
+    }
+    if (addressKey) seenKeys.add(key);
     
     return true;
   });
 }
-
 // ============================================
 // CALCUL DU SCORE
 // ============================================
