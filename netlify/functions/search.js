@@ -21,12 +21,11 @@ const CITY_ALIASES = {
 
 // Fonction pour normaliser et vérifier si une ville correspond
 function cityMatches(searchCity, itemText) {
-  if (!searchCity || !itemText) return true; // Pas de filtre = OK
+  if (!searchCity || !itemText) return true;
   
   const searchLower = searchCity.toLowerCase().trim();
   const textLower = itemText.toLowerCase();
   
-  // Trouver les alias de la ville recherchée
   let aliases = [searchLower];
   for (const [mainCity, cityAliases] of Object.entries(CITY_ALIASES)) {
     if (cityAliases.includes(searchLower) || mainCity === searchLower) {
@@ -35,7 +34,6 @@ function cityMatches(searchCity, itemText) {
     }
   }
   
-  // Vérifier si l'un des alias est présent dans le texte
   return aliases.some(alias => textLower.includes(alias));
 }
 
@@ -45,7 +43,6 @@ function cityMatches(searchCity, itemText) {
 async function fetchChotot(params) {
   const { city, propertyType, priceMin, priceMax } = params;
   
-  // Mapping ville → region_v2 pour Chotot
   const regionMapping = {
     'hồ chí minh': '13000',
     'hà nội': '12000', 
@@ -57,8 +54,7 @@ async function fetchChotot(params) {
     'cần thơ': '14000',
   };
   
-  // Trouver le bon code région
-  let regionCode = '13000'; // Défaut: HCM
+  let regionCode = '13000';
   if (city) {
     const cityLower = city.toLowerCase();
     for (const [cityName, code] of Object.entries(regionMapping)) {
@@ -71,11 +67,10 @@ async function fetchChotot(params) {
   
   const urlParams = new URLSearchParams();
   urlParams.append('limit', '50');
-  urlParams.append('cg', '1000'); // Catégorie immobilier
+  urlParams.append('cg', '1000');
   urlParams.append('region_v2', regionCode);
-  urlParams.append('st', 's,k'); // Statut: à vendre
+  urlParams.append('st', 's,k');
   
-  // Filtre prix
   if (priceMin || priceMax) {
     const minPrice = priceMin ? Math.round(parseFloat(priceMin) * 1000000000) : 0;
     const maxPrice = priceMax ? Math.round(parseFloat(priceMax) * 1000000000) : 999999999999;
@@ -199,7 +194,7 @@ async function fetchBatdongsan(params) {
 }
 
 // ============================================
-// FILTRES UNIVERSELS (appliqués à toutes les sources)
+// FILTRES UNIVERSELS
 // ============================================
 function applyFilters(results, filters) {
   const { city, district, propertyType, priceMin, priceMax, livingAreaMin, livingAreaMax, bedrooms, daysListed } = filters;
@@ -229,7 +224,6 @@ function applyFilters(results, filters) {
   // 3. FILTRE VILLE (avec aliases)
   if (city) {
     filtered = filtered.filter(item => {
-      // Chercher dans tous les champs possibles
       const textToSearch = [
         item.address || '',
         item.city || '',
@@ -330,15 +324,13 @@ function applyFilters(results, filters) {
     const now = new Date();
     
     filtered = filtered.filter(item => {
-      if (!item.postedOn) return true; // Pas de date = on garde
+      if (!item.postedOn) return true;
       
       const postedStr = (item.postedOn || '').toLowerCase();
       
-      // Cas spéciaux
       if (postedStr.includes('hôm nay') || postedStr.includes('today')) return true;
       if (postedStr.includes('hôm qua') || postedStr.includes('yesterday')) return maxDays >= 1;
       
-      // Essayer de parser une date (formats: dd/mm/yyyy, dd-mm-yyyy, yyyy-mm-dd)
       let postedDate = null;
       
       const dateMatch1 = postedStr.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
@@ -356,7 +348,7 @@ function applyFilters(results, filters) {
         return diffDays <= maxDays;
       }
       
-      return true; // Date non parsable = on garde
+      return true;
     });
     console.log(`Après filtre jours (${daysListed}j): ${filtered.length} résultats`);
   }
@@ -365,27 +357,49 @@ function applyFilters(results, filters) {
 }
 
 // ============================================
-// CALCUL DU SCORE DE PERTINENCE
+// DÉDUPLICATION
+// ============================================
+function deduplicateResults(results) {
+  const seenIds = new Set();
+  const seenTitles = new Set();
+  
+  return results.filter(item => {
+    // Dédupliquer par ID exact
+    if (item.id && seenIds.has(item.id)) return false;
+    if (item.id) seenIds.add(item.id);
+    
+    // Dédupliquer par titre + prix (même bien sur différentes sources)
+    const normalizedTitle = (item.title || '')
+      .toLowerCase()
+      .replace(/[^a-z0-9àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/g, '')
+      .substring(0, 40);
+    const titleKey = `${normalizedTitle}_${item.price}`;
+    
+    if (seenTitles.has(titleKey)) return false;
+    seenTitles.add(titleKey);
+    
+    return true;
+  });
+}
+
+// ============================================
+// CALCUL DU SCORE
 // ============================================
 function calculateScore(item) {
   let score = 50;
   
-  // Bonus pour mots-clés urgents
   const urgentWords = ['gấp', 'nhanh', 'kẹt tiền', 'cần tiền', 'thanh lý', 'rẻ', 'lỗ', 'ngộp', 'bán gấp', 'cần bán'];
   const titleLower = (item.title || '').toLowerCase();
   urgentWords.forEach(word => {
     if (titleLower.includes(word)) score += 8;
   });
   
-  // Bonus si photo disponible
   if (item.thumbnail || (item.images && item.images.length > 0)) score += 5;
   
-  // Bonus si publié récemment
   const postedStr = (item.postedOn || '').toLowerCase();
   if (postedStr.includes('hôm nay') || postedStr.includes('today')) score += 15;
   else if (postedStr.includes('hôm qua') || postedStr.includes('yesterday')) score += 10;
   
-  // Bonus si prix/m² raisonnable (< 80M/m² pour HCM)
   const area = item.floorAreaSqm || item.area || 0;
   if (area > 0 && item.price > 0) {
     const pricePerSqm = item.price / area;
@@ -393,10 +407,7 @@ function calculateScore(item) {
     else if (pricePerSqm < 80000000) score += 5;
   }
   
-  // Bonus si surface renseignée
   if (area > 0) score += 3;
-  
-  // Bonus si chambres renseignées
   if (item.bedrooms && item.bedrooms > 0) score += 2;
   
   return Math.min(100, Math.max(0, score));
@@ -498,9 +509,15 @@ exports.handler = async (event, context) => {
     console.log(`APRÈS FILTRES: ${filteredResults.length} résultats`);
     
     // ============================================
-    // ÉTAPE 3: MAPPER AU FORMAT FRONTEND
+    // ÉTAPE 3: DÉDUPLICATION
     // ============================================
-    const mappedResults = filteredResults.slice(0, 100).map((item, index) => {
+    const uniqueResults = deduplicateResults(filteredResults);
+    console.log(`APRÈS DÉDUPLICATION: ${uniqueResults.length} résultats (${filteredResults.length - uniqueResults.length} doublons supprimés)`);
+    
+    // ============================================
+    // ÉTAPE 4: MAPPER AU FORMAT FRONTEND
+    // ============================================
+    const mappedResults = uniqueResults.slice(0, 100).map((item, index) => {
       const area = item.floorAreaSqm || item.area || 0;
       
       return {
