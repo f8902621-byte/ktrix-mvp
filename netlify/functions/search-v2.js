@@ -5,7 +5,7 @@ const APIFY_ACTOR_ID = process.env.APIFY_ACTOR_ID;
 // MAPPING DES VILLES (normalisation)
 // ============================================
 const CITY_ALIASES = {
-  'hồ chí minh': ['hồ chí minh', 'ho chi minh', 'hcm', 'tp hcm', 'tp. hcm', 'tphcm', 'sài gòn', 'saigon', 'sg'],
+  'hồ chí minh': ['hồ chí minh', 'ho chi minh', 'hcm', 'tp hcm', 'tp. hcm', 'tphcm', 'sài gòn', 'saigon', 'sg', 'hồ chí minh city', 'ho chi minh city'],
   'hà nội': ['hà nội', 'ha noi', 'hanoi', 'hn'],
   'đà nẵng': ['đà nẵng', 'da nang', 'danang', 'đn'],
   'bình dương': ['bình dương', 'binh duong', 'bd'],
@@ -19,7 +19,6 @@ const CITY_ALIASES = {
   'thừa thiên huế': ['thừa thiên huế', 'thua thien hue', 'huế', 'hue'],
 };
 
-// Fonction pour normaliser et vérifier si une ville correspond
 function cityMatches(searchCity, itemText) {
   if (!searchCity || !itemText) return true;
   
@@ -41,7 +40,7 @@ function cityMatches(searchCity, itemText) {
 // CHOTOT API INTEGRATION
 // ============================================
 async function fetchChotot(params) {
-  const { city, propertyType, priceMin, priceMax } = params;
+  const { city, priceMin, priceMax } = params;
   
   const regionMapping = {
     'hồ chí minh': '13000',
@@ -200,6 +199,7 @@ function applyFilters(results, filters) {
   const { city, district, propertyType, priceMin, priceMax, livingAreaMin, livingAreaMax, bedrooms, daysListed } = filters;
   
   let filtered = [...results];
+  console.log(`Début filtrage avec ${filtered.length} résultats`);
   
   // 1. FILTRE PRIX MIN
   if (priceMin) {
@@ -221,22 +221,12 @@ function applyFilters(results, filters) {
     console.log(`Après filtre prix max (${priceMax} tỷ): ${filtered.length} résultats`);
   }
   
- // 3. FILTRE VILLE (avec aliases) - VERSION TOLÉRANTE
+  // 3. FILTRE VILLE - DÉSACTIVÉ TEMPORAIREMENT POUR DEBUG
+  // Le scraper Batdongsan ne renvoie pas de données de ville fiables
+  // On filtre côté source (Chotot utilise region_v2)
   if (city) {
-    filtered = filtered.filter(item => {
-      const textToSearch = [
-        item.address || '',
-        item.city || '',
-        item.district || '',
-        item.title || ''
-      ].join(' ');
-      
-      // Si aucune info de localisation, on garde le résultat (tolérant)
-      if (!textToSearch.trim()) return true;
-      
-      return cityMatches(city, textToSearch);
-    });
-    console.log(`Après filtre ville (${city}): ${filtered.length} résultats`);
+    console.log(`Filtre ville (${city}): IGNORÉ - filtrage côté source`);
+    // NE PAS FILTRER - on fait confiance aux sources
   }
   
   // 4. FILTRE DISTRICT
@@ -283,38 +273,25 @@ function applyFilters(results, filters) {
     console.log(`Après filtre chambres (${bedrooms}+): ${filtered.length} résultats`);
   }
   
-  // 8. FILTRE TYPE DE BIEN
-  if (propertyType) {
+  // 8. FILTRE TYPE DE BIEN - SIMPLIFIÉ
+  if (propertyType && propertyType.toLowerCase() !== 'tất cả nhà đất') {
     const typeLower = propertyType.toLowerCase();
     
-    const typeMapping = {
-      'căn hộ chung cư': ['căn hộ', 'chung cư', 'apartment', 'can ho'],
-      'căn hộ nghỉ dưỡng': ['căn hộ nghỉ dưỡng', 'resort apartment'],
-      'nhà ở': ['nhà', 'nhà phố', 'nhà riêng', 'house', 'nha pho'],
-      'nhà biệt thự': ['biệt thự', 'villa', 'biet thu'],
-      'nhà nghỉ dưỡng': ['nghỉ dưỡng'],
-      'studio': ['studio'],
-      'mặt bằng': ['mặt bằng', 'commercial', 'mat bang'],
-      'shophouse': ['shophouse'],
-      'văn phòng': ['văn phòng', 'office', 'van phong'],
-      'cửa hàng': ['cửa hàng', 'shop', 'cua hang'],
-      'kho, nhà xưởng': ['kho', 'nhà xưởng', 'warehouse', 'xuong'],
-      'đất': ['đất', 'land', 'dat nen'],
-      'đất nghỉ dưỡng': ['đất nghỉ dưỡng'],
-      'tất cả nhà đất': [],
-      'các loại nhà bán': ['nhà'],
-      'bất động sản khác': []
-    };
-    
-    const keywords = typeMapping[typeLower] || [typeLower];
+    // Mots-clés par type
+    let keywords = [];
+    if (typeLower.includes('căn hộ') || typeLower.includes('chung cư')) {
+      keywords = ['căn hộ', 'chung cư', 'apartment', 'can ho'];
+    } else if (typeLower.includes('biệt thự') || typeLower.includes('villa')) {
+      keywords = ['biệt thự', 'villa'];
+    } else if (typeLower.includes('nhà')) {
+      keywords = ['nhà', 'house'];
+    } else if (typeLower.includes('đất')) {
+      keywords = ['đất', 'land'];
+    }
     
     if (keywords.length > 0) {
       filtered = filtered.filter(item => {
-        const textToSearch = [
-          item.title || '',
-          item.propertyType || ''
-        ].join(' ').toLowerCase();
-        
+        const textToSearch = (item.title || '').toLowerCase();
         return keywords.some(kw => textToSearch.includes(kw));
       });
       console.log(`Après filtre type (${propertyType}): ${filtered.length} résultats`);
@@ -360,34 +337,24 @@ function applyFilters(results, filters) {
 }
 
 // ============================================
-// DÉDUPLICATION AMÉLIORÉE
+// DÉDUPLICATION SIMPLE
 // ============================================
 function deduplicateResults(results) {
   const seenIds = new Set();
-  const seenProperties = new Set();
+  const seenKeys = new Set();
   
   return results.filter(item => {
-    // Dédupliquer par ID exact
+    // Par ID
     if (item.id && seenIds.has(item.id)) return false;
     if (item.id) seenIds.add(item.id);
     
-    // Dédupliquer par caractéristiques du bien (surface + prix + mots-clés adresse)
-    const area = item.floorAreaSqm || item.area || 0;
-    const price = item.price || 0;
+    // Par surface + prix (arrondi)
+    const area = Math.round(item.floorAreaSqm || item.area || 0);
+    const priceRounded = Math.round((item.price || 0) / 100000000); // Arrondi à 100M
+    const key = `${area}_${priceRounded}`;
     
-    // Extraire les mots-clés d'adresse du titre (district, rue, projet)
-    const titleLower = (item.title || '').toLowerCase();
-    const addressKeywords = titleLower
-      .replace(/bán|gấp|nhanh|cần|tiền|kẹt|thanh|lý|rẻ|lỗ|ngộp|căn hộ|chung cư|nhà|đất/g, '') // Supprimer mots génériques
-      .replace(/[^a-z0-9àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ\s]/g, '')
-      .trim()
-      .substring(0, 30);
-    
-    // Clé unique : surface arrondie + prix arrondi + adresse simplifiée
-    const propertyKey = `${Math.round(area)}_${Math.round(price/100000000)}_${addressKeywords}`;
-    
-    if (seenProperties.has(propertyKey)) return false;
-    seenProperties.add(propertyKey);
+    if (area > 0 && seenKeys.has(key)) return false;
+    if (area > 0) seenKeys.add(key);
     
     return true;
   });
@@ -503,7 +470,7 @@ exports.handler = async (event, context) => {
     console.log(`TOTAL BRUT: ${allResults.length} résultats`);
     
     // ============================================
-    // ÉTAPE 2: APPLIQUER TOUS LES FILTRES
+    // ÉTAPE 2: APPLIQUER LES FILTRES
     // ============================================
     const filteredResults = applyFilters(allResults, {
       city,
@@ -523,7 +490,7 @@ exports.handler = async (event, context) => {
     // ÉTAPE 3: DÉDUPLICATION
     // ============================================
     const uniqueResults = deduplicateResults(filteredResults);
-    console.log(`APRÈS DÉDUPLICATION: ${uniqueResults.length} résultats (${filteredResults.length - uniqueResults.length} doublons supprimés)`);
+    console.log(`APRÈS DÉDUPLICATION: ${uniqueResults.length} résultats (${filteredResults.length - uniqueResults.length} doublons)`);
     
     // ============================================
     // ÉTAPE 4: MAPPER AU FORMAT FRONTEND
