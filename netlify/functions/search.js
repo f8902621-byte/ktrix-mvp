@@ -146,6 +146,8 @@ async function fetchChotot(params) {
       url: `https://www.chotot.com/${ad.list_id}.htm`,
       source: 'chotot.com',
       postedOn: ad.list_time ? new Date(ad.list_time * 1000).toLocaleDateString('vi-VN') : '',
+      list_time: ad.list_time || 0,
+      category: ad.category || null,
       propertyType: ad.category_name || '',
       pricePerM2: ad.price_million_per_m2 || null,
     }));
@@ -513,21 +515,38 @@ exports.handler = async (event) => {
     console.log(`TOTAL BRUT: ${allResults.length}`);
     
     // Filtre type de bien global (pour Chotot qui ne filtre pas côté API)
-    if (propertyType && !propertyType.toLowerCase().includes('tất cả')) {
+    if (propertyType && !propertyType.toLowerCase().includes('tất cả') && !propertyType.toLowerCase().includes('all')) {
       const type = propertyType.toLowerCase();
+      let categoryCode = null;
       let keywords = [];
-      if (type.includes('căn hộ') || type.includes('chung cư')) keywords = ['căn hộ', 'chung cư', 'apartment', 'cc', 'ccmn'];
-      else if (type.includes('biệt thự')) keywords = ['biệt thự', 'villa'];
-      else if (type.includes('nhà')) keywords = ['nhà'];
-      else if (type.includes('đất')) keywords = ['đất'];
       
-      if (keywords.length > 0) {
+      // Mapping des types vers les codes Chotot et mots-clés
+      if (type.includes('căn hộ') || type.includes('chung cư') || type.includes('apartment')) {
+        categoryCode = 1020; // Căn hộ/Chung cư
+        keywords = ['căn hộ', 'chung cư', 'apartment', 'penthouse'];
+      } else if (type.includes('biệt thự') || type.includes('villa')) {
+        categoryCode = 1030; // Biệt thự
+        keywords = ['biệt thự', 'villa'];
+      } else if (type.includes('nhà') || type.includes('house')) {
+        categoryCode = 1010; // Nhà ở
+        keywords = ['nhà'];
+      } else if (type.includes('đất') || type.includes('land')) {
+        categoryCode = 1040; // Đất
+        keywords = ['đất', 'lô đất'];
+      }
+      
+      if (categoryCode || keywords.length > 0) {
         const before = allResults.length;
         allResults = allResults.filter(item => {
+          // Priorité au category code si disponible
+          if (item.category && categoryCode) {
+            return item.category === categoryCode;
+          }
+          // Sinon filtre par mots-clés dans le titre
           const t = (item.title || '').toLowerCase();
           return keywords.some(k => t.includes(k));
         });
-        console.log(`Filtre type "${propertyType}": ${before} → ${allResults.length}`);
+        console.log(`Filtre type "${propertyType}" (code=${categoryCode}): ${before} → ${allResults.length}`);
       }
     }
     
