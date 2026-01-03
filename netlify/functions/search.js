@@ -370,13 +370,23 @@ function calculateNegotiationScore(item, avgPricePerM2) {
   
   let daysOnline = 0;
   if (listTime > 0) {
-    daysOnline = Math.floor((Date.now() - listTime * 1000) / (1000 * 60 * 60 * 24));
+    // list_time peut être en secondes ou millisecondes selon la source
+    // Si > 10000000000, c'est en millisecondes, sinon en secondes
+    const listTimeMs = listTime > 10000000000 ? listTime : listTime * 1000;
+    daysOnline = Math.floor((Date.now() - listTimeMs) / (1000 * 60 * 60 * 24));
+    // Sécurité : si le résultat est négatif ou absurde, on met 0
+    if (daysOnline < 0 || daysOnline > 3650) {
+      daysOnline = 0;
+    }
   } else if (postedOn) {
     // Essayer de parser la date vietnamienne (dd/mm/yyyy)
     const match = postedOn.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
     if (match) {
       const postedDate = new Date(match[3], match[2] - 1, match[1]);
       daysOnline = Math.floor((Date.now() - postedDate.getTime()) / (1000 * 60 * 60 * 24));
+      if (daysOnline < 0 || daysOnline > 3650) {
+        daysOnline = 0;
+      }
     }
   }
   
