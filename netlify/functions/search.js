@@ -121,6 +121,10 @@ async function fetchChotot(params) {
       price: ad.price || 0,
       floorAreaSqm: ad.size || ad.area || 0,
       area: ad.size || ad.area || 0,
+      // Adresse complète : street + ward + district
+      address: [ad.street_name, ad.ward_name, ad.area_name].filter(Boolean).join(', ') || '',
+      street: ad.street_name || '',
+      ward: ad.ward_name || '',
       district: ad.area_name || '',
       city: ad.region_name || '',
       bedrooms: ad.rooms || null,
