@@ -5,56 +5,68 @@ const APIFY_ACTOR_ID = process.env.APIFY_ACTOR_ID;
 // MAPPING DES VILLES → CODE RÉGION CHOTOT
 // ============================================
 const CHOTOT_REGIONS = {
-  'hồ chí minh': '13000',
-  'hà nội': '12000',
-  'đà nẵng': '15000',
-  'bình dương': '13100',
-  'đồng nai': '13200',
-  'hải phòng': '12100',
-  'cần thơ': '14000',
-  'khánh hòa': '15100',
-  'bà rịa - vũng tàu': '13300',
-  'quảng ninh': '12200',
-  'lâm đồng': '15200',
+  'ho chi minh': '13000',
+  'ha noi': '12000',
+  'da nang': '15000',
+  'binh duong': '13100',
+  'dong nai': '13200',
+  'hai phong': '12100',
+  'can tho': '14000',
+  'khanh hoa': '15100',
+  'ba ria': '13300',
+  'vung tau': '13300',
+  'quang ninh': '12200',
+  'lam dong': '15200',
   'long an': '13400',
-  'bắc ninh': '12300',
-  'thanh hóa': '11000',
-  'nghệ an': '11100',
+  'bac ninh': '12300',
+  'thanh hoa': '11000',
+  'nghe an': '11100',
 };
 
-const CITY_ALIASES = {
-  'hồ chí minh': ['hcm', 'tphcm', 'sài gòn', 'saigon', 'sg', 'ho chi minh'],
-  'hà nội': ['hanoi', 'hn', 'ha noi'],
-  'đà nẵng': ['danang', 'đn', 'da nang'],
-  'bình dương': ['binh duong', 'bd'],
-  'đồng nai': ['dong nai', 'bien hoa'],
-  'hải phòng': ['hai phong', 'hp'],
-  'cần thơ': ['can tho', 'ct'],
-  'khánh hòa': ['khanh hoa', 'nha trang'],
-  'bà rịa - vũng tàu': ['vung tau', 'brvt', 'ba ria'],
-  'quảng ninh': ['quang ninh', 'ha long', 'hạ long'],
-  'lâm đồng': ['lam dong', 'da lat', 'đà lạt'],
-};
+// Fonction pour supprimer les accents vietnamiens
+function removeVietnameseAccents(str) {
+  return str
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'd')
+    .toLowerCase()
+    .trim();
+}
 
 function getChototRegion(city) {
-  if (!city) return '13000';
-  const cityLower = city.toLowerCase().trim();
+  if (!city) return '13000'; // Défaut: HCM
+  
+  const cityNormalized = removeVietnameseAccents(city);
+  console.log(`City mapping: "${city}" → normalized: "${cityNormalized}"`);
   
   // Correspondance directe
   for (const [cityName, code] of Object.entries(CHOTOT_REGIONS)) {
-    if (cityLower.includes(cityName) || cityName.includes(cityLower)) {
+    if (cityNormalized.includes(cityName) || cityName.includes(cityNormalized)) {
+      console.log(`City matched: "${cityName}" → code ${code}`);
       return code;
     }
   }
   
-  // Chercher dans les aliases
-  for (const [mainCity, aliases] of Object.entries(CITY_ALIASES)) {
-    if (aliases.some(alias => cityLower.includes(alias) || alias.includes(cityLower))) {
-      return CHOTOT_REGIONS[mainCity] || '13000';
-    }
+  // Mappings spécifiques supplémentaires
+  if (cityNormalized.includes('sai gon') || cityNormalized.includes('saigon') || cityNormalized.includes('hcm') || cityNormalized.includes('tphcm')) {
+    return '13000';
+  }
+  if (cityNormalized.includes('hanoi') || cityNormalized.includes('hn')) {
+    return '12000';
+  }
+  if (cityNormalized.includes('danang') || cityNormalized.includes('dn')) {
+    return '15000';
+  }
+  if (cityNormalized.includes('nha trang')) {
+    return '15100';
+  }
+  if (cityNormalized.includes('da lat') || cityNormalized.includes('dalat')) {
+    return '15200';
   }
   
-  return '13000';
+  console.log(`City not found, defaulting to HCM (13000)`);
+  return '13000'; // Défaut: HCM
 }
 
 // ============================================
