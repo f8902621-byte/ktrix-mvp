@@ -192,7 +192,7 @@ export default function Landing() {
       <header className="fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-b z-50">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src="/Ktrix%202%20Bi.png" alt="K Trix" className="w-10 h-10 object-contain" />
+            <img src="https://raw.githubusercontent.com/f8902621-byte/traxhome-mvp/main/Ktrixlogo.png" alt="K Trix" className="w-10 h-10 object-contain" />
             <div>
               <span className="text-xl font-bold text-gray-900">K Trix</span>
               <span className="ml-2 text-xs bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full font-medium">BETA</span>
@@ -419,7 +419,7 @@ export default function Landing() {
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="flex items-center gap-3">
-              <img src="/Ktrix%202%20Bi.png" alt="K Trix" className="w-10 h-10 object-contain" />
+              <img src="https://raw.githubusercontent.com/f8902621-byte/traxhome-mvp/main/Ktrixlogo.png" alt="K Trix" className="w-10 h-10 object-contain" />
               <div>
                 <span className="text-white font-bold">K Trix</span>
                 <p className="text-sm">{t.footerDesc}</p>
