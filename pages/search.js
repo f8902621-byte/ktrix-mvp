@@ -249,9 +249,7 @@ export default function SearchPage() {
               <Home className="w-5 h-5" />
             </button>
             <div className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-sky-400 rounded-lg flex items-center justify-center text-white font-bold text-xl shadow-md">
-                K
-              </div>
+              <img src="/Ktrix%202%20Bi.png" alt="K Trix" className="w-10 h-10 object-contain" />
               <span className="text-xl font-bold text-gray-900">K Trix</span>
               <span className="text-xs bg-orange-100 text-orange-600 px-2 py-1 rounded-full font-medium">MVP</span>
             </div>
