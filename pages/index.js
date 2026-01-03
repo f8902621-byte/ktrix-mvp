@@ -209,7 +209,7 @@ export default function Landing() {
               <option value="fr">🇫🇷 Français</option>
             </select>
             <button
-              onClick={() => router.push('/search')}
+              onClick={() => router.push(`/search?lang=${language}`)}
               className="px-5 py-2.5 bg-gradient-to-r from-blue-500 to-sky-400 text-white rounded-lg font-medium hover:from-blue-600 hover:to-sky-500 transition shadow-lg shadow-blue-400/30 flex items-center gap-2"
             >
               <Search className="w-4 h-4" />
@@ -238,7 +238,7 @@ export default function Landing() {
               <p className="text-lg text-gray-600 mb-8 leading-relaxed">{t.heroDesc}</p>
               <div className="flex flex-wrap gap-4">
                 <button
-                  onClick={() => router.push('/search')}
+                  onClick={() => router.push(`/search?lang=${language}`)}
                   className="px-8 py-4 bg-gradient-to-r from-blue-500 to-sky-400 text-white rounded-xl font-semibold hover:from-blue-600 hover:to-sky-500 transition shadow-xl shadow-blue-400/30 flex items-center gap-2 text-lg"
                 >
                   {t.tryBeta}
@@ -407,7 +407,7 @@ export default function Landing() {
           )}
           <div className="flex items-center justify-center gap-2 text-sky-100">
             <span>{t.ctaDirect}</span>
-            <button onClick={() => router.push('/search')} className="text-white font-semibold underline hover:no-underline">
+            <button onClick={() => router.push(`/search?lang=${language}`)} className="text-white font-semibold underline hover:no-underline">
               {t.tryBeta} →
             </button>
           </div>
