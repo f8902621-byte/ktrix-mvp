@@ -293,21 +293,160 @@ function deduplicateResults(results) {
 }
 
 // ============================================
-// SCORE
+// SCORE DE NÉGOCIATION INTELLIGENT
 // ============================================
-function calculateScore(item) {
-  let score = 50;
+
+// Mots-clés urgents avec poids
+const URGENT_KEYWORDS = [
+  { pattern: /bán\s*gấp/i, weight: 25, label: 'Bán gấp' },
+  { pattern: /cần\s*bán\s*gấp/i, weight: 25, label: 'Cần bán gấp' },
+  { pattern: /kẹt\s*tiền/i, weight: 25, label: 'Kẹt tiền' },
+  { pattern: /cần\s*tiền/i, weight: 20, label: 'Cần tiền' },
+  { pattern: /ngộp\s*bank/i, weight: 25, label: 'Ngộp bank' },
+  { pattern: /thanh\s*lý/i, weight: 20, label: 'Thanh lý' },
+  { pattern: /bán\s*lỗ/i, weight: 25, label: 'Bán lỗ' },
+  { pattern: /giá\s*rẻ/i, weight: 15, label: 'Giá rẻ' },
+  { pattern: /bán\s*nhanh/i, weight: 15, label: 'Bán nhanh' },
+  { pattern: /chính\s*chủ/i, weight: 10, label: 'Chính chủ' },
+  { pattern: /cắt\s*lỗ/i, weight: 25, label: 'Cắt lỗ' },
+  { pattern: /hạ\s*giá/i, weight: 20, label: 'Hạ giá' },
+];
+
+function calculateNegotiationScore(item, avgPricePerM2) {
+  let score = 0;
+  const details = {
+    urgentKeywords: [],
+    priceAnalysis: null,
+    listingAge: null,
+    photoAnalysis: null,
+    priceType: null,
+  };
+  
   const title = (item.title || '').toLowerCase();
   
-  if (/gấp|nhanh|kẹt tiền|cần tiền|thanh lý|lỗ|ngộp/.test(title)) score += 15;
-  if (item.thumbnail) score += 5;
-  if ((item.postedOn || '').includes('hôm nay') || (item.postedOn || '').includes('phút')) score += 10;
-  if (item.area > 0 && item.price > 0) {
-    const pricePerM2 = item.price / item.area;
-    if (pricePerM2 < 50000000) score += 10; // Bon rapport qualité/prix
+  // 1. Mots-clés urgents (max 25 points - on prend le plus fort)
+  let maxUrgentWeight = 0;
+  for (const kw of URGENT_KEYWORDS) {
+    if (kw.pattern.test(title) || kw.pattern.test(item.title || '')) {
+      details.urgentKeywords.push(kw.label);
+      if (kw.weight > maxUrgentWeight) {
+        maxUrgentWeight = kw.weight;
+      }
+    }
+  }
+  score += maxUrgentWeight;
+  
+  // 2. Analyse prix/m² vs moyenne (max 25 points)
+  if (item.area > 0 && item.price > 0 && avgPricePerM2 > 0) {
+    const itemPricePerM2 = item.price / item.area;
+    const priceDiff = ((avgPricePerM2 - itemPricePerM2) / avgPricePerM2) * 100;
+    
+    details.priceAnalysis = {
+      itemPricePerM2: Math.round(itemPricePerM2),
+      avgPricePerM2: Math.round(avgPricePerM2),
+      diffPercent: Math.round(priceDiff),
+    };
+    
+    if (priceDiff >= 20) {
+      score += 25; // 20%+ moins cher
+      details.priceAnalysis.verdict = 'excellent';
+    } else if (priceDiff >= 10) {
+      score += 20; // 10-20% moins cher
+      details.priceAnalysis.verdict = 'good';
+    } else if (priceDiff >= 5) {
+      score += 10; // 5-10% moins cher
+      details.priceAnalysis.verdict = 'fair';
+    } else if (priceDiff >= 0) {
+      score += 5; // Prix moyen
+      details.priceAnalysis.verdict = 'average';
+    } else {
+      details.priceAnalysis.verdict = 'above_average';
+    }
   }
   
-  return Math.min(100, score);
+  // 3. Durée en ligne (max 20 points)
+  const postedOn = item.postedOn || '';
+  const listTime = item.list_time || 0;
+  
+  let daysOnline = 0;
+  if (listTime > 0) {
+    daysOnline = Math.floor((Date.now() - listTime * 1000) / (1000 * 60 * 60 * 24));
+  } else if (postedOn) {
+    // Essayer de parser la date vietnamienne (dd/mm/yyyy)
+    const match = postedOn.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+    if (match) {
+      const postedDate = new Date(match[3], match[2] - 1, match[1]);
+      daysOnline = Math.floor((Date.now() - postedDate.getTime()) / (1000 * 60 * 60 * 24));
+    }
+  }
+  
+  details.listingAge = { days: daysOnline };
+  
+  if (daysOnline > 60) {
+    score += 20;
+    details.listingAge.verdict = 'very_old';
+  } else if (daysOnline > 30) {
+    score += 15;
+    details.listingAge.verdict = 'old';
+  } else if (daysOnline > 14) {
+    score += 5;
+    details.listingAge.verdict = 'moderate';
+  } else {
+    details.listingAge.verdict = 'fresh';
+  }
+  
+  // 4. Analyse photos (max 10 points)
+  const numPhotos = (item.images || []).length || (item.thumbnail ? 1 : 0);
+  details.photoAnalysis = { count: numPhotos };
+  
+  if (numPhotos === 0) {
+    score += 10; // Pas de photo = vendeur amateur/pressé
+    details.photoAnalysis.verdict = 'none';
+  } else if (numPhotos <= 2) {
+    score += 5; // Peu de photos
+    details.photoAnalysis.verdict = 'few';
+  } else {
+    details.photoAnalysis.verdict = 'good';
+  }
+  
+  // 5. Prix rond (max 5 points)
+  const priceInBillion = item.price / 1000000000;
+  const isRoundPrice = priceInBillion === Math.floor(priceInBillion) || 
+                       (priceInBillion * 10) === Math.floor(priceInBillion * 10);
+  
+  if (isRoundPrice && priceInBillion >= 1) {
+    score += 5;
+    details.priceType = 'round'; // Prix rond = plus négociable
+  } else {
+    details.priceType = 'precise';
+  }
+  
+  // Score final (plafonné à 100)
+  const finalScore = Math.min(100, score);
+  
+  // Niveau de négociation
+  let negotiationLevel;
+  if (finalScore >= 70) {
+    negotiationLevel = 'excellent';
+  } else if (finalScore >= 50) {
+    negotiationLevel = 'good';
+  } else if (finalScore >= 30) {
+    negotiationLevel = 'moderate';
+  } else {
+    negotiationLevel = 'low';
+  }
+  
+  return {
+    score: finalScore,
+    level: negotiationLevel,
+    details,
+  };
+}
+
+// Fonction legacy pour compatibilité
+function calculateScore(item) {
+  const result = calculateNegotiationScore(item, 50000000);
+  return result.score;
 }
 
 // ============================================
@@ -398,37 +537,58 @@ exports.handler = async (event) => {
       sortedResults.sort((a, b) => b.score - a.score);
     }
     
+    // Calculer le prix moyen au m² pour comparaison
+    const validPricePerM2 = sortedResults
+      .filter(item => item.area > 0 && item.price > 0)
+      .map(item => item.price / item.area);
+    const avgPricePerM2 = validPricePerM2.length > 0 
+      ? validPricePerM2.reduce((a, b) => a + b, 0) / validPricePerM2.length 
+      : 50000000;
+    
     // Limiter à 100 résultats pour le frontend
-    const results = sortedResults.slice(0, 100).map((item, i) => ({
-      id: item.id || i,
-      title: item.title || 'Sans titre',
-      price: item.price || 0,
-      pricePerSqm: item.area > 0 ? Math.round(item.price / item.area) : 0,
-      city: item.city || city || '',
-      district: item.district || '',
-      address: item.address || '',
-      floorArea: item.area || 0,
-      bedrooms: item.bedrooms || 0,
-      bathrooms: item.bathrooms || 0,
-      imageUrl: item.thumbnail || 'https://via.placeholder.com/300x200?text=No+Image',
-      images: item.images || [],
-      url: item.url || '#',
-      source: item.source || 'unknown',
-      score: item.score || calculateScore(item),
-      hasUrgentKeyword: /gấp|nhanh|kẹt|thanh lý|lỗ|ngộp/i.test(item.title),
-      isNew: /hôm nay|phút|today/i.test(item.postedOn || ''),
-      postedOn: item.postedOn || '',
-    }));
+    const results = sortedResults.slice(0, 100).map((item, i) => {
+      // Calculer le score de négociation détaillé
+      const negotiation = calculateNegotiationScore(item, avgPricePerM2);
+      
+      return {
+        id: item.id || i,
+        title: item.title || 'Sans titre',
+        price: item.price || 0,
+        pricePerSqm: item.area > 0 ? Math.round(item.price / item.area) : 0,
+        avgPricePerSqm: Math.round(avgPricePerM2),
+        city: item.city || city || '',
+        district: item.district || '',
+        address: item.address || '',
+        floorArea: item.area || 0,
+        bedrooms: item.bedrooms || 0,
+        bathrooms: item.bathrooms || 0,
+        imageUrl: item.thumbnail || 'https://via.placeholder.com/300x200?text=No+Image',
+        images: item.images || [],
+        url: item.url || '#',
+        source: item.source || 'unknown',
+        // Score de négociation
+        score: negotiation.score,
+        negotiationLevel: negotiation.level,
+        negotiationDetails: negotiation.details,
+        // Badges
+        hasUrgentKeyword: negotiation.details.urgentKeywords.length > 0,
+        urgentKeywords: negotiation.details.urgentKeywords,
+        isNew: /hôm nay|phút|today/i.test(item.postedOn || ''),
+        postedOn: item.postedOn || '',
+        daysOnline: negotiation.details.listingAge?.days || 0,
+      };
+    });
 
     const prices = results.map(r => r.price).filter(p => p > 0);
     const stats = {
       lowestPrice: prices.length ? Math.min(...prices) : 0,
       highestPrice: prices.length ? Math.max(...prices) : 0,
+      avgPricePerSqm: Math.round(avgPricePerM2),
       totalResults: results.length,
       totalAvailable: unique.length,
     };
 
-    console.log(`FINAL: ${results.length} résultats affichés, ${unique.length} disponibles`);
+    console.log(`FINAL: ${results.length} résultats affichés, ${unique.length} disponibles, prix moyen/m²: ${Math.round(avgPricePerM2/1000000)}M`);
 
     return {
       statusCode: 200,
