@@ -17,27 +17,27 @@ export default function SearchPage() {
   const [selectedProperty, setSelectedProperty] = useState(null);
   const [savedSearches, setSavedSearches] = useState([]);
   const [showSavedSearches, setShowSavedSearches] = useState(false);
- const [searchParams, setSearchParams] = useState({
-  city: '',
-  district: '',
-  propertyType: '',
-  priceMin: '',
-  priceMax: '',
-  livingAreaMin: '',
-  livingAreaMax: '',
-  bedrooms: '',
-  bathrooms: '',
-  hasParking: false,
-  hasPool: false,
-  streetWidthMin: '',
-  daysListed: '',
-  legalStatus: '',
-  customKeyword: '',
-  sources: ['chotot'],
-  keywords: [],
-  keywordsOnly: false,
-  numSites: 5
-});
+  const [searchParams, setSearchParams] = useState({
+    city: '',
+    district: '',
+    propertyType: '',
+    priceMin: '',
+    priceMax: '',
+    livingAreaMin: '',
+    livingAreaMax: '',
+    bedrooms: '',
+    bathrooms: '',
+    hasParking: false,
+    hasPool: false,
+    streetWidthMin: '',
+    daysListed: '',
+    legalStatus: '',
+    customKeyword: '',
+    sources: ['chotot'],
+    keywords: [],
+    keywordsOnly: false,
+    numSites: 5
+  });
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -46,14 +46,12 @@ export default function SearchPage() {
     }
   }, []);
 
-  // Lire la langue depuis l'URL query param
   useEffect(() => {
     if (router.query.lang && ['vn', 'en', 'fr'].includes(router.query.lang)) {
       setLanguage(router.query.lang);
     }
   }, [router.query.lang]);
 
-  // Fermer le modal avec la touche Escape
   useEffect(() => {
     const handleEscape = (e) => {
       if (e.key === 'Escape') {
@@ -200,19 +198,20 @@ export default function SearchPage() {
     }
   }[language];
 
-const urgentKeywords = [
-  { vn: 'Bán gấp', en: 'Urgent Sale', fr: 'Vente Urgente' },
-  { vn: 'Bán nhanh', en: 'Quick Sale', fr: 'Vente Express' },
-  { vn: 'Cần bán nhanh', en: 'Need Quick Sale', fr: 'Doit Vendre Vite' },
-  { vn: 'Kẹt tiền', en: 'Need Money', fr: 'Besoin Argent' },
-  { vn: 'Cần tiền', en: 'Need Cash', fr: 'Besoin Cash' },
-  { vn: 'Giá rẻ', en: 'Cheap Price', fr: 'Prix Bas' },
-  { vn: 'Ngộp bank', en: 'Bank Pressure', fr: 'Pression Banque' },
-  { vn: 'Chính chủ', en: 'Direct Owner', fr: 'Propriétaire Direct' },
-  { vn: 'Miễn trung gian', en: 'No Agent', fr: 'Sans Intermédiaire' },
-  { vn: 'Giá thương lượng', en: 'Negotiable Price', fr: 'Prix Négociable' },
-  { vn: 'Bán lỗ', en: 'Selling at Loss', fr: 'Vente à Perte' }
-];
+  const urgentKeywords = [
+    { vn: 'Bán gấp', en: 'Urgent Sale', fr: 'Vente Urgente' },
+    { vn: 'Bán nhanh', en: 'Quick Sale', fr: 'Vente Express' },
+    { vn: 'Cần bán nhanh', en: 'Need Quick Sale', fr: 'Doit Vendre Vite' },
+    { vn: 'Kẹt tiền', en: 'Need Money', fr: 'Besoin Argent' },
+    { vn: 'Cần tiền', en: 'Need Cash', fr: 'Besoin Cash' },
+    { vn: 'Giá rẻ', en: 'Cheap Price', fr: 'Prix Bas' },
+    { vn: 'Ngộp bank', en: 'Bank Pressure', fr: 'Pression Banque' },
+    { vn: 'Chính chủ', en: 'Direct Owner', fr: 'Propriétaire Direct' },
+    { vn: 'Miễn trung gian', en: 'No Agent', fr: 'Sans Intermédiaire' },
+    { vn: 'Giá thương lượng', en: 'Negotiable Price', fr: 'Prix Négociable' },
+    { vn: 'Bán lỗ', en: 'Selling at Loss', fr: 'Vente à Perte' }
+  ];
+
   const propertyTypes = [
     { vn: 'Căn hộ chung cư', en: 'Apartment', fr: 'Appartement' },
     { vn: 'Nhà ở', en: 'House', fr: 'Maison' },
@@ -222,12 +221,7 @@ const urgentKeywords = [
   ];
 
   const availableSources = [
-    // Sources désactivées temporairement (coût Apify / données périmées)
-    // { id: 'batdongsan', name: 'Batdongsan.com.vn', active: true },
-    // { id: 'nhadat247', name: 'Nhadat247.com.vn', active: true },
     { id: 'chotot', name: 'Chotot.com', active: true },
-    // { id: 'homedy', name: 'Homedy.com', active: false },
-    // { id: 'alonhadat', name: 'Alonhadat.com.vn', active: false },
   ];
 
   const vietnamCities = [
@@ -452,34 +446,35 @@ const urgentKeywords = [
                 </select>
               </div>
             </div>
-{/* Price */}
-<div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-  <div>
-    <label className="block text-sm font-bold text-gray-700 mb-2">{t.priceMin}</label>
-    <div className="flex items-center gap-2">
-      <input type="number" step="0.1" min="0" max="500" value={searchParams.priceMin} onChange={(e) => setSearchParams({...searchParams, priceMin: e.target.value})} className="w-24 px-3 py-2.5 border rounded-lg text-right" placeholder="0" />
-      <span className="text-gray-500 font-medium">Tỷ</span>
-    </div>
-  </div>
-  <div>
-    <label className="block text-sm font-bold text-gray-700 mb-2">{t.priceMax} <span className="text-orange-500">*</span></label>
-    <div className="flex items-center gap-2">
-      <input type="number" step="0.1" min="0" max="500" value={searchParams.priceMax} onChange={(e) => setSearchParams({...searchParams, priceMax: e.target.value})} className="w-24 px-3 py-2.5 border rounded-lg text-right" placeholder="10" />
-      <span className="text-gray-500 font-medium">Tỷ</span>
-    </div>
-  </div>
-  <div>
-    <label className="block text-sm font-bold text-gray-700 mb-2">{t.livingArea}</label>
-    <div className="flex gap-2">
-      <input type="number" value={searchParams.livingAreaMin} onChange={(e) => setSearchParams({...searchParams, livingAreaMin: e.target.value})} className="w-full px-3 py-2.5 border rounded-lg" placeholder={t.min} />
-      <input type="number" value={searchParams.livingAreaMax} onChange={(e) => setSearchParams({...searchParams, livingAreaMax: e.target.value})} className="w-full px-3 py-2.5 border rounded-lg" placeholder={t.max} />
-    </div>
-  </div>
-  <div>
-    <label className="block text-sm font-bold text-gray-700 mb-2">{t.bedrooms}</label>
-    <input type="number" value={searchParams.bedrooms} onChange={(e) => setSearchParams({...searchParams, bedrooms: e.target.value})} className="w-full px-4 py-2.5 border rounded-lg" placeholder="2" />
-  </div>
-</div>
+
+            {/* Price */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">{t.priceMin}</label>
+                <div className="flex items-center gap-2">
+                  <input type="number" step="0.1" min="0" max="500" value={searchParams.priceMin} onChange={(e) => setSearchParams({...searchParams, priceMin: e.target.value})} className="w-24 px-3 py-2.5 border rounded-lg text-right" placeholder="0" />
+                  <span className="text-gray-500 font-medium">Tỷ</span>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">{t.priceMax} <span className="text-orange-500">*</span></label>
+                <div className="flex items-center gap-2">
+                  <input type="number" step="0.1" min="0" max="500" value={searchParams.priceMax} onChange={(e) => setSearchParams({...searchParams, priceMax: e.target.value})} className="w-24 px-3 py-2.5 border rounded-lg text-right" placeholder="10" />
+                  <span className="text-gray-500 font-medium">Tỷ</span>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">{t.livingArea}</label>
+                <div className="flex gap-2">
+                  <input type="number" value={searchParams.livingAreaMin} onChange={(e) => setSearchParams({...searchParams, livingAreaMin: e.target.value})} className="w-full px-3 py-2.5 border rounded-lg" placeholder={t.min} />
+                  <input type="number" value={searchParams.livingAreaMax} onChange={(e) => setSearchParams({...searchParams, livingAreaMax: e.target.value})} className="w-full px-3 py-2.5 border rounded-lg" placeholder={t.max} />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">{t.bedrooms}</label>
+                <input type="number" value={searchParams.bedrooms} onChange={(e) => setSearchParams({...searchParams, bedrooms: e.target.value})} className="w-full px-4 py-2.5 border rounded-lg" placeholder="2" />
+              </div>
+            </div>
 
             {/* Extra filters */}
             <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
@@ -516,50 +511,50 @@ const urgentKeywords = [
                 <input type="number" value={searchParams.streetWidthMin} onChange={(e) => setSearchParams({...searchParams, streetWidthMin: e.target.value})} placeholder="4" className="w-full px-3 py-2.5 border rounded-lg" />
               </div>
             </div>
-{/* Keywords */}
-<div>
-  <label className="block text-sm font-bold text-orange-600 mb-1">🔥 {t.keywords}</label>
-  <p className="text-xs text-gray-500 mb-3">{t.keywordsDesc}</p>
-  <div className="bg-orange-50 border-2 border-orange-200 rounded-lg p-4">
-    <div className="flex items-center justify-between mb-3 pb-3 border-b border-orange-200">
-      <button
-        type="button"
-        onClick={() => {
-          const allKeywords = urgentKeywords.map(kw => kw[language]);
-          const allSelected = allKeywords.every(kw => searchParams.keywords.includes(kw));
-          setSearchParams({
-            ...searchParams,
-            keywords: allSelected ? [] : allKeywords
-          });
-        }}
-        className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 font-bold text-sm shadow"
-      >
-        {urgentKeywords.map(kw => kw[language]).every(kw => searchParams.keywords.includes(kw)) 
-          ? (language === 'vn' ? '❌ Bỏ chọn tất cả' : language === 'fr' ? '❌ Tout désélectionner' : '❌ Deselect All')
-          : (language === 'vn' ? '✅ Chọn tất cả' : language === 'fr' ? '✅ Tout sélectionner' : '✅ Select All')}
-      </button>
-      <label className="flex items-center gap-2 cursor-pointer bg-white px-3 py-2 rounded-lg border border-orange-300">
-        <input 
-          type="checkbox" 
-          checked={searchParams.keywordsOnly || false} 
-          onChange={(e) => setSearchParams({...searchParams, keywordsOnly: e.target.checked})} 
-          className="w-4 h-4 text-orange-500 rounded" 
-        />
-        <span className="text-sm font-medium text-orange-700">
-          {language === 'vn' ? '🎯 Chỉ kết quả có từ khóa' : language === 'fr' ? '🎯 Uniquement avec mots-clés' : '🎯 Only with keywords'}
-        </span>
-      </label>
-    </div>
-    <div className="flex flex-wrap gap-2">
-      {urgentKeywords.map((kw, i) => (
-        <button key={i} onClick={() => toggleKeyword(kw)} className={`px-3 py-1.5 rounded-full text-sm font-medium transition ${searchParams.keywords.includes(kw[language]) ? 'bg-orange-500 text-white' : 'bg-white text-orange-600 border border-orange-300'}`}>
-          {kw[language]}
-        </button>
-      ))}
-    </div>
-  </div>
-</div>
-</div>
+
+            {/* Keywords */}
+            <div>
+              <label className="block text-sm font-bold text-orange-600 mb-1">🔥 {t.keywords}</label>
+              <p className="text-xs text-gray-500 mb-3">{t.keywordsDesc}</p>
+              <div className="bg-orange-50 border-2 border-orange-200 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-3 pb-3 border-b border-orange-200">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const allKeywords = urgentKeywords.map(kw => kw[language]);
+                      const allSelected = allKeywords.every(kw => searchParams.keywords.includes(kw));
+                      setSearchParams({
+                        ...searchParams,
+                        keywords: allSelected ? [] : allKeywords
+                      });
+                    }}
+                    className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 font-bold text-sm shadow"
+                  >
+                    {urgentKeywords.map(kw => kw[language]).every(kw => searchParams.keywords.includes(kw)) 
+                      ? (language === 'vn' ? '❌ Bỏ chọn tất cả' : language === 'fr' ? '❌ Tout désélectionner' : '❌ Deselect All')
+                      : (language === 'vn' ? '✅ Chọn tất cả' : language === 'fr' ? '✅ Tout sélectionner' : '✅ Select All')}
+                  </button>
+                  <label className="flex items-center gap-2 cursor-pointer bg-white px-3 py-2 rounded-lg border border-orange-300">
+                    <input 
+                      type="checkbox" 
+                      checked={searchParams.keywordsOnly || false} 
+                      onChange={(e) => setSearchParams({...searchParams, keywordsOnly: e.target.checked})} 
+                      className="w-4 h-4 text-orange-500 rounded" 
+                    />
+                    <span className="text-sm font-medium text-orange-700">
+                      {language === 'vn' ? '🎯 Chỉ kết quả có từ khóa' : language === 'fr' ? '🎯 Uniquement avec mots-clés' : '🎯 Only with keywords'}
+                    </span>
+                  </label>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {urgentKeywords.map((kw, i) => (
+                    <button key={i} onClick={() => toggleKeyword(kw)} className={`px-3 py-1.5 rounded-full text-sm font-medium transition ${searchParams.keywords.includes(kw[language]) ? 'bg-orange-500 text-white' : 'bg-white text-orange-600 border border-orange-300'}`}>
+                      {kw[language]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
 
             {error && (
               <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 flex items-center gap-2 text-orange-700">
@@ -634,7 +629,7 @@ const urgentKeywords = [
                       {prop.isNew && <div className="absolute top-2 left-2 bg-sky-100 text-sky-700 px-3 py-1 rounded-full text-xs font-bold animate-pulse">{t.newListing}</div>}
                       {prop.urgentKeywords && prop.urgentKeywords.length > 0 && (
                         <div className="absolute top-2 right-2 bg-orange-500 text-white px-3 py-1 rounded-full text-xs font-bold animate-pulse">
-                          🔥 {prop.urgentKeywords.slice(0, 2).join(', ')}
+                          🔥 {prop.urgentKeywords[0]}
                         </div>
                       )}
                       {prop.legalStatus && <div className="absolute bottom-2 left-2 bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-bold">📋 {prop.legalStatus}</div>}
@@ -671,15 +666,14 @@ const urgentKeywords = [
                       {prop.postedOn && (
                         <div className="text-xs text-gray-500 mb-2">📅 {prop.postedOn}</div>
                       )}
-
                       <a 
-  href={prop.url} 
-  onClick={(e) => { e.preventDefault(); setSelectedProperty(prop); }}
-  onAuxClick={(e) => { if (e.button === 1) window.open(prop.url, '_blank'); }}
-  className="block w-full px-4 py-2 bg-orange-400 text-white rounded-lg hover:bg-orange-500 font-medium text-center cursor-pointer"
->
-  {t.viewDetails}
-</a>
+                        href={prop.url} 
+                        onClick={(e) => { e.preventDefault(); setSelectedProperty(prop); }}
+                        onAuxClick={(e) => { if (e.button === 1) window.open(prop.url, '_blank'); }}
+                        className="block w-full px-4 py-2 bg-orange-400 text-white rounded-lg hover:bg-orange-500 font-medium text-center cursor-pointer"
+                      >
+                        {t.viewDetails}
+                      </a>
                     </div>
                   </div>
                 ))}
@@ -707,13 +701,11 @@ const urgentKeywords = [
             {/* Image */}
             <div className="relative h-48 md:h-64 bg-slate-200">
               <img src={selectedProperty.imageUrl} alt={selectedProperty.title} className="w-full h-full object-cover" />
-              {selectedProperty.hasUrgentKeyword && (
+              {selectedProperty.urgentKeywords && selectedProperty.urgentKeywords.length > 0 && (
                 <div className="absolute top-3 right-3 bg-orange-500 text-white px-3 py-1 rounded-full text-sm font-bold animate-pulse">
- {selectedProperty.urgentKeywords && selectedProperty.urgentKeywords.length > 0 && (
-  <div className="absolute top-3 right-3 bg-orange-500 text-white px-3 py-1 rounded-full text-sm font-bold animate-pulse">
-    🔥 {selectedProperty.urgentKeywords[0]}
-  </div>
-)}
+                  🔥 {selectedProperty.urgentKeywords[0]}
+                </div>
+              )}
               <div className="absolute bottom-3 left-3 bg-black bg-opacity-70 text-white px-3 py-1 rounded text-sm">
                 {selectedProperty.source}
               </div>
@@ -731,7 +723,7 @@ const urgentKeywords = [
                 </div>
               </div>
               
-              {/* NEGOTIATION SCORE - La star du show */}
+              {/* NEGOTIATION SCORE */}
               <div className={`p-5 rounded-xl border-2 ${
                 selectedProperty.negotiationLevel === 'excellent' ? 'bg-green-50 border-green-300' :
                 selectedProperty.negotiationLevel === 'good' ? 'bg-sky-50 border-sky-300' :
@@ -763,11 +755,7 @@ const urgentKeywords = [
                       </p>
                     </div>
                   </div>
-                  <div className={`text-5xl ${
-                    selectedProperty.negotiationLevel === 'excellent' ? '' :
-                    selectedProperty.negotiationLevel === 'good' ? '' :
-                    selectedProperty.negotiationLevel === 'moderate' ? '' : ''
-                  }`}>
+                  <div className="text-5xl">
                     {selectedProperty.negotiationLevel === 'excellent' ? '🎯' :
                      selectedProperty.negotiationLevel === 'good' ? '👍' :
                      selectedProperty.negotiationLevel === 'moderate' ? '🤔' : '😐'}
@@ -791,7 +779,6 @@ const urgentKeywords = [
                 <div className="space-y-2 text-sm">
                   <p className="font-medium text-gray-700 mb-2">{t.whyThisScore}</p>
                   
-                  {/* Mots-clés urgents */}
                   {selectedProperty.urgentKeywords && selectedProperty.urgentKeywords.length > 0 && (
                     <div className="flex items-center gap-2 text-orange-700 bg-orange-100 px-3 py-2 rounded-lg">
                       <span>🔥</span>
@@ -801,7 +788,6 @@ const urgentKeywords = [
                     </div>
                   )}
                   
-                  {/* Prix vs moyenne */}
                   {selectedProperty.negotiationDetails?.priceAnalysis && (
                     <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${
                       selectedProperty.negotiationDetails.priceAnalysis.diffPercent > 0 
@@ -823,7 +809,6 @@ const urgentKeywords = [
                     </div>
                   )}
                   
-                  {/* Durée en ligne */}
                   {selectedProperty.daysOnline > 14 && (
                     <div className="flex items-center gap-2 bg-sky-100 text-sky-700 px-3 py-2 rounded-lg">
                       <span>📅</span>
@@ -833,7 +818,6 @@ const urgentKeywords = [
                     </div>
                   )}
                   
-                  {/* Peu de photos */}
                   {selectedProperty.negotiationDetails?.photoAnalysis?.verdict !== 'good' && (
                     <div className="flex items-center gap-2 bg-purple-100 text-purple-700 px-3 py-2 rounded-lg">
                       <span>📷</span>
