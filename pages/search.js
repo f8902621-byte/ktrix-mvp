@@ -448,29 +448,34 @@ export default function SearchPage() {
                 </select>
               </div>
             </div>
-
-            {/* Price */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">{t.priceMin}</label>
-                <input type="number" step="0.1" value={searchParams.priceMin} onChange={(e) => setSearchParams({...searchParams, priceMin: e.target.value})} className="w-full px-4 py-2.5 border rounded-lg" placeholder="0" />
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">{t.priceMax} <span className="text-orange-500">*</span></label>
-                <input type="number" step="0.1" value={searchParams.priceMax} onChange={(e) => setSearchParams({...searchParams, priceMax: e.target.value})} className="w-full px-4 py-2.5 border rounded-lg" placeholder="10" />
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">{t.livingArea}</label>
-                <div className="flex gap-2">
-                  <input type="number" value={searchParams.livingAreaMin} onChange={(e) => setSearchParams({...searchParams, livingAreaMin: e.target.value})} className="w-full px-3 py-2.5 border rounded-lg" placeholder={t.min} />
-                  <input type="number" value={searchParams.livingAreaMax} onChange={(e) => setSearchParams({...searchParams, livingAreaMax: e.target.value})} className="w-full px-3 py-2.5 border rounded-lg" placeholder={t.max} />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">{t.bedrooms}</label>
-                <input type="number" value={searchParams.bedrooms} onChange={(e) => setSearchParams({...searchParams, bedrooms: e.target.value})} className="w-full px-4 py-2.5 border rounded-lg" placeholder="2" />
-              </div>
-            </div>
+{/* Price */}
+<div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+  <div>
+    <label className="block text-sm font-bold text-gray-700 mb-2">{t.priceMin}</label>
+    <div className="flex items-center gap-2">
+      <input type="number" step="0.1" min="0" max="500" value={searchParams.priceMin} onChange={(e) => setSearchParams({...searchParams, priceMin: e.target.value})} className="w-24 px-3 py-2.5 border rounded-lg text-right" placeholder="0" />
+      <span className="text-gray-500 font-medium">Tỷ</span>
+    </div>
+  </div>
+  <div>
+    <label className="block text-sm font-bold text-gray-700 mb-2">{t.priceMax} <span className="text-orange-500">*</span></label>
+    <div className="flex items-center gap-2">
+      <input type="number" step="0.1" min="0" max="500" value={searchParams.priceMax} onChange={(e) => setSearchParams({...searchParams, priceMax: e.target.value})} className="w-24 px-3 py-2.5 border rounded-lg text-right" placeholder="10" />
+      <span className="text-gray-500 font-medium">Tỷ</span>
+    </div>
+  </div>
+  <div>
+    <label className="block text-sm font-bold text-gray-700 mb-2">{t.livingArea}</label>
+    <div className="flex gap-2">
+      <input type="number" value={searchParams.livingAreaMin} onChange={(e) => setSearchParams({...searchParams, livingAreaMin: e.target.value})} className="w-full px-3 py-2.5 border rounded-lg" placeholder={t.min} />
+      <input type="number" value={searchParams.livingAreaMax} onChange={(e) => setSearchParams({...searchParams, livingAreaMax: e.target.value})} className="w-full px-3 py-2.5 border rounded-lg" placeholder={t.max} />
+    </div>
+  </div>
+  <div>
+    <label className="block text-sm font-bold text-gray-700 mb-2">{t.bedrooms}</label>
+    <input type="number" value={searchParams.bedrooms} onChange={(e) => setSearchParams({...searchParams, bedrooms: e.target.value})} className="w-full px-4 py-2.5 border rounded-lg" placeholder="2" />
+  </div>
+</div>
 
             {/* Extra filters */}
             <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
