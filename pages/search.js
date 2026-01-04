@@ -206,11 +206,12 @@ export default function SearchPage() {
   ];
 
   const availableSources = [
-    { id: 'batdongsan', name: 'Batdongsan.com.vn', active: true },
+    // Sources désactivées temporairement (coût Apify / données périmées)
+    // { id: 'batdongsan', name: 'Batdongsan.com.vn', active: true },
+    // { id: 'nhadat247', name: 'Nhadat247.com.vn', active: true },
     { id: 'chotot', name: 'Chotot.com', active: true },
-    { id: 'nhadat247', name: 'Nhadat247.com.vn', active: true },
-    { id: 'homedy', name: 'Homedy.com', active: false },
-    { id: 'alonhadat', name: 'Alonhadat.com.vn', active: false },
+    // { id: 'homedy', name: 'Homedy.com', active: false },
+    // { id: 'alonhadat', name: 'Alonhadat.com.vn', active: false },
   ];
 
   const vietnamCities = [
