@@ -17,26 +17,27 @@ export default function SearchPage() {
   const [selectedProperty, setSelectedProperty] = useState(null);
   const [savedSearches, setSavedSearches] = useState([]);
   const [showSavedSearches, setShowSavedSearches] = useState(false);
-  const [searchParams, setSearchParams] = useState({
-    city: '',
-    district: '',
-    propertyType: '',
-    priceMin: '',
-    priceMax: '',
-    livingAreaMin: '',
-    livingAreaMax: '',
-    bedrooms: '',
-    bathrooms: '',
-    hasParking: false,
-    hasPool: false,
-    streetWidthMin: '',
-    daysListed: '',
-    legalStatus: '',
-    customKeyword: '',
-    sources: ['chotot'],
-    keywords: [],
-    numSites: 5
-  });
+ const [searchParams, setSearchParams] = useState({
+  city: '',
+  district: '',
+  propertyType: '',
+  priceMin: '',
+  priceMax: '',
+  livingAreaMin: '',
+  livingAreaMax: '',
+  bedrooms: '',
+  bathrooms: '',
+  hasParking: false,
+  hasPool: false,
+  streetWidthMin: '',
+  daysListed: '',
+  legalStatus: '',
+  customKeyword: '',
+  sources: ['chotot'],
+  keywords: [],
+  keywordsOnly: false,
+  numSites: 5
+});
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -517,19 +518,48 @@ const urgentKeywords = [
             </div>
 
             {/* Keywords */}
-            <div>
-              <label className="block text-sm font-bold text-orange-600 mb-1">🔥 {t.keywords}</label>
-              <p className="text-xs text-gray-500 mb-3">{t.keywordsDesc}</p>
-              <div className="bg-orange-50 border-2 border-orange-200 rounded-lg p-4">
-                <div className="flex flex-wrap gap-2">
-                  {urgentKeywords.map((kw, i) => (
-                    <button key={i} onClick={() => toggleKeyword(kw)} className={`px-3 py-1.5 rounded-full text-sm font-medium transition ${searchParams.keywords.includes(kw[language]) ? 'bg-orange-500 text-white' : 'bg-white text-orange-600 border border-orange-300'}`}>
-                      {kw[language]}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
+<div>
+  <div className="flex items-center justify-between mb-1">
+    <label className="block text-sm font-bold text-orange-600">🔥 {t.keywords}</label>
+    <button
+      type="button"
+      onClick={() => {
+        const allKeywords = urgentKeywords.map(kw => kw[language]);
+        const allSelected = allKeywords.every(kw => searchParams.keywords.includes(kw));
+        setSearchParams({
+          ...searchParams,
+          keywords: allSelected ? [] : allKeywords
+        });
+      }}
+      className="text-xs px-2 py-1 bg-orange-100 text-orange-600 rounded hover:bg-orange-200 font-medium"
+    >
+      {urgentKeywords.map(kw => kw[language]).every(kw => searchParams.keywords.includes(kw)) 
+        ? (language === 'vn' ? '❌ Bỏ chọn tất cả' : language === 'fr' ? '❌ Tout désélectionner' : '❌ Deselect All')
+        : (language === 'vn' ? '✅ Chọn tất cả' : language === 'fr' ? '✅ Tout sélectionner' : '✅ Select All')}
+    </button>
+  </div>
+  <p className="text-xs text-gray-500 mb-3">{t.keywordsDesc}</p>
+  <div className="bg-orange-50 border-2 border-orange-200 rounded-lg p-4">
+    <div className="flex flex-wrap gap-2 mb-3">
+      {urgentKeywords.map((kw, i) => (
+        <button key={i} onClick={() => toggleKeyword(kw)} className={`px-3 py-1.5 rounded-full text-sm font-medium transition ${searchParams.keywords.includes(kw[language]) ? 'bg-orange-500 text-white' : 'bg-white text-orange-600 border border-orange-300'}`}>
+          {kw[language]}
+        </button>
+      ))}
+    </div>
+    <label className="flex items-center gap-2 cursor-pointer pt-3 border-t border-orange-200">
+      <input 
+        type="checkbox" 
+        checked={searchParams.keywordsOnly || false} 
+        onChange={(e) => setSearchParams({...searchParams, keywordsOnly: e.target.checked})} 
+        className="w-4 h-4 text-orange-500 rounded" 
+      />
+      <span className="text-sm font-medium text-orange-700">
+        {language === 'vn' ? '🎯 Chỉ hiện kết quả có từ khóa' : language === 'fr' ? '🎯 Afficher uniquement les annonces avec mots-clés' : '🎯 Show only listings with keywords'}
+      </span>
+    </label>
+  </div>
+</div>
 
             {error && (
               <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 flex items-center gap-2 text-orange-700">
