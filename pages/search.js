@@ -52,6 +52,18 @@ export default function SearchPage() {
     }
   }, [router.query.lang]);
 
+  // Fermer le modal avec la touche Escape
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape') {
+        setSelectedProperty(null);
+        setExpandedPhoto(null);
+      }
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, []);
+
   const t = {
     vn: {
       menu: 'Menu', searchParams: 'Tham số Tìm kiếm', backToHome: 'Trang chủ',
@@ -582,9 +594,13 @@ export default function SearchPage() {
                     <div className="relative h-48 bg-slate-200">
                       <img src={prop.imageUrl} alt={prop.title} className="w-full h-full object-cover" />
                       {prop.isNew && <div className="absolute top-2 left-2 bg-sky-100 text-sky-700 px-3 py-1 rounded-full text-xs font-bold animate-pulse">{t.newListing}</div>}
-                      {prop.hasUrgentKeyword && <div className="absolute top-2 right-2 bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-xs font-bold animate-pulse">🔥 {t.urgentSale}</div>}
+                      {prop.urgentKeywords && prop.urgentKeywords.length > 0 && (
+                        <div className="absolute top-2 right-2 bg-orange-500 text-white px-3 py-1 rounded-full text-xs font-bold animate-pulse">
+                          🔥 {prop.urgentKeywords.slice(0, 2).join(', ')}
+                        </div>
+                      )}
                       {prop.legalStatus && <div className="absolute bottom-2 left-2 bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-bold">📋 {prop.legalStatus}</div>}
-                      <div className="absolute bottom-2 right-2 bg-slate-800 text-white px-2 py-1 rounded text-xs font-medium opacity-80">
+                      <div className="absolute bottom-2 right-2 bg-sky-500 text-white px-2 py-1 rounded text-xs font-bold shadow">
                         {prop.source}
                       </div>
                     </div>
