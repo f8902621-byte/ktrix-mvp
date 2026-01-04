@@ -5,22 +5,18 @@ const APIFY_ACTOR_ID = process.env.APIFY_ACTOR_ID;
 // MAPPING DES VILLES → CODE RÉGION CHOTOT
 // ============================================
 const CHOTOT_REGIONS = {
+  // Codes vérifiés Janvier 2026
   'ho chi minh': '13000',
   'ha noi': '12000',
   'da nang': '3017',
-  'binh duong': '13100',
-  'dong nai': '13200',
-  'hai phong': '12100',
-  'can tho': '14000',
-  'khanh hoa': '15100',
-  'ba ria': '13300',
-  'vung tau': '13300',
-  'quang ninh': '12200',
-  'lam dong': '15200',
-  'long an': '13400',
-  'bac ninh': '12300',
-  'thanh hoa': '11000',
-  'nghe an': '11100',
+  'binh duong': '2011',
+  'khanh hoa': '7044',
+  'nha trang': '7044',
+  'can tho': '5027',
+  'hai phong': '4019',
+  'ba ria': '2010',
+  'vung tau': '2010',
+  'ba ria vung tau': '2010',
 };
 
 // Fonction pour supprimer les accents vietnamiens
@@ -160,8 +156,12 @@ async function fetchNhadat247() {
   const NHADAT247_ACTOR_ID = 'outlandish_bookcases~nhadat247-scraper';
   try {
     const response = await fetch(`https://api.apify.com/v2/acts/${NHADAT247_ACTOR_ID}/runs/last/dataset/items?token=${APIFY_API_TOKEN}`);
-    if (!response.ok) return [];
+    if (!response.ok) {
+      console.log('Nhadat247: API non disponible');
+      return [];
+    }
     const data = await response.json();
+    console.log(`Nhadat247: ${(data || []).length} annonces récupérées`);
     return (data || []).map(item => ({
       id: item.id || `nhadat247_${Math.random()}`,
       title: item.title || '',
@@ -176,6 +176,8 @@ async function fetchNhadat247() {
       url: item.url || '',
       source: 'nhadat247.com.vn',
       postedOn: item.postedDate || '',
+      list_time: 0, // Pas disponible
+      category: null, // Pas disponible - filtrage par mots-clés uniquement
     }));
   } catch (error) {
     console.error('Nhadat247 error:', error);
@@ -504,12 +506,23 @@ exports.handler = async (event) => {
       allResults.push(...filtered);
     }
     
-    // NHADAT247 - Données pré-scrapées HCM
+    // NHADAT247 - Données pré-scrapées HCM UNIQUEMENT
     if (sources?.includes('nhadat247')) {
-      const nhadat247Results = await fetchNhadat247();
-      const filtered = applyFilters(nhadat247Results, { city, district, propertyType, priceMin, priceMax, livingAreaMin, livingAreaMax, bedrooms });
-      console.log(`Nhadat247: ${nhadat247Results.length} → ${filtered.length} filtrés`);
-      allResults.push(...filtered);
+      // Nhadat247 n'a que des données pour Hồ Chí Minh
+      const cityNormalized = removeVietnameseAccents(city || '');
+      const isHCM = cityNormalized.includes('ho chi minh') || 
+                    cityNormalized.includes('saigon') || 
+                    cityNormalized.includes('hcm') ||
+                    cityNormalized.includes('tphcm');
+      
+      if (isHCM) {
+        const nhadat247Results = await fetchNhadat247();
+        const filtered = applyFilters(nhadat247Results, { city, district, propertyType, priceMin, priceMax, livingAreaMin, livingAreaMax, bedrooms });
+        console.log(`Nhadat247 (HCM): ${nhadat247Results.length} → ${filtered.length} filtrés`);
+        allResults.push(...filtered);
+      } else {
+        console.log(`Nhadat247: ignoré (ville=${city} n'est pas HCM)`);
+      }
     }
     
     console.log(`TOTAL BRUT: ${allResults.length}`);
