@@ -19,6 +19,179 @@ const CHOTOT_REGIONS = {
   'ba ria vung tau': '2010',
 };
 
+// ============================================
+// MAPPING UNIVERSEL DES TYPES DE BIENS K TRIX
+// ============================================
+const PROPERTY_TYPE_MAPPING = {
+  // Clé = valeur normalisée du type sélectionné par l'utilisateur
+  // Chaque entrée contient: chotot (code), batdongsan (slug), include (mots-clés à inclure), exclude (mots-clés à exclure)
+  
+  'tat_ca': {
+    label: { vn: 'Tất cả nhà đất', en: 'All Properties', fr: 'Tous biens' },
+    chotot: 1000,
+    batdongsan: null,
+    include: [],
+    exclude: []
+  },
+  
+  // === APPARTEMENTS (Code Chotot 1010) ===
+  'can_ho_chung_cu': {
+    label: { vn: 'Căn hộ chung cư', en: 'Apartment', fr: 'Appartement' },
+    chotot: 1010,
+    batdongsan: 'ban-can-ho-chung-cu',
+    include: ['căn hộ', 'chung cư', 'apartment', 'cc'],
+    exclude: ['nghỉ dưỡng', 'condotel', 'resort', 'studio']
+  },
+  'can_ho_nghi_duong': {
+    label: { vn: 'Căn hộ nghỉ dưỡng', en: 'Resort Condo', fr: 'Appart. Vacances' },
+    chotot: 1010,
+    batdongsan: 'ban-can-ho-chung-cu',
+    include: ['nghỉ dưỡng', 'condotel', 'resort'],
+    exclude: []
+  },
+  'studio': {
+    label: { vn: 'Studio', en: 'Studio', fr: 'Studio' },
+    chotot: 1010,
+    batdongsan: 'ban-can-ho-chung-cu',
+    include: ['studio'],
+    exclude: []
+  },
+  
+  // === MAISONS (Code Chotot 1020) ===
+  'nha_o': {
+    label: { vn: 'Nhà ở', en: 'House', fr: 'Maison' },
+    chotot: 1020,
+    batdongsan: 'ban-nha-rieng',
+    include: ['nhà riêng', 'nhà ở', 'nhà phố'],
+    exclude: ['biệt thự', 'villa', 'nghỉ dưỡng', 'resort']
+  },
+  'nha_biet_thu': {
+    label: { vn: 'Nhà biệt thự', en: 'Villa', fr: 'Villa' },
+    chotot: 1020,
+    batdongsan: 'ban-nha-biet-thu-lien-ke',
+    include: ['biệt thự', 'villa', 'liền kề'],
+    exclude: ['nghỉ dưỡng', 'resort']
+  },
+  'nha_nghi_duong': {
+    label: { vn: 'Nhà nghỉ dưỡng', en: 'Resort House', fr: 'Maison Vacances' },
+    chotot: 1020,
+    batdongsan: 'ban-nha-rieng',
+    include: ['nghỉ dưỡng', 'resort'],
+    exclude: []
+  },
+  
+  // === COMMERCIAL (Code Chotot 1030) ===
+  'shophouse': {
+    label: { vn: 'Shophouse', en: 'Shophouse', fr: 'Shophouse' },
+    chotot: 1030,
+    batdongsan: 'ban-shophouse-nha-pho-thuong-mai',
+    include: ['shophouse', 'nhà phố thương mại'],
+    exclude: []
+  },
+  'van_phong': {
+    label: { vn: 'Văn phòng', en: 'Office', fr: 'Bureau' },
+    chotot: 1030,
+    batdongsan: null, // N'existe pas sur Batdongsan
+    include: ['văn phòng', 'office', 'officetel'],
+    exclude: []
+  },
+  'cua_hang': {
+    label: { vn: 'Cửa hàng', en: 'Shop', fr: 'Boutique' },
+    chotot: 1030,
+    batdongsan: 'ban-shophouse-nha-pho-thuong-mai',
+    include: ['cửa hàng', 'shop', 'ki ốt', 'kiot'],
+    exclude: []
+  },
+  'mat_bang': {
+    label: { vn: 'Mặt bằng', en: 'Premises', fr: 'Local commercial' },
+    chotot: 1030,
+    batdongsan: 'ban-shophouse-nha-pho-thuong-mai',
+    include: ['mặt bằng', 'mặt tiền'],
+    exclude: ['shophouse', 'văn phòng', 'kho']
+  },
+  'kho_nha_xuong': {
+    label: { vn: 'Kho, nhà xưởng', en: 'Warehouse', fr: 'Entrepôt' },
+    chotot: 1030,
+    batdongsan: 'ban-kho-nha-xuong',
+    include: ['kho', 'nhà xưởng', 'xưởng', 'warehouse'],
+    exclude: []
+  },
+  
+  // === TERRAIN (Code Chotot 1040) ===
+  'dat': {
+    label: { vn: 'Đất', en: 'Land', fr: 'Terrain' },
+    chotot: 1040,
+    batdongsan: 'ban-dat-dat-nen',
+    include: ['đất', 'đất nền', 'lô đất'],
+    exclude: ['nghỉ dưỡng', 'resort']
+  },
+  'dat_nghi_duong': {
+    label: { vn: 'Đất nghỉ dưỡng', en: 'Resort Land', fr: 'Terrain Vacances' },
+    chotot: 1040,
+    batdongsan: 'ban-dat-dat-nen',
+    include: ['nghỉ dưỡng', 'resort'],
+    exclude: []
+  },
+  
+  // === AUTRES ===
+  'bat_dong_san_khac': {
+    label: { vn: 'Bất động sản khác', en: 'Other', fr: 'Autre bien' },
+    chotot: 1000,
+    batdongsan: null,
+    include: [],
+    exclude: []
+  }
+};
+
+// Fonction pour trouver le mapping à partir du texte utilisateur
+function getPropertyTypeMapping(userInput) {
+  if (!userInput) return PROPERTY_TYPE_MAPPING['tat_ca'];
+  
+  const input = removeVietnameseAccents(userInput.toLowerCase());
+  
+  // Recherche par correspondance dans les labels ou mots-clés
+  for (const [key, mapping] of Object.entries(PROPERTY_TYPE_MAPPING)) {
+    const labelVn = removeVietnameseAccents(mapping.label.vn.toLowerCase());
+    const labelEn = mapping.label.en.toLowerCase();
+    const labelFr = mapping.label.fr.toLowerCase();
+    
+    // Correspondance exacte ou partielle avec les labels
+    if (input.includes(labelVn) || labelVn.includes(input) ||
+        input.includes(labelEn) || labelEn.includes(input) ||
+        input.includes(labelFr) || labelFr.includes(input)) {
+      return mapping;
+    }
+    
+    // Correspondance avec les mots-clés d'inclusion
+    for (const kw of mapping.include) {
+      if (input.includes(removeVietnameseAccents(kw))) {
+        return mapping;
+      }
+    }
+  }
+  
+  // Mappings spécifiques pour termes courants
+  if (input.includes('can ho') || input.includes('chung cu') || input.includes('apartment')) {
+    return PROPERTY_TYPE_MAPPING['can_ho_chung_cu'];
+  }
+  if (input.includes('biet thu') || input.includes('villa')) {
+    return PROPERTY_TYPE_MAPPING['nha_biet_thu'];
+  }
+  if (input.includes('nha') && !input.includes('biet thu') && !input.includes('nghi duong')) {
+    return PROPERTY_TYPE_MAPPING['nha_o'];
+  }
+  if (input.includes('dat') && !input.includes('nghi duong')) {
+    return PROPERTY_TYPE_MAPPING['dat'];
+  }
+  if (input.includes('nghi duong') || input.includes('resort')) {
+    if (input.includes('can ho')) return PROPERTY_TYPE_MAPPING['can_ho_nghi_duong'];
+    if (input.includes('dat')) return PROPERTY_TYPE_MAPPING['dat_nghi_duong'];
+    return PROPERTY_TYPE_MAPPING['nha_nghi_duong'];
+  }
+  
+  return PROPERTY_TYPE_MAPPING['tat_ca'];
+}
+
 // Fonction pour supprimer les accents vietnamiens
 function removeVietnameseAccents(str) {
   return str
@@ -52,10 +225,10 @@ function getChototRegion(city) {
     return '12000';
   }
   if (cityNormalized.includes('danang') || cityNormalized.includes('dn')) {
-    return '15000';
+    return '3017';
   }
   if (cityNormalized.includes('nha trang')) {
-    return '15100';
+    return '7044';
   }
   if (cityNormalized.includes('da lat') || cityNormalized.includes('dalat')) {
     return '15200';
@@ -69,14 +242,16 @@ function getChototRegion(city) {
 // CHOTOT API - 300 RÉSULTATS AVEC TRI PAR PRIX
 // ============================================
 async function fetchChotot(params) {
-  const { city, priceMin, priceMax, sortBy } = params;
+  const { city, priceMin, priceMax, sortBy, propertyType } = params;
   
   const regionCode = getChototRegion(city);
-  console.log(`Chotot: ville="${city}" → region=${regionCode}`);
+  const typeMapping = getPropertyTypeMapping(propertyType);
+  
+  console.log(`Chotot: ville="${city}" → region=${regionCode}, type="${propertyType}" → code=${typeMapping.chotot}`);
   
   // Paramètres de base
   const baseParams = new URLSearchParams();
-  baseParams.append('cg', '1000'); // Immobilier
+  baseParams.append('cg', typeMapping.chotot.toString()); // Code catégorie
   baseParams.append('region_v2', regionCode);
   baseParams.append('st', 's,k'); // À vendre
   baseParams.append('limit', '50');
@@ -118,18 +293,17 @@ async function fetchChotot(params) {
     }
   }
   
-  console.log(`Chotot TOTAL: ${allAds.length} annonces`);
+  console.log(`Chotot TOTAL brut: ${allAds.length} annonces`);
   
-  // Mapper et filtrer prix > 0
-  return allAds
-    .filter(ad => ad.price && ad.price > 0) // Exclure prix "à négocier"
+  // Mapper les résultats
+  let results = allAds
+    .filter(ad => ad.price && ad.price > 0)
     .map(ad => ({
       id: `chotot_${ad.list_id}`,
       title: ad.subject || 'Không có tiêu đề',
       price: ad.price || 0,
       floorAreaSqm: ad.size || ad.area || 0,
       area: ad.size || ad.area || 0,
-      // Adresse complète : street + ward + district
       address: [ad.street_name, ad.ward_name, ad.area_name].filter(Boolean).join(', ') || '',
       street: ad.street_name || '',
       ward: ad.ward_name || '',
@@ -147,13 +321,58 @@ async function fetchChotot(params) {
       propertyType: ad.category_name || '',
       pricePerM2: ad.price_million_per_m2 || null,
     }));
+  
+  // Appliquer le filtrage par mots-clés INCLURE/EXCLURE
+  if (typeMapping.include.length > 0 || typeMapping.exclude.length > 0) {
+    const beforeFilter = results.length;
+    results = filterByKeywords(results, typeMapping.include, typeMapping.exclude);
+    console.log(`Chotot filtre mots-clés: ${beforeFilter} → ${results.length}`);
+  }
+  
+  return results;
+}
+
+// ============================================
+// FILTRAGE PAR MOTS-CLÉS (INCLURE/EXCLURE)
+// ============================================
+function filterByKeywords(results, includeKeywords, excludeKeywords) {
+  return results.filter(item => {
+    const title = removeVietnameseAccents(item.title || '');
+    const propertyType = removeVietnameseAccents(item.propertyType || '');
+    const combined = title + ' ' + propertyType;
+    
+    // Vérifier exclusions d'abord
+    if (excludeKeywords.length > 0) {
+      for (const kw of excludeKeywords) {
+        if (combined.includes(removeVietnameseAccents(kw))) {
+          return false; // Exclure cet item
+        }
+      }
+    }
+    
+    // Vérifier inclusions (si spécifiées)
+    if (includeKeywords.length > 0) {
+      let hasMatch = false;
+      for (const kw of includeKeywords) {
+        if (combined.includes(removeVietnameseAccents(kw))) {
+          hasMatch = true;
+          break;
+        }
+      }
+      return hasMatch;
+    }
+    
+    return true; // Pas de filtre inclusion = tout passe
+  });
 }
 
 // ============================================
 // NHADAT247 API (données pré-scrapées HCM)
 // ============================================
-async function fetchNhadat247() {
+async function fetchNhadat247(propertyType) {
   const NHADAT247_ACTOR_ID = 'outlandish_bookcases~nhadat247-scraper';
+  const typeMapping = getPropertyTypeMapping(propertyType);
+  
   try {
     const response = await fetch(`https://api.apify.com/v2/acts/${NHADAT247_ACTOR_ID}/runs/last/dataset/items?token=${APIFY_API_TOKEN}`);
     if (!response.ok) {
@@ -162,7 +381,8 @@ async function fetchNhadat247() {
     }
     const data = await response.json();
     console.log(`Nhadat247: ${(data || []).length} annonces récupérées`);
-    return (data || []).map(item => ({
+    
+    let results = (data || []).map(item => ({
       id: item.id || `nhadat247_${Math.random()}`,
       title: item.title || '',
       price: item.price || 0,
@@ -176,9 +396,19 @@ async function fetchNhadat247() {
       url: item.url || '',
       source: 'nhadat247.com.vn',
       postedOn: item.postedDate || '',
-      list_time: 0, // Pas disponible
-      category: null, // Pas disponible - filtrage par mots-clés uniquement
+      list_time: 0,
+      category: null,
+      propertyType: item.propertyType || '',
     }));
+    
+    // Appliquer filtrage par mots-clés
+    if (typeMapping.include.length > 0 || typeMapping.exclude.length > 0) {
+      const beforeFilter = results.length;
+      results = filterByKeywords(results, typeMapping.include, typeMapping.exclude);
+      console.log(`Nhadat247 filtre mots-clés: ${beforeFilter} → ${results.length}`);
+    }
+    
+    return results;
   } catch (error) {
     console.error('Nhadat247 error:', error);
     return [];
@@ -186,14 +416,17 @@ async function fetchNhadat247() {
 }
 
 // ============================================
-// BATDONGSAN API (données pré-scrapées - actuellement bloqué)
+// BATDONGSAN API (données pré-scrapées)
 // ============================================
-async function fetchBatdongsan() {
+async function fetchBatdongsan(propertyType) {
+  const typeMapping = getPropertyTypeMapping(propertyType);
+  
   try {
     const response = await fetch(`https://api.apify.com/v2/acts/${APIFY_ACTOR_ID}/runs/last/dataset/items?token=${APIFY_API_TOKEN}`);
     if (!response.ok) return [];
     const data = await response.json();
-    return (data || []).filter(item => item.price > 0).map(item => ({
+    
+    let results = (data || []).filter(item => item.price > 0).map(item => ({
       id: item.id || `batdongsan_${Math.random()}`,
       title: item.title || '',
       price: item.price || 0,
@@ -209,6 +442,15 @@ async function fetchBatdongsan() {
       postedOn: item.postedOn || '',
       propertyType: item.propertyType || '',
     }));
+    
+    // Appliquer filtrage par mots-clés
+    if (typeMapping.include.length > 0 || typeMapping.exclude.length > 0) {
+      const beforeFilter = results.length;
+      results = filterByKeywords(results, typeMapping.include, typeMapping.exclude);
+      console.log(`Batdongsan filtre mots-clés: ${beforeFilter} → ${results.length}`);
+    }
+    
+    return results;
   } catch (error) {
     console.error('Batdongsan error:', error);
     return [];
@@ -219,7 +461,7 @@ async function fetchBatdongsan() {
 // FILTRES POST-API
 // ============================================
 function applyFilters(results, filters) {
-  const { city, district, propertyType, priceMin, priceMax, livingAreaMin, livingAreaMax, bedrooms } = filters;
+  const { city, district, priceMin, priceMax, livingAreaMin, livingAreaMax, bedrooms } = filters;
   let filtered = [...results];
   
   if (priceMin) {
@@ -253,22 +495,6 @@ function applyFilters(results, filters) {
   
   if (bedrooms) {
     filtered = filtered.filter(item => item.bedrooms >= parseInt(bedrooms));
-  }
-  
-  if (propertyType && !propertyType.toLowerCase().includes('tất cả')) {
-    const type = propertyType.toLowerCase();
-    let keywords = [];
-    if (type.includes('căn hộ') || type.includes('chung cư')) keywords = ['căn hộ', 'chung cư', 'apartment', 'cc', 'ccmn'];
-    else if (type.includes('biệt thự')) keywords = ['biệt thự', 'villa'];
-    else if (type.includes('nhà')) keywords = ['nhà'];
-    else if (type.includes('đất')) keywords = ['đất'];
-    
-    if (keywords.length > 0) {
-      filtered = filtered.filter(item => {
-        const t = (item.title || '').toLowerCase();
-        return keywords.some(k => t.includes(k));
-      });
-    }
   }
   
   return filtered;
@@ -352,16 +578,16 @@ function calculateNegotiationScore(item, avgPricePerM2) {
     };
     
     if (priceDiff >= 20) {
-      score += 25; // 20%+ moins cher
+      score += 25;
       details.priceAnalysis.verdict = 'excellent';
     } else if (priceDiff >= 10) {
-      score += 20; // 10-20% moins cher
+      score += 20;
       details.priceAnalysis.verdict = 'good';
     } else if (priceDiff >= 5) {
-      score += 10; // 5-10% moins cher
+      score += 10;
       details.priceAnalysis.verdict = 'fair';
     } else if (priceDiff >= 0) {
-      score += 5; // Prix moyen
+      score += 5;
       details.priceAnalysis.verdict = 'average';
     } else {
       details.priceAnalysis.verdict = 'above_average';
@@ -374,16 +600,12 @@ function calculateNegotiationScore(item, avgPricePerM2) {
   
   let daysOnline = 0;
   if (listTime > 0) {
-    // list_time peut être en secondes ou millisecondes selon la source
-    // Si > 10000000000, c'est en millisecondes, sinon en secondes
     const listTimeMs = listTime > 10000000000 ? listTime : listTime * 1000;
     daysOnline = Math.floor((Date.now() - listTimeMs) / (1000 * 60 * 60 * 24));
-    // Sécurité : si le résultat est négatif ou absurde, on met 0
     if (daysOnline < 0 || daysOnline > 3650) {
       daysOnline = 0;
     }
   } else if (postedOn) {
-    // Essayer de parser la date vietnamienne (dd/mm/yyyy)
     const match = postedOn.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
     if (match) {
       const postedDate = new Date(match[3], match[2] - 1, match[1]);
@@ -414,10 +636,10 @@ function calculateNegotiationScore(item, avgPricePerM2) {
   details.photoAnalysis = { count: numPhotos };
   
   if (numPhotos === 0) {
-    score += 10; // Pas de photo = vendeur amateur/pressé
+    score += 10;
     details.photoAnalysis.verdict = 'none';
   } else if (numPhotos <= 2) {
-    score += 5; // Peu de photos
+    score += 5;
     details.photoAnalysis.verdict = 'few';
   } else {
     details.photoAnalysis.verdict = 'good';
@@ -430,15 +652,13 @@ function calculateNegotiationScore(item, avgPricePerM2) {
   
   if (isRoundPrice && priceInBillion >= 1) {
     score += 5;
-    details.priceType = 'round'; // Prix rond = plus négociable
+    details.priceType = 'round';
   } else {
     details.priceType = 'precise';
   }
   
-  // Score final (plafonné à 100)
   const finalScore = Math.min(100, score);
   
-  // Niveau de négociation
   let negotiationLevel;
   if (finalScore >= 70) {
     negotiationLevel = 'excellent';
@@ -457,7 +677,6 @@ function calculateNegotiationScore(item, avgPricePerM2) {
   };
 }
 
-// Fonction legacy pour compatibilité
 function calculateScore(item) {
   const result = calculateNegotiationScore(item, 50000000);
   return result.score;
@@ -488,27 +707,36 @@ exports.handler = async (event) => {
 
   console.log('=== NOUVELLE RECHERCHE ===');
   console.log('Params:', JSON.stringify({ city, propertyType, priceMin, priceMax, sortBy, sources }));
+  
+  // Log du mapping utilisé
+  const typeMapping = getPropertyTypeMapping(propertyType);
+  console.log('Type mapping:', JSON.stringify({
+    input: propertyType,
+    chotot: typeMapping.chotot,
+    batdongsan: typeMapping.batdongsan,
+    include: typeMapping.include,
+    exclude: typeMapping.exclude
+  }));
 
   try {
     let allResults = [];
     
     // CHOTOT - Source principale (300 résultats, toutes villes)
     if (sources?.includes('chotot')) {
-      const chototResults = await fetchChotot({ city, priceMin, priceMax, sortBy });
+      const chototResults = await fetchChotot({ city, priceMin, priceMax, sortBy, propertyType });
       allResults.push(...chototResults);
     }
     
-    // BATDONGSAN - Données pré-scrapées (limité)
+    // BATDONGSAN - Données pré-scrapées
     if (sources?.includes('batdongsan')) {
-      const batdongsanResults = await fetchBatdongsan();
-      const filtered = applyFilters(batdongsanResults, { city, district, propertyType, priceMin, priceMax, livingAreaMin, livingAreaMax, bedrooms });
-      console.log(`Batdongsan: ${batdongsanResults.length} → ${filtered.length} filtrés`);
+      const batdongsanResults = await fetchBatdongsan(propertyType);
+      const filtered = applyFilters(batdongsanResults, { city, district, priceMin, priceMax, livingAreaMin, livingAreaMax, bedrooms });
+      console.log(`Batdongsan: ${batdongsanResults.length} → ${filtered.length} après filtres`);
       allResults.push(...filtered);
     }
     
     // NHADAT247 - Données pré-scrapées HCM UNIQUEMENT
     if (sources?.includes('nhadat247')) {
-      // Nhadat247 n'a que des données pour Hồ Chí Minh
       const cityNormalized = removeVietnameseAccents(city || '');
       const isHCM = cityNormalized.includes('ho chi minh') || 
                     cityNormalized.includes('saigon') || 
@@ -516,9 +744,9 @@ exports.handler = async (event) => {
                     cityNormalized.includes('tphcm');
       
       if (isHCM) {
-        const nhadat247Results = await fetchNhadat247();
-        const filtered = applyFilters(nhadat247Results, { city, district, propertyType, priceMin, priceMax, livingAreaMin, livingAreaMax, bedrooms });
-        console.log(`Nhadat247 (HCM): ${nhadat247Results.length} → ${filtered.length} filtrés`);
+        const nhadat247Results = await fetchNhadat247(propertyType);
+        const filtered = applyFilters(nhadat247Results, { city, district, priceMin, priceMax, livingAreaMin, livingAreaMax, bedrooms });
+        console.log(`Nhadat247 (HCM): ${nhadat247Results.length} → ${filtered.length} après filtres`);
         allResults.push(...filtered);
       } else {
         console.log(`Nhadat247: ignoré (ville=${city} n'est pas HCM)`);
@@ -527,49 +755,12 @@ exports.handler = async (event) => {
     
     console.log(`TOTAL BRUT: ${allResults.length}`);
     
-    // Filtre type de bien global (pour Chotot qui ne filtre pas côté API)
-    if (propertyType && !propertyType.toLowerCase().includes('tất cả') && !propertyType.toLowerCase().includes('all')) {
-      const type = propertyType.toLowerCase();
-      let categoryCode = null;
-      let kwds = [];
-      
-      // Mapping des types vers les codes Chotot et mots-clés
-      if (type.includes('căn hộ') || type.includes('chung cư') || type.includes('apartment')) {
-        categoryCode = 1010; // Căn hộ/Chung cư
-        kwds = ['căn hộ', 'chung cư', 'apartment', 'penthouse'];
-      } else if (type.includes('biệt thự') || type.includes('villa')) {
-        categoryCode = 1030; // Biệt thự
-        kwds = ['biệt thự', 'villa'];
-      } else if (type.includes('nhà') || type.includes('house')) {
-        categoryCode = 1020; // Nhà ở
-        kwds = ['nhà'];
-      } else if (type.includes('đất') || type.includes('land')) {
-        categoryCode = 1040; // Đất
-        kwds = ['đất', 'lô đất'];
-      }
-      
-      if (categoryCode || kwds.length > 0) {
-        const before = allResults.length;
-        allResults = allResults.filter(item => {
-          // Priorité au category code si disponible
-          if (item.category && categoryCode) {
-            return item.category === categoryCode;
-          }
-          // Sinon filtre par mots-clés dans le titre
-          const t = (item.title || '').toLowerCase();
-          return kwds.some(k => t.includes(k));
-        });
-        console.log(`Filtre type "${propertyType}" (code=${categoryCode}): ${before} → ${allResults.length}`);
-      }
-    }
-    
     // Déduplication
     let unique = deduplicateResults(allResults);
     
     // Filtre keywordsOnly - ne garder que les annonces avec mots-clés urgents
     if (keywordsOnly) {
       const before = unique.length;
-      // Toujours chercher les mots-clés vietnamiens (langue des annonces)
       const vietnameseKeywords = [
         'bán gấp', 'bán nhanh', 'cần bán nhanh', 'kẹt tiền', 'cần tiền', 
         'giá rẻ', 'ngộp bank', 'chính chủ', 'miễn trung gian', 
@@ -588,12 +779,11 @@ exports.handler = async (event) => {
     } else if (sortBy === 'price_desc') {
       sortedResults.sort((a, b) => b.price - a.price);
     } else {
-      // Par défaut: tri par score
       sortedResults = sortedResults.map(item => ({ ...item, score: calculateScore(item) }));
       sortedResults.sort((a, b) => b.score - a.score);
     }
     
-    // Calculer le prix moyen au m² pour comparaison
+    // Calculer le prix moyen au m²
     const validPricePerM2 = sortedResults
       .filter(item => item.area > 0 && item.price > 0)
       .map(item => item.price / item.area);
@@ -601,9 +791,8 @@ exports.handler = async (event) => {
       ? validPricePerM2.reduce((a, b) => a + b, 0) / validPricePerM2.length 
       : 50000000;
     
-    // Limiter à 100 résultats pour le frontend
+    // Limiter à 100 résultats
     const results = sortedResults.slice(0, 100).map((item, i) => {
-      // Calculer le score de négociation détaillé
       const negotiation = calculateNegotiationScore(item, avgPricePerM2);
       
       return {
@@ -622,11 +811,9 @@ exports.handler = async (event) => {
         images: item.images || [],
         url: item.url || '#',
         source: item.source || 'unknown',
-        // Score de négociation
         score: negotiation.score,
         negotiationLevel: negotiation.level,
         negotiationDetails: negotiation.details,
-        // Badges
         hasUrgentKeyword: negotiation.details.urgentKeywords.length > 0,
         urgentKeywords: negotiation.details.urgentKeywords,
         isNew: /hôm nay|phút|today/i.test(item.postedOn || ''),
