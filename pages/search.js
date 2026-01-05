@@ -107,6 +107,12 @@ export default function SearchPage() {
       fewPhotos: 'Ít hình ảnh',
       roundPrice: 'Giá tròn',
       viewOnMap: 'Xem trên bản đồ',
+      cbreAnalysis: 'Phân tích CBRE',
+      cbreSource: 'Nguồn: CBRE',
+      cbreReference: 'Giá tham khảo',
+      belowMarket: 'dưới thị trường',
+      aboveMarket: 'trên thị trường',
+      cbreDisclaimer: '© CBRE Vietnam. Dữ liệu chỉ mang tính tham khảo.',
     },
     en: {
       menu: 'Menu', searchParams: 'Search Parameters', backToHome: 'Home',
@@ -151,6 +157,12 @@ export default function SearchPage() {
       fewPhotos: 'Few photos',
       roundPrice: 'Round price',
       viewOnMap: 'View on map',
+      cbreAnalysis: 'CBRE Analysis',
+      cbreSource: 'Source: CBRE',
+      cbreReference: 'Reference price',
+      belowMarket: 'below market',
+      aboveMarket: 'above market',
+      cbreDisclaimer: '© CBRE Vietnam. Data for reference only.',
     },
     fr: {
       menu: 'Menu', searchParams: 'Paramètres', backToHome: 'Accueil',
@@ -195,6 +207,12 @@ export default function SearchPage() {
       fewPhotos: 'Peu de photos',
       roundPrice: 'Prix rond',
       viewOnMap: 'Voir sur carte',
+      cbreAnalysis: 'Analyse CBRE',
+      cbreSource: 'Source: CBRE',
+      cbreReference: 'Prix de référence',
+      belowMarket: 'sous le marché',
+      aboveMarket: 'au-dessus du marché',
+      cbreDisclaimer: '© CBRE Vietnam. Données à titre indicatif.',
     }
   }[language];
 
@@ -806,6 +824,39 @@ export default function SearchPage() {
                       {selectedProperty.negotiationDetails.priceAnalysis.diffPercent > 0 && (
                         <span className="ml-auto font-bold">+{selectedProperty.negotiationDetails.priceAnalysis.diffPercent >= 20 ? 25 : selectedProperty.negotiationDetails.priceAnalysis.diffPercent >= 10 ? 20 : 10}</span>
                       )}
+                    </div>
+                  )}
+                  
+                  {/* CBRE Analysis - Source: CBRE Vietnam */}
+                  {selectedProperty.cbreAnalysis && selectedProperty.cbreAnalysis.percentDiff !== null && (
+                    <div className={`px-3 py-3 rounded-lg border-2 ${
+                      selectedProperty.cbreAnalysis.rating === 'excellent' ? 'bg-green-50 border-green-400' :
+                      selectedProperty.cbreAnalysis.rating === 'good' ? 'bg-emerald-50 border-emerald-300' :
+                      selectedProperty.cbreAnalysis.rating === 'fair' ? 'bg-blue-50 border-blue-300' :
+                      selectedProperty.cbreAnalysis.rating === 'above' ? 'bg-yellow-50 border-yellow-300' :
+                      'bg-red-50 border-red-300'
+                    }`}>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <span>📊</span>
+                          <span className="font-bold">{t.cbreAnalysis}</span>
+                          <span className="text-xs bg-blue-600 text-white px-2 py-0.5 rounded">{t.cbreSource}</span>
+                        </div>
+                        <span className={`font-bold ${
+                          selectedProperty.cbreAnalysis.percentDiff <= -10 ? 'text-green-600' :
+                          selectedProperty.cbreAnalysis.percentDiff <= 0 ? 'text-blue-600' :
+                          selectedProperty.cbreAnalysis.percentDiff <= 10 ? 'text-yellow-600' :
+                          'text-red-600'
+                        }`}>
+                          {selectedProperty.cbreAnalysis.percentDiff <= 0 ? '' : '+'}
+                          {selectedProperty.cbreAnalysis.percentDiff}% {selectedProperty.cbreAnalysis.percentDiff <= 0 ? t.belowMarket : t.aboveMarket}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-600">{selectedProperty.cbreAnalysis.analysis}</p>
+                      <div className="mt-2 pt-2 border-t border-gray-200 text-xs text-gray-500">
+                        <p>📋 {t.cbreReference}: {selectedProperty.cbreAnalysis.referencePrice}M VND/m² | {selectedProperty.cbreAnalysis.referenceSource}</p>
+                        <p className="italic mt-1">{t.cbreDisclaimer}</p>
+                      </div>
                     </div>
                   )}
                   
