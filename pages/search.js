@@ -69,7 +69,7 @@ export default function SearchPage() {
       city: 'Thành phố', district: 'Quận/Huyện', propertyType: 'Loại BDS',
       priceMin: 'Giá tối thiểu', priceMax: 'Giá tối đa', livingArea: 'Diện tích (m²)',
       bedrooms: 'Phòng ngủ', daysListed: 'Đăng trong (ngày)', legalStatus: 'Pháp lý',
-      legalAll: 'Tất cả', legalSoHong: 'Sổ Hồng', legalSoDo: 'Sổ Đỏ', legalNone: 'Chưa có sổ',
+      legalAll: 'Tất cả', legalSoHong: 'Sổ đỏ/Sổ hồng', legalHopdong: 'Hợp đồng mua bán', legalDangcho: 'Đang chờ sổ',
       customKeyword: 'Thêm từ khóa', customKeywordPlaceholder: 'Nhập từ khóa khác...',
       sources: 'Nguồn dữ liệu', keywords: 'Từ khóa Khẩn cấp (QUAN TRỌNG)',
       keywordsDesc: 'Những từ này cho thấy người bán gấp = cơ hội đàm phán tốt nhất!',
@@ -125,7 +125,7 @@ export default function SearchPage() {
       city: 'City', district: 'District', propertyType: 'Property Type',
       priceMin: 'Min Price', priceMax: 'Max Price', livingArea: 'Living Area (m²)',
       bedrooms: 'Bedrooms', daysListed: 'Listed within (days)', legalStatus: 'Legal Status',
-      legalAll: 'All', legalSoHong: 'Pink Book', legalSoDo: 'Red Book', legalNone: 'No documents',
+      legalAll: 'All', legalSoHong: 'Red/Pink Book', legalHopdong: 'Sales Contract', legalDangcho: 'Pending',
       customKeyword: 'Add keyword', customKeywordPlaceholder: 'Enter custom keyword...',
       sources: 'Data Sources', keywords: 'Urgent Keywords (IMPORTANT)',
       keywordsDesc: 'These words indicate desperate sellers = best negotiation opportunity!',
@@ -181,7 +181,7 @@ export default function SearchPage() {
       city: 'Ville', district: 'District', propertyType: 'Type de Bien',
       priceMin: 'Prix Min', priceMax: 'Prix Max', livingArea: 'Surface (m²)',
       bedrooms: 'Chambres', daysListed: 'Publié depuis (jours)', legalStatus: 'Statut légal',
-      legalAll: 'Tous', legalSoHong: 'Carnet Rose', legalSoDo: 'Carnet Rouge', legalNone: 'Sans document',
+     legalAll: 'Tous', legalSoHong: 'Sổ đỏ/Sổ hồng', legalHopdong: 'Contrat de vente', legalDangcho: 'En attente',
       customKeyword: 'Ajouter mot-clé', customKeywordPlaceholder: 'Entrer un mot-clé...',
       sources: 'Sources de données', keywords: 'Mots-clés Urgents (IMPORTANT)',
       keywordsDesc: 'Ces mots indiquent un vendeur pressé = meilleure opportunité de négociation!',
@@ -592,10 +592,11 @@ export default function SearchPage() {
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">{t.legalStatus}</label>
                 <select value={searchParams.legalStatus} onChange={(e) => setSearchParams({...searchParams, legalStatus: e.target.value})} className="w-full px-4 py-2.5 border rounded-lg">
-                  <option value="">{t.legalAll}</option>
-                  <option value="sohong">{t.legalSoHong}</option>
-                  <option value="sodo">{t.legalSoDo}</option>
-                </select>
+  <option value="">{t.legalAll}</option>
+  <option value="sohong">{t.legalSoHong}</option>
+  <option value="hopdong">{t.legalHopdong}</option>
+  <option value="dangcho">{t.legalDangcho}</option>
+</select>
               </div>
               <div className="flex items-end">
                 <label className="flex items-center gap-2 cursor-pointer pb-2">
