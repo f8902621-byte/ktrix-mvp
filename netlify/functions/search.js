@@ -574,6 +574,7 @@ function calculateNegotiationScore(item, avgPricePerM2) {
     listingAge: null,
     photoAnalysis: null,
     priceType: null,
+      legalStatus: null,
   };
   
   const title = (item.title || '').toLowerCase();
@@ -680,7 +681,21 @@ function calculateNegotiationScore(item, avgPricePerM2) {
   } else {
     details.priceType = 'precise';
   }
-  
+  // 6. Bonus statut légal (max 15 points)
+  if (item.legalStatus) {
+    if (item.legalStatus === 'Sổ đỏ/Sổ hồng') {
+      score += 15;
+      details.legalStatus = { status: item.legalStatus, verdict: 'excellent' };
+    } else if (item.legalStatus === 'Hợp đồng mua bán') {
+      score += 8;
+      details.legalStatus = { status: item.legalStatus, verdict: 'good' };
+    } else if (item.legalStatus === 'Đang chờ sổ') {
+      score += 3;
+      details.legalStatus = { status: item.legalStatus, verdict: 'pending' };
+    }
+  } else {
+    details.legalStatus = { status: null, verdict: 'unknown' };
+  }
   const finalScore = Math.min(100, score);
   
   let negotiationLevel;
