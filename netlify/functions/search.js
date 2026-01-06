@@ -334,6 +334,11 @@ async function fetchChotot(params) {
       propertyType: ad.category_name || '',
       pricePerM2: ad.price_million_per_m2 || null,
       legalStatus: ad.property_legal_document ? getLegalStatus(ad.property_legal_document) : null,
+      direction: ad.direction || null,
+      floors: ad.floors || null,
+      streetWidth: ad.street_width || null,
+      facadeWidth: ad.facade_width || null,
+      furnishing: ad.furnishing_sell || null,
     }));
   
   // Appliquer le filtrage par mots-clés INCLURE/EXCLURE
