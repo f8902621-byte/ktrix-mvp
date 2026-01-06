@@ -503,7 +503,7 @@ async function fetchChotot(params) {
         images: ad.images || (ad.image ? [ad.image] : []),
         url: `https://www.chotot.com/${ad.list_id}.htm`,
         source: 'chotot.com',
-        postedOn: ad.list_time ? new Date(ad.list_time * 1000).toLocaleDateString('vi-VN') : '',
+        postedOn: ad.list_time ? new Date(ad.list_time > 10000000000 ? ad.list_time : ad.list_time * 1000).toLocaleDateString('vi-VN') : '',
         list_time: ad.list_time || 0,
         category: ad.category || null,
         propertyType: ad.category_name || '',
