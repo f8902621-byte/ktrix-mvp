@@ -810,7 +810,12 @@ export default function SearchPage() {
                   🔥 {selectedProperty.urgentKeywords[0]}
                 </div>
               )}
-              <div className="absolute bottom-3 left-3 bg-black bg-opacity-70 text-white px-3 py-1 rounded text-sm">
+             <div className={`absolute bottom-3 left-3 px-3 py-1 rounded text-sm font-medium ${
+                selectedProperty.source === 'chotot.com' ? 'bg-green-500 text-white' :
+                selectedProperty.source === 'batdongsan.com.vn' ? 'bg-blue-500 text-white' :
+                selectedProperty.source === 'nhadat247.com.vn' ? 'bg-purple-500 text-white' :
+                'bg-black bg-opacity-70 text-white'
+              }`}>
                 {selectedProperty.source}
               </div>
             </div>
