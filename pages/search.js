@@ -980,6 +980,42 @@ export default function SearchPage() {
                 </div>
               </div>
               
+              {/* Infos supplémentaires */}
+              {(selectedProperty.direction || selectedProperty.floors || selectedProperty.streetWidth || selectedProperty.facadeWidth || selectedProperty.furnishing) && (
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mt-3">
+                  {selectedProperty.direction && (
+                    <div className="bg-amber-50 p-3 rounded-lg text-center">
+                      <p className="text-lg font-bold text-amber-600">🧭 {selectedProperty.direction}</p>
+                      <p className="text-xs text-gray-600">Hướng</p>
+                    </div>
+                  )}
+                  {selectedProperty.floors && (
+                    <div className="bg-indigo-50 p-3 rounded-lg text-center">
+                      <p className="text-lg font-bold text-indigo-600">🏢 {selectedProperty.floors}</p>
+                      <p className="text-xs text-gray-600">Tầng</p>
+                    </div>
+                  )}
+                  {selectedProperty.streetWidth && (
+                    <div className={`p-3 rounded-lg text-center ${selectedProperty.streetWidth < 3 ? 'bg-red-50' : 'bg-green-50'}`}>
+                      <p className={`text-lg font-bold ${selectedProperty.streetWidth < 3 ? 'text-red-600' : 'text-green-600'}`}>🛣️ {selectedProperty.streetWidth}m</p>
+                      <p className="text-xs text-gray-600">Đường rộng</p>
+                    </div>
+                  )}
+                  {selectedProperty.facadeWidth && (
+                    <div className="bg-blue-50 p-3 rounded-lg text-center">
+                      <p className="text-lg font-bold text-blue-600">📐 {selectedProperty.facadeWidth}m</p>
+                      <p className="text-xs text-gray-600">Mặt tiền</p>
+                    </div>
+                  )}
+                  {selectedProperty.furnishing && (
+                    <div className="bg-purple-50 p-3 rounded-lg text-center">
+                      <p className="text-lg font-bold text-purple-600">🛋️</p>
+                      <p className="text-xs text-gray-600">{selectedProperty.furnishing}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+              
               {/* Address */}
               {(selectedProperty.address || selectedProperty.district) && (
                 <div 
