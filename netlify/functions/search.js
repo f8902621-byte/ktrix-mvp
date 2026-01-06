@@ -31,7 +31,35 @@ const getLegalStatus = (code) => {
   };
   return legalMap[code] || null;
 };
+// ============================================
+// MAPPING DIRECTION
+// ============================================
+const getDirection = (code) => {
+  const directionMap = {
+    1: 'Đông',        // Est
+    2: 'Tây',         // Ouest
+    3: 'Nam',         // Sud
+    4: 'Bắc',         // Nord
+    5: 'Đông Bắc',    // Nord-Est
+    6: 'Đông Nam',    // Sud-Est
+    7: 'Tây Bắc',     // Nord-Ouest
+    8: 'Tây Nam',     // Sud-Ouest
+  };
+  return directionMap[code] || null;
+};
 
+// ============================================
+// MAPPING FURNISHING (Meublé)
+// ============================================
+const getFurnishing = (code) => {
+  const furnishingMap = {
+    1: 'Nội thất cao cấp',    // Haut de gamme
+    2: 'Nội thất đầy đủ',     // Entièrement meublé
+    3: 'Nội thất cơ bản',     // Basique
+    4: 'Bàn giao thô',        // Non meublé
+  };
+  return furnishingMap[code] || null;
+};
 // ============================================
 // MAPPING UNIVERSEL DES TYPES DE BIENS K TRIX
 // ============================================
@@ -864,6 +892,11 @@ exports.handler = async (event) => {
         postedOn: item.postedOn || '',
         daysOnline: negotiation.details.listingAge?.days || 0,
         legalStatus: item.legalStatus || null,
+        direction: item.direction || null,
+        floors: item.floors || null,
+        streetWidth: item.streetWidth || null,
+        facadeWidth: item.facadeWidth || null,
+        furnishing: item.furnishing || null,
       };
     });
 
