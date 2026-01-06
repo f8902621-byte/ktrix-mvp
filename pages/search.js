@@ -918,9 +918,7 @@ export default function SearchPage() {
                     <span className="ml-auto font-bold">+0</span>
                   </div>
                 )}
-                  </div>
-                )}
-                  {selectedProperty.negotiationDetails?.priceAnalysis && (
+                            {selectedProperty.negotiationDetails?.priceAnalysis && (
                     <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${
                       selectedProperty.negotiationDetails.priceAnalysis.diffPercent > 0 
                         ? 'bg-green-100 text-green-700' 
