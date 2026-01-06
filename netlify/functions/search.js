@@ -20,6 +20,17 @@ const CHOTOT_REGIONS = {
   'quy nhon': '7043',
 'binh dinh': '7043',
 };
+// ============================================
+// MAPPING STATUT LÉGAL
+// ============================================
+const getLegalStatus = (code) => {
+  const legalMap = {
+    1: 'Sổ đỏ/Sổ hồng',
+    2: 'Hợp đồng mua bán',
+    3: 'Đang chờ sổ',
+  };
+  return legalMap[code] || null;
+};
 
 // ============================================
 // MAPPING UNIVERSEL DES TYPES DE BIENS K TRIX
@@ -322,6 +333,7 @@ async function fetchChotot(params) {
       category: ad.category || null,
       propertyType: ad.category_name || '',
       pricePerM2: ad.price_million_per_m2 || null,
+      legalStatus: ad.property_legal_document ? getLegalStatus(ad.property_legal_document) : null,
     }));
   
   // Appliquer le filtrage par mots-clés INCLURE/EXCLURE
@@ -329,6 +341,17 @@ async function fetchChotot(params) {
     const beforeFilter = results.length;
     results = filterByKeywords(results, typeMapping.include, typeMapping.exclude);
     console.log(`Chotot filtre mots-clés: ${beforeFilter} → ${results.length}`);
+  }
+  // Filtrer par statut légal
+  if (legalStatus) {
+    const beforeLegal = results.length;
+    results = results.filter(r => {
+      if (legalStatus === 'sohong') return r.legalStatus === 'Sổ đỏ/Sổ hồng';
+      if (legalStatus === 'hopdong') return r.legalStatus === 'Hợp đồng mua bán';
+      if (legalStatus === 'dangcho') return r.legalStatus === 'Đang chờ sổ';
+      return true;
+    });
+    console.log(`Filtre légal ${legalStatus}: ${beforeLegal} → ${results.length}`);
   }
   
   return results;
@@ -463,7 +486,7 @@ async function fetchBatdongsan(propertyType) {
 // FILTRES POST-API
 // ============================================
 function applyFilters(results, filters) {
-  const { city, district, priceMin, priceMax, livingAreaMin, livingAreaMax, bedrooms } = filters;
+  const { city, district, priceMin, priceMax, livingAreaMin, livingAreaMax, bedrooms, legalStatus } = filters;
   let filtered = [...results];
   
   if (priceMin) {
@@ -497,6 +520,15 @@ function applyFilters(results, filters) {
   
   if (bedrooms) {
     filtered = filtered.filter(item => item.bedrooms >= parseInt(bedrooms));
+  }
+  // Filtre par statut légal
+  if (legalStatus) {
+    filtered = filtered.filter(item => {
+      if (legalStatus === 'sohong') return item.legalStatus === 'Sổ đỏ/Sổ hồng';
+      if (legalStatus === 'hopdong') return item.legalStatus === 'Hợp đồng mua bán';
+      if (legalStatus === 'dangcho') return item.legalStatus === 'Đang chờ sổ';
+      return true;
+    });
   }
   
   return filtered;
