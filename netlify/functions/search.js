@@ -800,11 +800,30 @@ function applyFilters(results, filters) {
   }
   
   if (district) {
-    const d = district.toLowerCase();
-    filtered = filtered.filter(item => 
-      (item.district || '').toLowerCase().includes(d) || 
-      (item.title || '').toLowerCase().includes(d)
-    );
+    const d = removeVietnameseAccents(district.toLowerCase());
+    const districtMatch = d.match(/quan\s*(\d+)/);
+    const districtNum = districtMatch ? districtMatch[1] : null;
+    
+    filtered = filtered.filter(item => {
+      const itemDistrict = removeVietnameseAccents((item.district || '').toLowerCase());
+      const itemTitle = removeVietnameseAccents((item.title || '').toLowerCase());
+      const itemAddress = removeVietnameseAccents((item.address || '').toLowerCase());
+      const combined = itemDistrict + ' ' + itemTitle + ' ' + itemAddress;
+      
+      if (combined.includes(d)) return true;
+      
+      if (districtNum) {
+        const patterns = [
+          `quan ${districtNum}`,
+          `q${districtNum}`,
+          `quan${districtNum}`,
+          `quan ${districtNum} cu`,
+        ];
+        return patterns.some(p => combined.includes(p));
+      }
+      
+      return false;
+    });
   }
   
   if (livingAreaMin) {
@@ -1242,7 +1261,9 @@ exports.handler = async (event) => {
     // CHOTOT - Source principale (300 résultats, toutes villes)
 if (sources?.includes('chotot')) {
   const chototResults = await fetchChotot({ city, priceMin, priceMax, sortBy, propertyType });
-  allResults.push(...chototResults);
+  const filteredChotot = applyFilters(chototResults, { district, livingAreaMin, livingAreaMax, bedrooms, legalStatus, streetWidthMin });
+  console.log(`Chotot: ${chototResults.length} → ${filteredChotot.length} après filtre district`);
+  allResults.push(...filteredChotot);
 }
     
     // BATDONGSAN - Données pré-scrapées
