@@ -86,19 +86,35 @@ function analyzeListingText(title, body) {
   };
 
   // === LARGEUR DE RUE / HẺM ===
+  // Patterns améliorés pour éviter les faux positifs (distance, surface m²)
+  
+  // D'abord, exclure les contextes de distance
+  const isDistanceContext = /cách\s+.{0,30}\d+\s*m/i.test(text) || 
+                            /gần\s+.{0,30}\d+\s*m/i.test(text) ||
+                            /xa\s+.{0,30}\d+\s*m/i.test(text);
+  
   const streetPatterns = [
-    /hẻm\s*(\d+[,.]?\d*)\s*m/i,
-    /ngõ\s*(\d+[,.]?\d*)\s*m/i,
-    /đường[^\d]*(\d+[,.]?\d*)\s*m/i,
-    /rộng\s*(\d+[,.]?\d*)\s*m(?!\s*²)/i,
-    /(\d+[,.]?\d*)\s*m\s*(hẻm|ngõ)/i,
+    // "hẻm 4m", "hẻm rộng 5m", "hẻm xe hơi 4m" - PAS "90m²"
+    /hẻm\s+(?:xe\s+hơi\s+)?(?:rộng\s+)?(\d+[,.]?\d*)\s*m(?!\s*²|²|\d)/i,
+    // "ngõ 3m", "ngõ rộng 4m"
+    /ngõ\s+(?:rộng\s+)?(\d+[,.]?\d*)\s*m(?!\s*²|²|\d)/i,
+    // "đường rộng 6m" - uniquement avec "rộng" explicite
+    /đường\s+rộng\s+(\d+[,.]?\d*)\s*m(?!\s*²|²|\d)/i,
+    // "xe hơi vào tận nhà" + dimension = probablement largeur
+    /xe\s+hơi.{0,10}(\d+[,.]?\d*)\s*m(?!\s*²|²|\d)/i,
   ];
+  
   for (const pattern of streetPatterns) {
     const match = text.match(pattern);
     if (match) {
-      analysis.extractedStreetWidth = parseFloat(match[1].replace(',', '.'));
-      analysis.detectedKeywords.push(`Hẻm ${analysis.extractedStreetWidth}m`);
-      break;
+      const width = parseFloat(match[1].replace(',', '.'));
+      // Validation: une ruelle/hẻm fait entre 1m et 15m max
+      // Au-delà de 15m, c'est probablement une erreur d'interprétation
+      if (width >= 1 && width <= 15) {
+        analysis.extractedStreetWidth = width;
+        analysis.detectedKeywords.push(`Hẻm ${width}m`);
+        break;
+      }
     }
   }
 
