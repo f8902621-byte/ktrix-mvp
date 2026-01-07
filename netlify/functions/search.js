@@ -8,7 +8,6 @@ const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 
 async function saveListingsToSupabase(listings) {
-async function saveListingsToSupabase(listings) {
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY || listings.length === 0) {
     return [];
   }
