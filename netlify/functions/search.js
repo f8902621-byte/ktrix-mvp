@@ -1382,3 +1382,18 @@ exports.handler = async (event) => {
       headers,
       body: JSON.stringify({ success: true, results, stats, priceDrops })
     };
+return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({ success: true, results, stats, priceDrops })
+    };
+
+  } catch (error) {
+    console.error('Error:', error);
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({ success: false, error: error.message, results: [], stats: {} })
+    };
+  }
+};
