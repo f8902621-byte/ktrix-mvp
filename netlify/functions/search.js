@@ -1240,10 +1240,12 @@ exports.handler = async (event) => {
     let allResults = [];
     
     // CHOTOT - Source principale (300 résultats, toutes villes)
-    if (sources?.includes('chotot')) {
-      const chototResults = await fetchChotot({ city, priceMin, priceMax, sortBy, propertyType });
-      allResults.push(...chototResults);
-    }
+if (sources?.includes('chotot')) {
+  const chototResults = await fetchChotot({ city, priceMin, priceMax, sortBy, propertyType });
+  const filteredChotot = applyFilters(chototResults, { district, livingAreaMin, livingAreaMax, bedrooms, legalStatus, streetWidthMin });
+  console.log(`Chotot: ${chototResults.length} → ${filteredChotot.length} après filtre district`);
+  allResults.push(...filteredChotot);
+}
     
     // BATDONGSAN - Données pré-scrapées
     if (sources?.includes('batdongsan')) {
