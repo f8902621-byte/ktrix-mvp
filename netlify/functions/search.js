@@ -1017,7 +1017,98 @@ function calculateScore(item) {
   const result = calculateNegotiationScore(item, 50000000);
   return result.score;
 }
+// ============================================
+// CALCUL DES STATISTIQUES PAR DISTRICT
+// ============================================
+function calculateDistrictStats(results) {
+  const districtData = {};
+  
+  // Grouper par district
+  for (const item of results) {
+    const district = (item.district || 'unknown').toLowerCase().trim();
+    if (!district || district === 'unknown') continue;
+    
+    const area = item.area || item.floorAreaSqm || 0;
+    const price = item.price || 0;
+    
+    if (area > 0 && price > 0) {
+      if (!districtData[district]) {
+        districtData[district] = {
+          prices: [],
+          pricesPerM2: [],
+          count: 0
+        };
+      }
+      
+      const pricePerM2 = price / area;
+      districtData[district].prices.push(price);
+      districtData[district].pricesPerM2.push(pricePerM2);
+      districtData[district].count++;
+    }
+  }
+  
+  // Calculer les statistiques par district
+  const districtStats = {};
+  
+  for (const [district, data] of Object.entries(districtData)) {
+    if (data.count < 3) continue; // Minimum 3 biens pour des stats fiables
+    
+    const sortedPrices = [...data.pricesPerM2].sort((a, b) => a - b);
+    const count = sortedPrices.length;
+    
+    // Calcul percentiles pour la fourchette (25% - 75%)
+    const p25Index = Math.floor(count * 0.25);
+    const p75Index = Math.floor(count * 0.75);
+    const medianIndex = Math.floor(count * 0.5);
+    
+    districtStats[district] = {
+      count: data.count,
+      avgPricePerM2: Math.round(data.pricesPerM2.reduce((a, b) => a + b, 0) / count),
+      medianPricePerM2: Math.round(sortedPrices[medianIndex]),
+      minPricePerM2: Math.round(sortedPrices[0]),
+      maxPricePerM2: Math.round(sortedPrices[count - 1]),
+      // Fourchette "normale" (25e - 75e percentile)
+      lowRange: Math.round(sortedPrices[p25Index]),
+      highRange: Math.round(sortedPrices[p75Index]),
+    };
+  }
+  
+  return districtStats;
+}
 
+// ============================================
+// ANALYSE POSITION PRIX PAR RAPPORT AU QUARTIER
+// ============================================
+function analyzePricePosition(item, districtStats) {
+  const district = (item.district || '').toLowerCase().trim();
+  const area = item.area || item.floorAreaSqm || 0;
+  const price = item.price || 0;
+  
+  if (!district || area <= 0 || price <= 0 || !districtStats[district]) {
+    return null;
+  }
+  
+  const stats = districtStats[district];
+  const itemPricePerM2 = price / area;
+  
+  // Position par rapport à la fourchette normale
+  let position, verdict, percentFromMedian;
+  
+  percentFromMedian = Math.round(((itemPricePerM2 - stats.medianPricePerM2) / stats.medianPricePerM2) * 100);
+  
+  if (itemPricePerM2 < stats.lowRange) {
+    position = 'below';
+    verdict = 'Dưới giá thị trường'; // En dessous du marché
+  } else if (itemPricePerM2 > stats.highRange) {
+    position = 'above';
+    verdict = 'Cao hơn giá thị trường'; // Au-dessus du marché
+  } else {
+    position = 'within';
+    verdict = 'Giá hợp lý'; // Prix raisonnable
+  }
+  
+  return {
+    itemPricePerM2: Math.round(i
 // ============================================
 // HANDLER PRINCIPAL
 // ============================================
@@ -1093,7 +1184,9 @@ exports.handler = async (event) => {
     
     // Déduplication
     let unique = deduplicateResults(allResults);
-    
+    // Calculer les stats par district
+    const districtStats = calculateDistrictStats(unique);
+    console.log(`Stats districts calculées: ${Object.keys(districtStats).length} districts`);
     // Filtre keywordsOnly - ne garder que les annonces avec mots-clés urgents
     if (keywordsOnly) {
       const before = unique.length;
@@ -1128,8 +1221,9 @@ exports.handler = async (event) => {
       : 50000000;
     
     // Limiter à 100 résultats
-    const results = sortedResults.slice(0, 100).map((item, i) => {
+ const results = sortedResults.slice(0, 100).map((item, i) => {
       const negotiation = calculateNegotiationScore(item, avgPricePerM2);
+      const pricePosition = analyzePricePosition(item, districtStats);
       
       return {
         id: item.id || i,
@@ -1169,6 +1263,8 @@ exports.handler = async (event) => {
         hasLegalIssue: item.hasLegalIssue || false,
         hasPlanningRisk: item.hasPlanningRisk || false,
         detectedKeywords: item.detectedKeywords || [],
+        // Position prix dans le quartier
+        pricePosition: pricePosition,
       };
     });
 
