@@ -10,6 +10,8 @@ export default function SearchPage() {
   const [showSearch, setShowSearch] = useState(true);
   const [results, setResults] = useState([]);
   const [stats, setStats] = useState(null);
+  const [dbStats, setDbStats] = useState(null);
+const [showDbStats, setShowDbStats] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [expandedPhoto, setExpandedPhoto] = useState(null);
@@ -59,10 +61,23 @@ export default function SearchPage() {
         setExpandedPhoto(null);
       }
     };
-    window.addEventListener('keydown', handleEscape);
+       window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
   }, []);
-
+const loadDbStats = async (city = '') => {
+  try {
+    const url = city 
+      ? `/.netlify/functions/stats?city=${encodeURIComponent(city)}`
+      : '/.netlify/functions/stats';
+    const response = await fetch(url);
+    const data = await response.json();
+    if (data.success) {
+      setDbStats(data);
+    }
+  } catch (err) {
+    console.error('Error loading DB stats:', err);
+  }
+};
   const t = {
     vn: {
       menu: 'Menu', searchParams: 'Tham số Tìm kiếm', backToHome: 'Trang chủ',
@@ -131,6 +146,18 @@ export default function SearchPage() {
     nlpRentalIncome: '💰 Thu nhập cho thuê',
     nlpGrossYield: 'Lợi suất',
     nlpExtractedInfo: 'Thông tin trích xuất',
+      // Database Stats Dashboard
+      dbStatsTitle: '📊 Thống kê thị trường (từ dữ liệu K Trix)',
+      dbStatsTotal: 'Tổng tin đăng',
+      dbStatsDistricts: 'Quận/Huyện',
+      dbStatsAvgPrice: 'Giá TB/m²',
+      dbStatsTrend: 'Xu hướng',
+      dbStatsTrendUp: '📈 Tăng',
+      dbStatsTrendDown: '📉 Giảm',
+      dbStatsTrendStable: '➡️ Ổn định',
+      dbStatsNew: 'mới tuần này',
+      dbStatsShowMore: 'Xem chi tiết',
+      dbStatsHide: 'Ẩn thống kê',
     },
     en: {
       menu: 'Menu', searchParams: 'Search Parameters', backToHome: 'Home',
@@ -199,6 +226,17 @@ export default function SearchPage() {
     nlpRentalIncome: '💰 Rental income mentioned',
     nlpGrossYield: 'Gross yield',
     nlpExtractedInfo: 'Extracted info',
+      dbStatsTitle: '📊 Market Stats (from K Trix data)',
+dbStatsTotal: 'Total listings',
+dbStatsDistricts: 'Districts',
+dbStatsAvgPrice: 'Avg price/m²',
+dbStatsTrend: 'Trend',
+dbStatsTrendUp: '📈 Up',
+dbStatsTrendDown: '📉 Down',
+dbStatsTrendStable: '➡️ Stable',
+dbStatsNew: 'new this week',
+dbStatsShowMore: 'Show details',
+dbStatsHide: 'Hide stats',
     },
     fr: {
       menu: 'Menu', searchParams: 'Paramètres', backToHome: 'Accueil',
@@ -267,6 +305,17 @@ export default function SearchPage() {
     nlpRentalIncome: '💰 Revenu locatif mentionné',
     nlpGrossYield: 'Rendement brut',
     nlpExtractedInfo: 'Infos extraites',
+      dbStatsTitle: '📊 Stats marché (données K Trix)',
+dbStatsTotal: 'Annonces totales',
+dbStatsDistricts: 'Districts',
+dbStatsAvgPrice: 'Prix moy/m²',
+dbStatsTrend: 'Tendance',
+dbStatsTrendUp: '📈 Hausse',
+dbStatsTrendDown: '📉 Baisse',
+dbStatsTrendStable: '➡️ Stable',
+dbStatsNew: 'nouveau cette sem.',
+dbStatsShowMore: 'Voir détails',
+dbStatsHide: 'Masquer stats',
     }
   }[language];
 
@@ -725,6 +774,79 @@ export default function SearchPage() {
       {/* Results */}
       {!showSearch && (
         <div className="max-w-7xl mx-auto px-4 py-6">
+        {/* Database Stats Dashboard */}
+            <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl shadow-lg p-4 mb-6 border border-indigo-100">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-lg font-bold text-indigo-800 flex items-center gap-2">
+                  {t.dbStatsTitle}
+                </h3>
+                <button 
+                  onClick={() => { 
+                    if (!dbStats) loadDbStats(searchParams.city);
+                    setShowDbStats(!showDbStats);
+                  }}
+                  className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-lg text-sm font-medium hover:bg-indigo-200"
+                >
+                  {showDbStats ? t.dbStatsHide : t.dbStatsShowMore}
+                </button>
+              </div>
+              
+              {dbStats && showDbStats && (
+                <>
+                  {/* Global Stats */}
+                  <div className="grid grid-cols-3 gap-3 mb-4">
+                    <div className="bg-white rounded-lg p-3 text-center shadow-sm">
+                      <p className="text-2xl font-bold text-indigo-600">{dbStats.global?.totalListings || 0}</p>
+                      <p className="text-xs text-gray-500">{t.dbStatsTotal}</p>
+                    </div>
+                    <div className="bg-white rounded-lg p-3 text-center shadow-sm">
+                      <p className="text-2xl font-bold text-purple-600">{dbStats.global?.totalDistricts || 0}</p>
+                      <p className="text-xs text-gray-500">{t.dbStatsDistricts}</p>
+                    </div>
+                    <div className="bg-white rounded-lg p-3 text-center shadow-sm">
+                      <p className="text-2xl font-bold text-sky-600">{dbStats.global?.avgPricePerM2 ? `${Math.round(dbStats.global.avgPricePerM2 / 1000000)} tr` : '-'}</p>
+                      <p className="text-xs text-gray-500">{t.dbStatsAvgPrice}</p>
+                    </div>
+                  </div>
+                  
+                  {/* District Stats Table */}
+                  {dbStats.districts && dbStats.districts.length > 0 && (
+                    <div className="bg-white rounded-lg overflow-hidden shadow-sm">
+                      <table className="w-full text-sm">
+                        <thead className="bg-indigo-100">
+                          <tr>
+                            <th className="px-3 py-2 text-left font-medium text-indigo-800">District</th>
+                            <th className="px-3 py-2 text-right font-medium text-indigo-800">#</th>
+                            <th className="px-3 py-2 text-right font-medium text-indigo-800">{t.dbStatsAvgPrice}</th>
+                            <th className="px-3 py-2 text-right font-medium text-indigo-800">{t.dbStatsTrend}</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {dbStats.districts.slice(0, 10).map((d, i) => (
+                            <tr key={i} className={i % 2 === 0 ? 'bg-slate-50' : 'bg-white'}>
+                              <td className="px-3 py-2 font-medium">{d.district}</td>
+                              <td className="px-3 py-2 text-right">
+                                {d.count}
+                                {d.newThisWeek > 0 && (
+                                  <span className="ml-1 text-xs text-green-600">(+{d.newThisWeek})</span>
+                                )}
+                              </td>
+                              <td className="px-3 py-2 text-right font-medium text-sky-600">{d.avgPricePerM2Display}</td>
+                              <td className="px-3 py-2 text-right">
+                                {d.priceTrend === 'up' && <span className="text-red-500">{t.dbStatsTrendUp} {d.priceTrendPercent}%</span>}
+                                {d.priceTrend === 'down' && <span className="text-green-500">{t.dbStatsTrendDown} {Math.abs(d.priceTrendPercent)}%</span>}
+                                {d.priceTrend === 'stable' && <span className="text-gray-500">{t.dbStatsTrendStable}</span>}
+                                {!d.priceTrend && <span className="text-gray-300">-</span>}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
           {loading ? (
             <div className="flex flex-col items-center justify-center py-20">
               <Loader className="w-16 h-16 text-sky-500 animate-spin mb-4" />
