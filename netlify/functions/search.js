@@ -1108,7 +1108,20 @@ function analyzePricePosition(item, districtStats) {
   }
   
   return {
-    itemPricePerM2: Math.round(i
+   itemPricePerM2: Math.round(itemPricePerM2),
+    districtAvg: stats.avgPricePerM2,
+    districtMedian: stats.medianPricePerM2,
+    districtLowRange: stats.lowRange,
+    districtHighRange: stats.highRange,
+    districtMin: stats.minPricePerM2,
+    districtMax: stats.maxPricePerM2,
+    districtCount: stats.count,
+    position,
+    verdict,
+    percentFromMedian,
+  };
+}
+
 // ============================================
 // HANDLER PRINCIPAL
 // ============================================
