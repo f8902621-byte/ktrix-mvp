@@ -799,21 +799,22 @@ function applyFilters(results, filters) {
     filtered = filtered.filter(item => item.price > 0 && item.price <= max);
   }
   
-  if (district) {
+if (district) {
     const d = removeVietnameseAccents(district.toLowerCase());
+    console.log(`DISTRICT FILTER: searching for "${d}"`);
     
+    const beforeCount = filtered.length;
     filtered = filtered.filter(item => {
       const itemDistrict = removeVietnameseAccents((item.district || '').toLowerCase());
       const itemTitle = removeVietnameseAccents((item.title || '').toLowerCase());
       const itemAddress = removeVietnameseAccents((item.address || '').toLowerCase());
       const combined = itemDistrict + ' ' + itemTitle + ' ' + itemAddress;
       
-      // Chercher le district dans le texte combiné
-      if (combined.includes(d)) return true;
-      if (combined.includes('quan 2') || combined.includes('q2') || combined.includes('(quan 2')) return true;
-      
-      return false;
+      const match = combined.includes(d) || combined.includes('quan 2') || combined.includes('q2');
+      if (match) console.log(`MATCH: ${combined.substring(0, 80)}...`);
+      return match;
     });
+    console.log(`DISTRICT FILTER: ${beforeCount} → ${filtered.length}`);
   }
   
   if (livingAreaMin) {
