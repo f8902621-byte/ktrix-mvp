@@ -1369,8 +1369,12 @@ exports.handler = async (event) => {
     };
 
     console.log(`FINAL: ${results.length} résultats affichés, ${unique.length} disponibles, prix moyen/m²: ${Math.round(avgPricePerM2/1000000)}M`);
-// Sauvegarder les annonces dans Supabase (en arrière-plan)
-    saveListingsToSupabase(results).catch(err => console.error('Supabase async error:', err));
+// Sauvegarder les annonces dans Supabase
+    try {
+      await saveListingsToSupabase(results);
+    } catch (err) {
+      console.error('Supabase save error:', err);
+    }
     return {
       statusCode: 200,
       headers,
