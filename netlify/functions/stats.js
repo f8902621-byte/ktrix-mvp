@@ -54,12 +54,14 @@ exports.handler = async (event) => {
       url += `&property_type=ilike.*${encodeURIComponent(propertyType)}*`;
     }
 
-    const response = await fetch(url, {
-      headers: {
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-      }
-    });
+const response = await fetch(url, {
+  headers: {
+    'apikey': SUPABASE_ANON_KEY,
+    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+    'Range': '0-9999',
+    'Prefer': 'count=exact'
+  }
+});
 
     if (!response.ok) {
       throw new Error('Failed to fetch from Supabase');
