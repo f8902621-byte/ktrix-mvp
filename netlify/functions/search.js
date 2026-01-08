@@ -127,6 +127,20 @@ const getFurnishing = (code) => {
   };
   return furnishingMap[code] || null;
 };
+
+// ============================================
+// MAPPING CATÉGORIE CHOTOT → NOM TYPE
+// ============================================
+const getCategoryName = (categoryCode) => {
+  const categoryMap = {
+    1010: 'Căn hộ chung cư',
+    1020: 'Nhà ở',
+    1030: 'Văn phòng, Mặt bằng',
+    1040: 'Đất',
+    1000: 'Bất động sản',
+  };
+  return categoryMap[categoryCode] || null;
+};
 // ============================================
 // ANALYSE NLP DU TEXTE DES ANNONCES
 // ============================================
