@@ -816,14 +816,7 @@ dbStatsHide: 'Masquer stats',
                 </button>
               </div>
             </div>
-                  onClick={() => { 
-                    loadDbStats(searchParams.city, searchParams.propertyType);
-setShowDbStats(!showDbStats);
-                  }}
-                  className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-lg text-sm font-medium hover:bg-indigo-200"
-                >
-                  {showDbStats ? t.dbStatsHide : t.dbStatsShowMore}
-                </button>
+                 
               </div>
               
               {dbStats && showDbStats && (
