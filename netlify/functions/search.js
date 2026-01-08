@@ -628,7 +628,7 @@ async function fetchChotot(params) {
         postedOn: ad.list_time ? new Date(ad.list_time > 10000000000 ? ad.list_time : ad.list_time * 1000).toLocaleDateString('vi-VN') : '',
         list_time: ad.list_time || 0,
         category: ad.category || null,
-        propertyType: ad.category_name || '',
+        propertyType: propertyType || ad.category_name || '',
         pricePerM2: ad.price_million_per_m2 || null,
         legalStatus: ad.property_legal_document ? getLegalStatus(ad.property_legal_document) : null,
         // Données API Chotot (si disponibles)
