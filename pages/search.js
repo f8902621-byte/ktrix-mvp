@@ -64,11 +64,18 @@ const [showDbStats, setShowDbStats] = useState(false);
        window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
   }, []);
-const loadDbStats = async (city = '') => {
+  // Rafraîchir les stats quand les résultats changent
+  useEffect(() => {
+    if (results.length > 0 && !showSearch) {
+      loadDbStats(searchParams.city, searchParams.propertyType);
+      setShowDbStats(true);
+    }
+  }, [results]);
+const loadDbStats = async (city = '', propertyType = '') => {
   try {
-    const url = city 
-      ? `/.netlify/functions/stats?city=${encodeURIComponent(city)}`
-      : '/.netlify/functions/stats';
+    let url = '/.netlify/functions/stats?';
+    if (city) url += `city=${encodeURIComponent(city)}&`;
+    if (propertyType) url += `propertyType=${encodeURIComponent(propertyType)}`;
     const response = await fetch(url);
     const data = await response.json();
     if (data.success) {
@@ -779,12 +786,12 @@ dbStatsHide: 'Masquer stats',
             <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl shadow-lg p-4 mb-6 border border-indigo-100">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-lg font-bold text-indigo-800 flex items-center gap-2">
-                  {t.dbStatsTitle}
+                  {t.dbStatsTitle} {dbStats?.global?.city && `- ${dbStats.global.city}`}
                 </h3>
                 <button 
                   onClick={() => { 
-                    if (!dbStats) loadDbStats(searchParams.city);
-                    setShowDbStats(!showDbStats);
+                    loadDbStats(searchParams.city, searchParams.propertyType);
+setShowDbStats(!showDbStats);
                   }}
                   className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-lg text-sm font-medium hover:bg-indigo-200"
                 >
@@ -808,6 +815,10 @@ dbStatsHide: 'Masquer stats',
                       <p className="text-2xl font-bold text-sky-600">{dbStats.global?.avgPricePerM2 ? `${Math.round(dbStats.global.avgPricePerM2 / 1000000)} tr` : '-'}</p>
                       <p className="text-xs text-gray-500">{t.dbStatsAvgPrice}</p>
                     </div>
+                {/* Total en base */}
+              <div className="text-center text-sm text-gray-500 mt-2">
+                📦 Total en base: <span className="font-bold text-indigo-600">{dbStats.global?.totalInDatabase || 0}</span> annonces
+              </div>
                   </div>
                   
                   {/* District Stats Table */}
