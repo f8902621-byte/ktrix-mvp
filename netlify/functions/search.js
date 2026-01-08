@@ -83,9 +83,9 @@ const CHOTOT_REGIONS = {
   'ba ria vung tau': '2010',
   'quy nhon': '7043',
 'binh dinh': '7043',
-'lam dong': '3035',
-'da lat': '3035',
-'dalat': '3035',
+'lam dong': '3095',
+'da lat': '3095',
+'dalat': '3095',
 };
 // ============================================
 // MAPPING STATUT LÉGAL
