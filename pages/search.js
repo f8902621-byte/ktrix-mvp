@@ -815,11 +815,11 @@ dbStatsHide: 'Masquer stats',
                   }}
                   className="px-2 py-1 text-sm border border-indigo-200 rounded-lg bg-white"
                 >
-                  <option value="">📊 Tous types</option>
-                  <option value="apartment">🏢 Appartements</option>
-                  <option value="house">🏠 Maisons/Villas</option>
-                  <option value="commercial">🏪 Commercial</option>
-                  <option value="land">🌳 Terrains</option>
+                  <option value="">{t.statsCatAll}</option>
+<option value="apartment">{t.statsCatApartment}</option>
+<option value="house">{t.statsCatHouse}</option>
+<option value="commercial">{t.statsCatCommercial}</option>
+<option value="land">{t.statsCatLand}</option>
                 </select>
                 <button 
                   onClick={() => { 
