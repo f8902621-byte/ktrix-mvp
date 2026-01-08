@@ -78,9 +78,11 @@ const loadDbStats = async (city = '', propertyType = '') => {
     if (propertyType) url += `propertyType=${encodeURIComponent(propertyType)}`;
     const response = await fetch(url);
     const data = await response.json();
-    if (data.success) {
-      setDbStats(data);
-    }
+    console.log('Stats reçues:', data);
+if (data.success) {
+  setDbStats(data);
+  console.log('dbStats mis à jour:', data.global);
+}
   } catch (err) {
     console.error('Error loading DB stats:', err);
   }
