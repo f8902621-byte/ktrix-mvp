@@ -66,11 +66,11 @@ const [showDbStats, setShowDbStats] = useState(false);
   }, []);
   // Rafraîchir les stats quand les résultats changent
   useEffect(() => {
-    if (results.length > 0 && !showSearch) {
-      loadDbStats(searchParams.city, searchParams.propertyType);
-      setShowDbStats(true);
-    }
-  }, [results]);
+  if (results.length > 0 && !showSearch) {
+    loadDbStats(searchParams.city, '');  // Ne pas filtrer par type pour les stats
+    setShowDbStats(true);
+  }
+}, [results]);
 const loadDbStats = async (city = '', propertyType = '') => {
   try {
     let url = '/.netlify/functions/stats?';
