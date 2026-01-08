@@ -43,8 +43,10 @@ exports.handler = async (event) => {
   } else if (city.includes('Bình Định')) {
     searchTerm = 'Định';
   } else if (city.includes('Khánh Hòa')) {
-    searchTerm = 'Hòa';
-  }
+  searchTerm = 'Hòa';
+} else if (city.includes('Lâm Đồng') || city.includes('Đà Lạt') || city.includes('Da Lat')) {
+  searchTerm = 'Lâm Đồng';
+}
   url += `&city=ilike.*${encodeURIComponent(searchTerm)}*`;
 }
     
