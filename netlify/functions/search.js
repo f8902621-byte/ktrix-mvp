@@ -468,10 +468,39 @@ function getPropertyTypeMapping(userInput) {
   
   const input = removeVietnameseAccents(userInput.toLowerCase());
   
-  // Shophouse - détection directe
-if (input.includes('shophouse')) {
-  return PROPERTY_TYPE_MAPPING['shophouse'];
-}
+// ============================================
+  // DÉTECTIONS DIRECTES (évite les mauvais mappings)
+  // ============================================
+  if (input.includes('shophouse')) {
+    return PROPERTY_TYPE_MAPPING['shophouse'];
+  }
+  if (input.includes('office') || input.includes('officetel') || input.includes('van phong')) {
+    return PROPERTY_TYPE_MAPPING['van_phong'];
+  }
+  if (input.includes('studio')) {
+    return PROPERTY_TYPE_MAPPING['studio'];
+  }
+  if (input.includes('villa') || input.includes('biet thu')) {
+    return PROPERTY_TYPE_MAPPING['nha_biet_thu'];
+  }
+  if (input.includes('warehouse') || input.includes('kho') || input.includes('xuong')) {
+    return PROPERTY_TYPE_MAPPING['kho_nha_xuong'];
+  }
+  if (input.includes('premises') || input.includes('mat bang')) {
+    return PROPERTY_TYPE_MAPPING['mat_bang'];
+  }
+  if (input.includes('shop') || input.includes('cua hang') || input.includes('kiot')) {
+    return PROPERTY_TYPE_MAPPING['cua_hang'];
+  }
+  if (input.includes('resort') || input.includes('nghi duong')) {
+    if (input.includes('can ho') || input.includes('apartment')) {
+      return PROPERTY_TYPE_MAPPING['can_ho_nghi_duong'];
+    }
+    if (input.includes('dat') || input.includes('land')) {
+      return PROPERTY_TYPE_MAPPING['dat_nghi_duong'];
+    }
+    return PROPERTY_TYPE_MAPPING['nha_nghi_duong'];
+  }
   
   // Recherche par correspondance dans les labels ou mots-clés
   for (const [key, mapping] of Object.entries(PROPERTY_TYPE_MAPPING)) {
