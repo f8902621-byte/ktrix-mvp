@@ -178,14 +178,13 @@ export default function Landing() {
     }
   };
 
-  const sources = [
-    { name: 'Batdongsan.com.vn', logo: '🏠', active: true },
-    { name: 'Chotot.com', logo: '🛒', active: true },
-    { name: 'Nhadat247.com.vn', logo: '🏘️', active: true },
-    { name: 'Homedy.com', logo: '🏡', active: false },
-    { name: 'Alonhadat.com.vn', logo: '📍', active: false },
-  ];
-
+const sources = [
+  { name: 'Chotot.com', logo: '🛒', active: true },
+  { name: 'Alonhadat.com.vn', logo: '📍', active: true },
+  { name: 'Batdongsan.com.vn', logo: '🏠', active: false },
+  { name: 'Nhadat247.com.vn', logo: '🏘️', active: false },
+  { name: 'Homedy.com', logo: '🏡', active: false },
+];
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
