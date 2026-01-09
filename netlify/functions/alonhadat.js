@@ -1,14 +1,12 @@
 /**
  * K Trix - Alonhadat Scraper via ScraperAPI
- * Fonction Netlify pour récupérer les annonces immobilières de alonhadat.com.vn
+ * Version 2 - Parser corrigé basé sur la vraie structure HTML
  */
 
 const https = require('https');
 
 // Configuration
 const SCRAPER_API_KEY = process.env.SCRAPER_API_KEY;
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_KEY = process.env.SUPABASE_KEY;
 
 // Mapping des villes Alonhadat
 const CITY_MAPPING = {
@@ -47,12 +45,13 @@ const PROPERTY_TYPE_MAPPING = {
 function buildAlonhadatUrl(params) {
   const { city = 'ho-chi-minh', propertyType = 'nha-dat', page = 1, transactionType = 'can-ban' } = params;
   
-  // Format: https://alonhadat.com.vn/nha-dat/can-ban/nha-dat/1/ho-chi-minh/trang--1.html
-  // Ou pour biệt thự: https://alonhadat.com.vn/nha-dat/can-ban/biet-thu/3/ho-chi-minh/trang--1.html
-  
   const propType = PROPERTY_TYPE_MAPPING[propertyType] || PROPERTY_TYPE_MAPPING['nha-dat'];
   const cityData = CITY_MAPPING[city] || CITY_MAPPING['ho-chi-minh'];
   
+  // Format sans /trang-- pour la première page
+  if (page === 1) {
+    return `https://alonhadat.com.vn/nha-dat/${transactionType}/${propertyType}/${propType.code}/${city}.html`;
+  }
   return `https://alonhadat.com.vn/nha-dat/${transactionType}/${propertyType}/${propType.code}/${city}/trang--${page}.html`;
 }
 
@@ -93,15 +92,19 @@ async function scrapeWithScraperAPI(targetUrl) {
 
 /**
  * Parser le HTML Alonhadat pour extraire les annonces
+ * Structure réelle: <article class="property-item"> contient les annonces
  */
 function parseAlonhadatListings(html, city, propertyType) {
   const listings = [];
   
   // Regex pour extraire les articles (property-item)
-  const articleRegex = /<article[^>]*class="property-item"[^>]*>([\s\S]*?)<\/article>/gi;
+  // La structure est: <article class="property-item" ...>...</article>
+  const articleRegex = /<article\s+class=["']property-item["'][^>]*>([\s\S]*?)<\/article>/gi;
   let articleMatch;
   
+  let articleCount = 0;
   while ((articleMatch = articleRegex.exec(html)) !== null) {
+    articleCount++;
     const articleHtml = articleMatch[1];
     
     try {
@@ -110,16 +113,17 @@ function parseAlonhadatListings(html, city, propertyType) {
         listings.push(listing);
       }
     } catch (e) {
-      console.log(`[Alonhadat] Parse error: ${e.message}`);
+      console.log(`[Alonhadat] Parse error article ${articleCount}: ${e.message}`);
     }
   }
   
-  console.log(`[Alonhadat] Parsed ${listings.length} listings`);
+  console.log(`[Alonhadat] Found ${articleCount} articles, parsed ${listings.length} listings`);
   return listings;
 }
 
 /**
  * Extraire les données d'une annonce individuelle
+ * Basé sur la vraie structure HTML d'Alonhadat avec schema.org
  */
 function extractListingData(articleHtml, city, propertyType) {
   const listing = {
@@ -129,78 +133,113 @@ function extractListingData(articleHtml, city, propertyType) {
     scraped_at: new Date().toISOString(),
   };
   
-  // Extraire l'URL et l'ID
-  const urlMatch = articleHtml.match(/href="([^"]*\.html)"/i);
+  // Extraire l'URL et l'ID depuis le lien principal
+  // <a class="link vip" data-memberid="160506" href="/-shophouse-5-tang-500-m2...html"
+  const urlMatch = articleHtml.match(/href=["']([^"']*\.html)["']/i);
   if (urlMatch) {
-    listing.url = `https://alonhadat.com.vn${urlMatch[1]}`;
-    // Extraire l'ID depuis l'URL
-    const idMatch = urlMatch[1].match(/(\d+)\.html/);
-    if (idMatch) {
-      listing.external_id = `alonhadat_${idMatch[1]}`;
+    const href = urlMatch[1];
+    listing.url = href.startsWith('http') ? href : `https://alonhadat.com.vn${href}`;
+    // Extraire l'ID depuis data-memberid ou depuis l'URL
+    const memberIdMatch = articleHtml.match(/data-memberid=["'](\d+)["']/i);
+    if (memberIdMatch) {
+      listing.external_id = `alonhadat_${memberIdMatch[1]}`;
+    } else {
+      // Fallback: utiliser un hash de l'URL
+      listing.external_id = `alonhadat_${href.replace(/[^a-z0-9]/gi, '').slice(-10)}`;
     }
   }
   
-  // Extraire le titre
-  const titleMatch = articleHtml.match(/class="property-title"[^>]*>([^<]+)</i) ||
-                     articleHtml.match(/itemprop="name"[^>]*>([^<]+)</i) ||
-                     articleHtml.match(/<h1[^>]*>([^<]+)</i);
+  // Extraire le titre depuis <h3 class="property-title"> ou itemprop="name"
+  const titleMatch = articleHtml.match(/itemprop=["']name["'][^>]*>([^<]+)</i) ||
+                     articleHtml.match(/class=["']property-title["'][^>]*>([^<]+)</i) ||
+                     articleHtml.match(/<h3[^>]*>([^<]+)</i);
   if (titleMatch) {
     listing.title = titleMatch[1].trim();
   }
   
-  // Extraire le prix
-  const priceMatch = articleHtml.match(/class="price"[^>]*>([^<]+)</i) ||
-                     articleHtml.match(/(\d+[\d.,]*\s*(tỷ|triệu|tr))/i);
-  if (priceMatch) {
-    listing.price_raw = priceMatch[1].trim();
-    listing.price = parsePrice(priceMatch[1]);
+  // Extraire le prix depuis itemprop="price" content="8600000000"
+  const priceContentMatch = articleHtml.match(/itemprop=["']price["']\s+content=["'](\d+)["']/i);
+  if (priceContentMatch) {
+    listing.price = parseInt(priceContentMatch[1]);
   }
   
-  // Extraire la surface
-  const areaMatch = articleHtml.match(/(\d+[\d.,]*)\s*m²/i) ||
-                    articleHtml.match(/(\d+[\d.,]*)\s*m2/i);
-  if (areaMatch) {
-    listing.area = parseFloat(areaMatch[1].replace(',', '.'));
-  }
-  
-  // Extraire l'adresse/district
-  const addressMatch = articleHtml.match(/class="address"[^>]*>([^<]+)</i) ||
-                       articleHtml.match(/class="location"[^>]*>([^<]+)</i);
-  if (addressMatch) {
-    listing.address = addressMatch[1].trim();
-    // Extraire le district
-    const districtMatch = listing.address.match(/(quận|huyện|q\.?)\s*([^,]+)/i);
-    if (districtMatch) {
-      listing.district = districtMatch[2].trim();
+  // Aussi extraire le prix affiché (ex: "8,6 tỷ")
+  const priceDisplayMatch = articleHtml.match(/itemprop=["']price["'][^>]*>([^<]*tỷ[^<]*)</i) ||
+                            articleHtml.match(/>(\d+[\d,\.]*\s*tỷ)</i);
+  if (priceDisplayMatch) {
+    listing.price_raw = priceDisplayMatch[1].trim();
+    // Si on n'a pas le prix en content, parser le prix affiché
+    if (!listing.price) {
+      listing.price = parsePrice(priceDisplayMatch[1]);
     }
   }
   
-  // Extraire l'image
-  const imageMatch = articleHtml.match(/src="([^"]*\.(jpg|jpeg|png|webp)[^"]*)"/i);
+  // Extraire la surface depuis itemprop="floorSize" -> itemprop="value"
+  const areaMatch = articleHtml.match(/class=["']area["'][^>]*>[\s\S]*?itemprop=["']value["'][^>]*>(\d+)/i) ||
+                    articleHtml.match(/Diện tích:[^<]*<span[^>]*>(\d+)/i) ||
+                    articleHtml.match(/>(\d+)\s*m²</i) ||
+                    articleHtml.match(/>(\d+)<\/span>\s*<span[^>]*>m²/i);
+  if (areaMatch) {
+    listing.area = parseInt(areaMatch[1]);
+  }
+  
+  // Extraire l'adresse depuis itemprop="streetAddress", "addressLocality", "addressRegion"
+  const streetMatch = articleHtml.match(/itemprop=["']streetAddress["'][^>]*>([^<]+)</i);
+  const localityMatch = articleHtml.match(/itemprop=["']addressLocality["'][^>]*>([^<]+)</i);
+  const regionMatch = articleHtml.match(/itemprop=["']addressRegion["'][^>]*>([^<]+)</i);
+  
+  const addressParts = [];
+  if (streetMatch) addressParts.push(streetMatch[1].trim());
+  if (localityMatch) addressParts.push(localityMatch[1].trim());
+  if (regionMatch) addressParts.push(regionMatch[1].trim());
+  
+  if (addressParts.length > 0) {
+    listing.address = addressParts.join(', ');
+    // Extraire le district depuis locality ou region
+    listing.district = localityMatch ? localityMatch[1].trim() : (regionMatch ? regionMatch[1].trim() : null);
+  }
+  
+  // Extraire l'image depuis <img src="..." class="thumbnail">
+  const imageMatch = articleHtml.match(/class=["']thumbnail["'][^>]*src=["']([^"']+)["']/i) ||
+                     articleHtml.match(/src=["']([^"']*(?:thumbnail|files\/properties)[^"']*)["']/i);
   if (imageMatch) {
     listing.image = imageMatch[1].startsWith('http') ? imageMatch[1] : `https://alonhadat.com.vn${imageMatch[1]}`;
   }
   
-  // Extraire la date
-  const dateMatch = articleHtml.match(/datetime="([^"]+)"/i);
+  // Extraire la date depuis datetime="2026-01-09"
+  const dateMatch = articleHtml.match(/datetime=["']([^"']+)["']/i);
   if (dateMatch) {
     listing.posted_date = dateMatch[1];
   }
   
-  // Extraire les caractéristiques (chambres, toilettes, étages)
-  const bedroomMatch = articleHtml.match(/(\d+)\s*(pn|phòng ngủ|bedroom)/i);
+  // Extraire les caractéristiques depuis property-details
+  // <span class="street-width">10m</span><span class="floors">5 tầng</span><span class="bedroom">
+  
+  // Chambres - itemprop="numberOfBedrooms" ou class="bedroom"
+  const bedroomMatch = articleHtml.match(/itemprop=["']numberOfBedrooms["'][^>]*>(\d+)/i) ||
+                       articleHtml.match(/class=["']bedroom["'][^>]*>(\d+)/i) ||
+                       articleHtml.match(/>(\d+)\s*(?:pn|phòng ngủ|PN)</i);
   if (bedroomMatch) {
     listing.bedrooms = parseInt(bedroomMatch[1]);
   }
   
-  const bathroomMatch = articleHtml.match(/(\d+)\s*(wc|toilet|phòng tắm)/i);
-  if (bathroomMatch) {
-    listing.bathrooms = parseInt(bathroomMatch[1]);
-  }
-  
-  const floorMatch = articleHtml.match(/(\d+)\s*(tầng|lầu|floor)/i);
+  // Étages - class="floors"
+  const floorMatch = articleHtml.match(/class=["']floors["'][^>]*>(\d+)/i) ||
+                     articleHtml.match(/>(\d+)\s*tầng</i);
   if (floorMatch) {
     listing.floors = parseInt(floorMatch[1]);
+  }
+  
+  // Largeur façade - class="street-width"
+  const widthMatch = articleHtml.match(/class=["']street-width["'][^>]*>([^<]+)</i);
+  if (widthMatch) {
+    listing.frontage = widthMatch[1].trim();
+  }
+  
+  // Description courte depuis class="brief"
+  const briefMatch = articleHtml.match(/class=["']brief["'][^>]*itemprop=["']description["'][^>]*>([^<]+)</i);
+  if (briefMatch) {
+    listing.description = briefMatch[1].trim().substring(0, 500);
   }
   
   return listing;
@@ -212,14 +251,12 @@ function extractListingData(articleHtml, city, propertyType) {
 function parsePrice(priceStr) {
   if (!priceStr) return null;
   
-  const cleanPrice = priceStr.toLowerCase().replace(/[^\d.,tỷriệu]/g, '');
-  
   // Tỷ = milliards
   if (priceStr.toLowerCase().includes('tỷ')) {
     const match = priceStr.match(/([\d.,]+)/);
     if (match) {
       const value = parseFloat(match[1].replace(',', '.'));
-      return value * 1000000000; // Convertir en VND
+      return Math.round(value * 1000000000);
     }
   }
   
@@ -228,75 +265,11 @@ function parsePrice(priceStr) {
     const match = priceStr.match(/([\d.,]+)/);
     if (match) {
       const value = parseFloat(match[1].replace(',', '.'));
-      return value * 1000000; // Convertir en VND
+      return Math.round(value * 1000000);
     }
-  }
-  
-  // Déjà en VND
-  const numMatch = priceStr.match(/([\d.,]+)/);
-  if (numMatch) {
-    return parseFloat(numMatch[1].replace(/[.,]/g, ''));
   }
   
   return null;
-}
-
-/**
- * Sauvegarder les annonces dans Supabase
- */
-async function saveToSupabase(listings) {
-  if (!SUPABASE_URL || !SUPABASE_KEY) {
-    console.log('[Alonhadat] Supabase not configured, skipping save');
-    return { saved: 0, errors: 0 };
-  }
-  
-  const https = require('https');
-  const url = new URL(`${SUPABASE_URL}/rest/v1/listings`);
-  
-  let saved = 0;
-  let errors = 0;
-  
-  for (const listing of listings) {
-    try {
-      // Upsert basé sur external_id
-      const data = JSON.stringify({
-        ...listing,
-        updated_at: new Date().toISOString()
-      });
-      
-      const options = {
-        hostname: url.hostname,
-        path: `${url.pathname}?on_conflict=external_id`,
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': SUPABASE_KEY,
-          'Authorization': `Bearer ${SUPABASE_KEY}`,
-          'Prefer': 'resolution=merge-duplicates',
-          'Content-Length': Buffer.byteLength(data)
-        }
-      };
-      
-      await new Promise((resolve) => {
-        const req = https.request(options, (res) => {
-          if (res.statusCode === 201 || res.statusCode === 200) {
-            saved++;
-          } else {
-            errors++;
-          }
-          resolve();
-        });
-        req.on('error', () => { errors++; resolve(); });
-        req.write(data);
-        req.end();
-      });
-    } catch (e) {
-      errors++;
-    }
-  }
-  
-  console.log(`[Alonhadat] Saved: ${saved}, Errors: ${errors}`);
-  return { saved, errors };
 }
 
 /**
@@ -330,8 +303,7 @@ exports.handler = async (event, context) => {
     const city = params.city || 'ho-chi-minh';
     const propertyType = params.propertyType || params.property_type || 'nha-dat';
     const page = parseInt(params.page) || 1;
-    const maxPages = parseInt(params.maxPages) || 1;
-    const save = params.save !== 'false';
+    const maxPages = Math.min(parseInt(params.maxPages) || 1, 5); // Max 5 pages
     
     console.log(`[Alonhadat] Search: city=${city}, type=${propertyType}, pages=${maxPages}`);
     
@@ -348,19 +320,20 @@ exports.handler = async (event, context) => {
         allListings = allListings.concat(listings);
         totalScraped++;
         
-        // Pause entre les requêtes pour éviter le rate limiting
+        // Si pas de listings sur cette page, arrêter
+        if (listings.length === 0) {
+          console.log(`[Alonhadat] No listings on page ${p}, stopping`);
+          break;
+        }
+        
+        // Pause entre les requêtes
         if (p < page + maxPages - 1) {
           await new Promise(r => setTimeout(r, 1000));
         }
       } else {
         console.log(`[Alonhadat] Failed page ${p}: ${result.error}`);
+        break;
       }
-    }
-    
-    // Sauvegarder dans Supabase si demandé
-    let saveResult = { saved: 0, errors: 0 };
-    if (save && allListings.length > 0) {
-      saveResult = await saveToSupabase(allListings);
     }
     
     return {
@@ -373,8 +346,6 @@ exports.handler = async (event, context) => {
         propertyType: PROPERTY_TYPE_MAPPING[propertyType]?.name || propertyType,
         pagesScraped: totalScraped,
         totalListings: allListings.length,
-        saved: saveResult.saved,
-        errors: saveResult.errors,
         listings: allListings
       })
     };
