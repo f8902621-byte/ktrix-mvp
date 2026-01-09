@@ -36,7 +36,7 @@ const [showDbStats, setShowDbStats] = useState(false);
     daysListed: '',
     legalStatus: '',
     customKeyword: '',
-    sources: ['chotot'],
+    sources: ['chotot', 'alonhadat'],
     keywords: [],
     keywordsOnly: false,
     numSites: 5
@@ -385,10 +385,10 @@ dbStatsHide: 'Masquer stats',
     { vn: 'Bất động sản khác', en: 'Other Property', fr: 'Autre Bien', category: 'other' },
   ];
 
-  const availableSources = [
-    { id: 'chotot', name: 'Chotot.com', active: true },
-  ];
-
+ const availableSources = [
+  { id: 'chotot', name: 'Chotot.com', active: true },
+  { id: 'alonhadat', name: 'Alonhadat.com.vn', active: true },
+];
   const vietnamCities = [
     { vn: 'Hồ Chí Minh', en: 'Ho Chi Minh City', fr: 'Hô-Chi-Minh-Ville' },
     { vn: 'Hà Nội', en: 'Hanoi', fr: 'Hanoï' },
