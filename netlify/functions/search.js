@@ -468,6 +468,11 @@ function getPropertyTypeMapping(userInput) {
   
   const input = removeVietnameseAccents(userInput.toLowerCase());
   
+  // Shophouse - détection directe
+if (input.includes('shophouse')) {
+  return PROPERTY_TYPE_MAPPING['shophouse'];
+}
+  
   // Recherche par correspondance dans les labels ou mots-clés
   for (const [key, mapping] of Object.entries(PROPERTY_TYPE_MAPPING)) {
     const labelVn = removeVietnameseAccents(mapping.label.vn.toLowerCase());
