@@ -798,32 +798,105 @@ async function fetchNhadat247(propertyType) {
 }
 
 // ============================================
-// BATDONGSAN API (données pré-scrapées)
+// BATDONGSAN - SCRAPING VIA SCRAPERAPI
 // ============================================
-async function fetchBatdongsan(propertyType) {
-  const typeMapping = getPropertyTypeMapping(propertyType);
+async function fetchBatdongsan(params) {
+  const { city, propertyType, priceMax } = params;
   
   try {
-    const response = await fetch(`https://api.apify.com/v2/acts/${APIFY_ACTOR_ID}/runs/last/dataset/items?token=${APIFY_API_TOKEN}`);
-    if (!response.ok) return [];
-    const data = await response.json();
+    const baseUrl = process.env.URL || 'https://ktrix-vn.netlify.app';
     
-    let results = (data || []).filter(item => item.price > 0).map(item => ({
-      id: item.id || `batdongsan_${Math.random()}`,
-      title: item.title || '',
-      price: item.price || 0,
-      area: item.floorAreaSqm || item.area || 0,
-      district: item.district || '',
-      city: item.city || '',
-      bedrooms: item.bedrooms || null,
-      bathrooms: item.bathrooms || null,
-      thumbnail: item.thumbnail || item.images?.[0] || '',
-      images: item.images || [],
-      url: item.url || '',
-      source: 'batdongsan.com.vn',
-      postedOn: item.postedOn || '',
-      propertyType: item.propertyType || '',
-    }));
+    // Mapper la ville
+    const cityMapping = {
+      'ho chi minh': 'Ho Chi Minh',
+      'ha noi': 'Ha Noi',
+      'da nang': 'Da Nang',
+      'binh duong': 'Binh Duong',
+      'khanh hoa': 'Khanh Hoa',
+      'can tho': 'Can Tho',
+      'hai phong': 'Hai Phong',
+      'ba ria vung tau': 'Ba Ria Vung Tau',
+      'lam dong': 'Lam Dong',
+    };
+    
+    const typeMapping = {
+      'can ho chung cu': 'Can ho chung cu',
+      'nha o': 'Nha o',
+      'nha biet thu': 'Nha biet thu',
+      'dat': 'Dat',
+      'shophouse': 'Shophouse',
+      'van phong': 'Van phong',
+    };
+    
+    const cityNorm = removeVietnameseAccents(city || '').toLowerCase();
+    const typeNorm = removeVietnameseAccents(propertyType || '').toLowerCase();
+    
+    let cityParam = 'Ho Chi Minh';
+    for (const [key, value] of Object.entries(cityMapping)) {
+      if (cityNorm.includes(key)) { cityParam = value; break; }
+    }
+    
+    let typeParam = 'Can ho chung cu';
+    for (const [key, value] of Object.entries(typeMapping)) {
+      if (typeNorm.includes(key)) { typeParam = value; break; }
+    }
+    
+    const url = `${baseUrl}/.netlify/functions/scraper-batdongsan?city=${encodeURIComponent(cityParam)}&propertyType=${encodeURIComponent(typeParam)}&priceMax=${priceMax || 10}`;
+    
+    console.log(`Batdongsan: Fetching ${cityParam}/${typeParam}`);
+    
+    const response = await fetch(url);
+    if (!response.ok) {
+      console.log('Batdongsan: API error', response.status);
+      return [];
+    }
+    
+    const data = await response.json();
+    if (!data.success || !data.listings) {
+      console.log('Batdongsan: No listings');
+      return [];
+    }
+    
+    console.log(`Batdongsan: ${data.listings.length} annonces`);
+    
+    return data.listings.map(item => {
+      const nlp = analyzeListingText(item.title, '');
+      return {
+        id: item.external_id || `bds_${Date.now()}_${Math.random()}`,
+        title: item.title || '',
+        body: '',
+        price: item.price || 0,
+        area: item.area || 0,
+        address: item.address || '',
+        district: item.district || '',
+        city: item.city || city || '',
+        bedrooms: item.bedrooms || null,
+        bathrooms: item.bathrooms || null,
+        thumbnail: item.image || '',
+        images: item.image ? [item.image] : [],
+        url: item.url || '',
+        source: 'batdongsan.com.vn',
+        postedOn: item.posted_date || '',
+        list_time: 0,
+        propertyType: item.property_type || '',
+        floors: nlp.extractedFloors,
+        streetWidth: nlp.extractedStreetWidth,
+        facadeWidth: nlp.extractedFacade,
+        nlpAnalysis: nlp,
+        extractedRentalIncome: nlp.extractedRentalIncome,
+        hasMetroNearby: nlp.hasMetroNearby,
+        hasNewRoad: nlp.hasNewRoad,
+        hasInvestmentPotential: nlp.hasInvestmentPotential,
+        hasLegalIssue: nlp.hasLegalIssue,
+        hasPlanningRisk: nlp.hasPlanningRisk,
+        detectedKeywords: nlp.detectedKeywords,
+      };
+    });
+  } catch (error) {
+    console.error('Batdongsan error:', error.message);
+    return [];
+  }
+}
     
     // Appliquer filtrage par mots-clés
     if (typeMapping.include.length > 0 || typeMapping.exclude.length > 0) {
@@ -1409,9 +1482,9 @@ if (sources?.includes('chotot')) {
   allResults.push(...filteredChotot);
 }
     
-    // BATDONGSAN - Données pré-scrapées
-    if (sources?.includes('batdongsan')) {
-      const batdongsanResults = await fetchBatdongsan(propertyType);
+// BATDONGSAN - Scraping via ScraperAPI
+if (sources?.includes('batdongsan')) {
+  const batdongsanResults = await fetchBatdongsan({ city, propertyType, priceMax });
       const filtered = applyFilters(batdongsanResults, { city, district, priceMin, priceMax, livingAreaMin, livingAreaMax, bedrooms });
       console.log(`Batdongsan: ${batdongsanResults.length} → ${filtered.length} après filtres`);
       allResults.push(...filtered);
