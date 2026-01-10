@@ -10,7 +10,7 @@ exports.handler = async (event) => {
 
   try {
     const targetUrl = 'https://batdongsan.com.vn/ban-can-ho-chung-cu-tp-hcm?gcn=5-ty';
-    const scraperUrl = `https://api.scraperapi.com/?api_key=${SCRAPER_API_KEY}&url=${encodeURIComponent(targetUrl)}&country_code=vn&render=true`;
+    const scraperUrl = `https://api.scraperapi.com/?api_key=${SCRAPER_API_KEY}&url=${encodeURIComponent(targetUrl)}&country_code=vn`;
     
     console.log('[BDS Test] Fetching via ScraperAPI...');
     const startTime = Date.now();
