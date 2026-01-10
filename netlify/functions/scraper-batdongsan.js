@@ -6,19 +6,18 @@
 const SCRAPER_API_KEY = process.env.SCRAPER_API_KEY;
 
 // Mapping des villes
-const CITY_MAPPING = {
-  'ho chi minh': 'tp-hcm',
-  'ha noi': 'ha-noi',
-  'da nang': 'da-nang',
-  'binh duong': 'binh-duong',
-  'dong nai': 'dong-nai',
-  'hai phong': 'hai-phong',
-  'can tho': 'can-tho',
-  'khanh hoa': 'khanh-hoa',
-  'ba ria - vung tau': 'ba-ria-vung-tau',
-  'lam dong': 'lam-dong',
-  'binh dinh': 'quy-nhon-bdd',
-  'quy nhon': 'quy-nhon-bdd',
+const cityMapping = {
+  'ho chi minh': 'Ho Chi Minh',
+  'ha noi': 'Ha Noi',
+  'da nang': 'Da Nang',
+  'binh duong': 'Binh Duong',
+  'khanh hoa': 'Khanh Hoa',
+  'can tho': 'Can Tho',
+  'hai phong': 'Hai Phong',
+  'ba ria vung tau': 'Ba Ria Vung Tau',
+  'lam dong': 'Lam Dong',
+  'binh dinh': 'Binh Dinh',
+  'quy nhon': 'Binh Dinh',
 };
 
 // Mapping des types de biens
