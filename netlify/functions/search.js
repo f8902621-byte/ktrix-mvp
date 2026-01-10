@@ -1001,10 +1001,16 @@ function applyFilters(results, filters) {
   const { city, district, priceMin, priceMax, livingAreaMin, livingAreaMax, bedrooms, legalStatus, streetWidthMin } = filters;
   let filtered = [...results];
   
-  if (priceMin) {
-    const min = parseFloat(priceMin) * 1000000000;
-    filtered = filtered.filter(item => item.price >= min);
-  }
+if (priceMin) {
+  const min = parseFloat(priceMin) * 1000000000;
+  filtered = filtered.filter(item => {
+    // Pour Batdongsan, garder les annonces même sans prix
+    if (item.source === 'batdongsan.com.vn' && (!item.price || item.price === 0)) {
+      return true;
+    }
+    return item.price >= min;
+  });
+}
   
 if (priceMax) {
   const max = parseFloat(priceMax) * 1000000000;
