@@ -817,6 +817,10 @@ async function fetchBatdongsan(params) {
       'hai phong': 'Hai Phong',
       'ba ria vung tau': 'Ba Ria Vung Tau',
       'lam dong': 'Lam Dong',
+      'lam dong': 'Lam Dong',
+    'binh dinh': 'Binh Dinh',
+    'quy nhon': 'Binh Dinh',
+};
     };
     
     const typeMapping = {
