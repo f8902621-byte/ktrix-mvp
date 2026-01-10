@@ -209,16 +209,21 @@ async function testFullSearch() {
     const data = await response.json();
     const resultCount = data.results?.length || 0;
     
-    // Vérifier la qualité des résultats
-    let correctTypes = 0;
-    if (data.results) {
-      for (const r of data.results.slice(0, 10)) {
-        const title = (r.title || '').toLowerCase();
-        if (title.includes('căn hộ') || title.includes('chung cư') || title.includes('apartment') || title.includes('cc')) {
-          correctTypes++;
-        }
-      }
+// Vérifier la qualité des résultats
+let correctTypes = 0;
+if (data.results) {
+  for (const r of data.results.slice(0, 10)) {
+    const title = (r.title || '').toLowerCase();
+    const propType = (r.propertyType || r.category || r.type || '').toLowerCase();
+    const combined = title + ' ' + propType;
+    
+    if (combined.includes('căn hộ') || combined.includes('chung cư') || 
+        combined.includes('apartment') || combined.includes('cc') ||
+        propType.includes('apartment')) {
+      correctTypes++;
     }
+  }
+}
     
     const accuracy = resultCount > 0 ? Math.round((correctTypes / Math.min(10, resultCount)) * 100) : 0;
     
