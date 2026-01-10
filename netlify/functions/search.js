@@ -1006,10 +1006,16 @@ function applyFilters(results, filters) {
     filtered = filtered.filter(item => item.price >= min);
   }
   
-  if (priceMax) {
-    const max = parseFloat(priceMax) * 1000000000;
-    filtered = filtered.filter(item => item.price > 0 && item.price <= max);
-  }
+if (priceMax) {
+  const max = parseFloat(priceMax) * 1000000000;
+  filtered = filtered.filter(item => {
+    // Pour Batdongsan, garder les annonces même sans prix (données partielles)
+    if (item.source === 'batdongsan.com.vn' && (!item.price || item.price === 0)) {
+      return true;
+    }
+    return item.price > 0 && item.price <= max;
+  });
+}
   
 if (district) {
     const d = removeVietnameseAccents(district.toLowerCase());
