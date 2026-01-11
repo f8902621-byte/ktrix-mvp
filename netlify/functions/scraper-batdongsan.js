@@ -14,12 +14,12 @@ const cityMapping = {
   'khanh hoa': 'khanh-hoa',
   'can tho': 'can-tho',
   'hai phong': 'hai-phong',
-  'ba ria vung tau': 'ba-ria-vung-tau',
+  'ba ria vung tau': 'vung-tau-vt',
   'lam dong': 'lam-dong',
   'binh dinh': 'quy-nhon-bdd',
   'quy nhon': 'quy-nhon-bdd',
-  'vung tau': 'ba-ria-vung-tau',
-'ba ria': 'ba-ria-vung-tau',
+'vung tau': 'vung-tau-vt',
+'ba ria': 'vung-tau-vt',
 };
 
 const PROPERTY_TYPE_MAPPING = {
