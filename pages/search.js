@@ -36,7 +36,7 @@ const [showDbStats, setShowDbStats] = useState(false);
     daysListed: '',
     legalStatus: '',
     customKeyword: '',
-    sources: ['chotot', 'alonhadat'],
+    sources: ['chotot', 'alonhadat', 'batdongsan'],
     keywords: [],
     keywordsOnly: false,
     numSites: 5
