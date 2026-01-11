@@ -1491,7 +1491,6 @@ exports.handler = async (event) => {
   }));
 
   try {
-    let allResults = [];
     
 // APPELS SOURCES EN PARALLÈLE
 const sourcePromises = [];
