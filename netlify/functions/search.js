@@ -1501,13 +1501,21 @@ if (sources?.includes('chotot')) {
   allResults.push(...filteredChotot);
 }
     
-// BATDONGSAN - Scraping via ScraperAPI
+// BATDONGSAN - Scraping via ScraperAPI (avec timeout 8s)
 if (sources?.includes('batdongsan')) {
-  const batdongsanResults = await fetchBatdongsan({ city, propertyType, priceMax });
-      const filtered = applyFilters(batdongsanResults, { city, district, priceMin, priceMax, livingAreaMin, livingAreaMax, bedrooms });
-      console.log(`Batdongsan: ${batdongsanResults.length} → ${filtered.length} après filtres`);
-      allResults.push(...filtered);
-    }
+  try {
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Timeout')), 8000)
+    );
+    const fetchPromise = fetchBatdongsan({ city, propertyType, priceMax });
+    const batdongsanResults = await Promise.race([fetchPromise, timeoutPromise]);
+    const filtered = applyFilters(batdongsanResults, { city, district, priceMin, priceMax, livingAreaMin, livingAreaMax, bedrooms });
+    console.log(`Batdongsan: ${batdongsanResults.length} → ${filtered.length} après filtres`);
+    allResults.push(...filtered);
+  } catch (e) {
+    console.log(`Batdongsan: timeout ou erreur - ${e.message}`);
+  }
+}
     
     // NHADAT247 - Données pré-scrapées HCM UNIQUEMENT
     if (sources?.includes('nhadat247')) {
@@ -1526,13 +1534,21 @@ if (sources?.includes('batdongsan')) {
         console.log(`Nhadat247: ignoré (ville=${city} n'est pas HCM)`);
       }
     }
-    // ALONHADAT - Scraping via ScraperAPI
-    if (sources?.includes('alonhadat')) {
-      const alonhadatResults = await fetchAlonhadat({ city, propertyType });
-      const filtered = applyFilters(alonhadatResults, { city, district, priceMin, priceMax, livingAreaMin, livingAreaMax, bedrooms, legalStatus });
-      console.log(`Alonhadat: ${alonhadatResults.length} → ${filtered.length} après filtres`);
-      allResults.push(...filtered);
-    }
+ // ALONHADAT - Scraping via ScraperAPI (avec timeout 8s)
+if (sources?.includes('alonhadat')) {
+  try {
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Timeout')), 8000)
+    );
+    const fetchPromise = fetchAlonhadat({ city, propertyType });
+    const alonhadatResults = await Promise.race([fetchPromise, timeoutPromise]);
+    const filtered = applyFilters(alonhadatResults, { city, district, priceMin, priceMax, livingAreaMin, livingAreaMax, bedrooms, legalStatus });
+    console.log(`Alonhadat: ${alonhadatResults.length} → ${filtered.length} après filtres`);
+    allResults.push(...filtered);
+  } catch (e) {
+    console.log(`Alonhadat: timeout ou erreur - ${e.message}`);
+  }
+}
     console.log(`TOTAL BRUT: ${allResults.length}`);
     
     // Déduplication
