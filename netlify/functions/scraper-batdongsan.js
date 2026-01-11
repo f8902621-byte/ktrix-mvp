@@ -54,7 +54,6 @@ const PROPERTY_TYPE_MAPPING = {
   'office': 'ban-loai-bat-dong-san-khac',
   'khac': 'ban-loai-bat-dong-san-khac',
 };
-```
 
 **Note importante :** La structure URL de Batdongsan est `/{type}-{ville}`, donc le slug type ne doit PAS inclure la ville. Le code construit l'URL comme ceci :
 ```
