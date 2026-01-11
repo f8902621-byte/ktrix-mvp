@@ -821,14 +821,30 @@ async function fetchBatdongsan(params) {
     'quy nhon': 'Binh Dinh',
 };
     
-    const typeMapping = {
-      'can ho chung cu': 'Can ho chung cu',
-      'nha o': 'Nha o',
-      'nha biet thu': 'Nha biet thu',
-      'dat': 'Dat',
-      'shophouse': 'Shophouse',
-      'van phong': 'Van phong',
-    };
+ const typeMapping = {
+  'can ho chung cu': 'Can ho chung cu',
+  'can ho': 'Can ho chung cu',
+  'chung cu': 'Can ho chung cu',
+  'apartment': 'Can ho chung cu',
+  'nha o': 'Nha o',
+  'nha rieng': 'Nha o',
+  'house': 'Nha o',
+  'nha biet thu': 'Nha biet thu',
+  'biet thu': 'Nha biet thu',
+  'villa': 'villa',
+  'dat': 'dat',
+  'dat nen': 'dat nen',
+  'land': 'dat',
+  'shophouse': 'shophouse',
+  'nha pho thuong mai': 'shophouse',
+  'van phong': 'van phong',
+  'office': 'office',
+  'kho': 'kho',
+  'nha xuong': 'nha xuong',
+  'warehouse': 'warehouse',
+  'khu nghi duong': 'khu nghi duong',
+  'resort': 'resort',
+};
     
     const cityNorm = removeVietnameseAccents(city || '').toLowerCase();
     const typeNorm = removeVietnameseAccents(propertyType || '').toLowerCase();
