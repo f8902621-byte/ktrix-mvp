@@ -816,6 +816,8 @@ async function fetchBatdongsan(params) {
       'can tho': 'Can Tho',
       'hai phong': 'Hai Phong',
       'ba ria vung tau': 'Ba Ria Vung Tau',
+      'vung tau': 'Vung Tau',
+'ba ria': 'Vung Tau',
         'lam dong': 'Lam Dong',
     'binh dinh': 'Binh Dinh',
     'quy nhon': 'Binh Dinh',
