@@ -1493,61 +1493,74 @@ exports.handler = async (event) => {
   try {
     let allResults = [];
     
-    // CHOTOT - Source principale (300 résultats, toutes villes)
+// APPELS SOURCES EN PARALLÈLE
+const sourcePromises = [];
+
+// CHOTOT - Source principale
 if (sources?.includes('chotot')) {
-  const chototResults = await fetchChotot({ city, priceMin, priceMax, sortBy, propertyType });
-  const filteredChotot = applyFilters(chototResults, { district, livingAreaMin, livingAreaMax, bedrooms, legalStatus });
-  console.log(`Chotot: ${chototResults.length} → ${filteredChotot.length} après filtre district`);
-  allResults.push(...filteredChotot);
+  sourcePromises.push(
+    fetchChotot({ city, priceMin, priceMax, sortBy, propertyType })
+      .then(results => ({ source: 'chotot', results }))
+      .catch(e => { console.log(`Chotot erreur: ${e.message}`); return { source: 'chotot', results: [] }; })
+  );
 }
-    
-// BATDONGSAN - Scraping via ScraperAPI (avec timeout 8s)
+
+// BATDONGSAN - avec timeout 15s
 if (sources?.includes('batdongsan')) {
-  try {
-    const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('Timeout')), 20000)
+  const timeoutPromise = new Promise((resolve) => 
+    setTimeout(() => resolve({ source: 'batdongsan', results: [], timeout: true }), 15000)
+  );
+  const fetchPromise = fetchBatdongsan({ city, propertyType, priceMax })
+    .then(results => ({ source: 'batdongsan', results }))
+    .catch(e => { console.log(`Batdongsan erreur: ${e.message}`); return { source: 'batdongsan', results: [] }; });
+  sourcePromises.push(Promise.race([fetchPromise, timeoutPromise]));
+}
+
+// ALONHADAT - avec timeout 15s
+if (sources?.includes('alonhadat')) {
+  const timeoutPromise = new Promise((resolve) => 
+    setTimeout(() => resolve({ source: 'alonhadat', results: [], timeout: true }), 15000)
+  );
+  const fetchPromise = fetchAlonhadat({ city, propertyType })
+    .then(results => ({ source: 'alonhadat', results }))
+    .catch(e => { console.log(`Alonhadat erreur: ${e.message}`); return { source: 'alonhadat', results: [] }; });
+  sourcePromises.push(Promise.race([fetchPromise, timeoutPromise]));
+}
+
+// NHADAT247 - Données pré-scrapées HCM UNIQUEMENT
+if (sources?.includes('nhadat247')) {
+  const cityNormalized = removeVietnameseAccents(city || '');
+  const isHCM = cityNormalized.includes('ho chi minh') ||
+                cityNormalized.includes('saigon') ||
+                cityNormalized.includes('hcm') ||
+                cityNormalized.includes('tphcm');
+  if (isHCM) {
+    sourcePromises.push(
+      fetchNhadat247(propertyType)
+        .then(results => ({ source: 'nhadat247', results }))
+        .catch(e => { console.log(`Nhadat247 erreur: ${e.message}`); return { source: 'nhadat247', results: [] }; })
     );
-    const fetchPromise = fetchBatdongsan({ city, propertyType, priceMax });
-    const batdongsanResults = await Promise.race([fetchPromise, timeoutPromise]);
-    const filtered = applyFilters(batdongsanResults, { city, district, priceMin, priceMax, livingAreaMin, livingAreaMax, bedrooms });
-    console.log(`Batdongsan: ${batdongsanResults.length} → ${filtered.length} après filtres`);
-    allResults.push(...filtered);
-  } catch (e) {
-    console.log(`Batdongsan: timeout ou erreur - ${e.message}`);
   }
 }
-    
-    // NHADAT247 - Données pré-scrapées HCM UNIQUEMENT
-    if (sources?.includes('nhadat247')) {
-      const cityNormalized = removeVietnameseAccents(city || '');
-      const isHCM = cityNormalized.includes('ho chi minh') || 
-                    cityNormalized.includes('saigon') || 
-                    cityNormalized.includes('hcm') ||
-                    cityNormalized.includes('tphcm');
-      
-      if (isHCM) {
-        const nhadat247Results = await fetchNhadat247(propertyType);
-        const filtered = applyFilters(nhadat247Results, { city, district, priceMin, priceMax, livingAreaMin, livingAreaMax, bedrooms, legalStatus });
-        console.log(`Nhadat247 (HCM): ${nhadat247Results.length} → ${filtered.length} après filtres`);
-        allResults.push(...filtered);
-      } else {
-        console.log(`Nhadat247: ignoré (ville=${city} n'est pas HCM)`);
-      }
-    }
- // ALONHADAT - Scraping via ScraperAPI (avec timeout 8s)
-if (sources?.includes('alonhadat')) {
-  try {
-    const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('Timeout')), 20000)
-    );
-    const fetchPromise = fetchAlonhadat({ city, propertyType });
-    const alonhadatResults = await Promise.race([fetchPromise, timeoutPromise]);
-    const filtered = applyFilters(alonhadatResults, { city, district, priceMin, priceMax, livingAreaMin, livingAreaMax, bedrooms, legalStatus });
-    console.log(`Alonhadat: ${alonhadatResults.length} → ${filtered.length} après filtres`);
-    allResults.push(...filtered);
-  } catch (e) {
-    console.log(`Alonhadat: timeout ou erreur - ${e.message}`);
+
+// Attendre toutes les sources en parallèle
+const sourceResults = await Promise.all(sourcePromises);
+
+// Consolider les résultats
+let allResults = [];
+for (const { source, results, timeout } of sourceResults) {
+  if (timeout) {
+    console.log(`${source}: timeout`);
+    continue;
   }
+  if (results && results.length > 0) {
+    const filtered = applyFilters(results, { city, district, priceMin, priceMax, livingAreaMin, livingAreaMax, bedrooms, legalStatus });
+    console.log(`${source}: ${results.length} → ${filtered.length} après filtres`);
+    allResults.push(...filtered);
+  }
+}
+
+console.log(`TOTAL BRUT: ${allResults.length}`);
 }
     console.log(`TOTAL BRUT: ${allResults.length}`);
     
