@@ -1598,7 +1598,31 @@ for (const { source, results, timeout } of sourceResults) {
     const avgPricePerM2 = validPricePerM2.length > 0 
       ? validPricePerM2.reduce((a, b) => a + b, 0) / validPricePerM2.length 
       : 50000000;
-    
+    // Mélanger les sources équitablement
+const sourceGroups = {};
+for (const item of sortedResults) {
+  const src = item.source || 'unknown';
+  if (!sourceGroups[src]) sourceGroups[src] = [];
+  sourceGroups[src].push(item);
+}
+
+// Prendre les meilleurs de chaque source en alternant
+const mixedResults = [];
+const maxPerRound = 10;
+let hasMore = true;
+while (hasMore && mixedResults.length < 150) {
+  hasMore = false;
+  for (const src of Object.keys(sourceGroups)) {
+    const items = sourceGroups[src].splice(0, maxPerRound);
+    if (items.length > 0) {
+      mixedResults.push(...items);
+      hasMore = true;
+    }
+  }
+}
+
+// Remplacer sortedResults par mixedResults
+sortedResults = mixedResults;
     // Limiter à 100 résultats
  const results = sortedResults.slice(0, 100).map((item, i) => {
       const negotiation = calculateNegotiationScore(item, avgPricePerM2);
