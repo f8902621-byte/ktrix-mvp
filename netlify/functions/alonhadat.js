@@ -28,31 +28,37 @@ const CITY_MAPPING = {
 
 // Mapping des types de biens Alonhadat
 const PROPERTY_TYPE_MAPPING = {
-  'nha-dat': { name: 'Nhà đất', code: 1, ktrix: 'Nhà ở' },
-  'can-ho-chung-cu': { name: 'Căn hộ chung cư', code: 2, ktrix: 'Căn hộ chung cư' },
-  'biet-thu': { name: 'Biệt thự', code: 3, ktrix: 'Biệt thự' },
-  'dat-nen': { name: 'Đất nền', code: 4, ktrix: 'Đất' },
-  'nha-mat-tien': { name: 'Nhà mặt tiền', code: 5, ktrix: 'Nhà ở' },
-  'nha-xuong-kho': { name: 'Nhà xưởng, kho', code: 6, ktrix: 'Kho, nhà xưởng' },
-  'mat-bang': { name: 'Mặt bằng', code: 7, ktrix: 'Mặt bằng' },
-  'van-phong': { name: 'Văn phòng', code: 8, ktrix: 'Văn phòng' },
-  'shophouse': { name: 'Shophouse', code: 9, ktrix: 'Shophouse' },
+  'nha-dat': { slug: 'nha', name: 'Nhà', ktrix: 'Nhà ở' },
+  'nha': { slug: 'nha', name: 'Nhà', ktrix: 'Nhà ở' },
+  'can-ho-chung-cu': { slug: 'can-ho-chung-cu', name: 'Căn hộ chung cư', ktrix: 'Căn hộ chung cư' },
+  'can-ho': { slug: 'can-ho-chung-cu', name: 'Căn hộ chung cư', ktrix: 'Căn hộ chung cư' },
+  'dat': { slug: 'dat-tho-cu-dat-o', name: 'Đất', ktrix: 'Đất' },
+  'dat-nen': { slug: 'dat-tho-cu-dat-o', name: 'Đất', ktrix: 'Đất' },
+  'biet-thu': { slug: 'biet-thu-nha-lien-ke', name: 'Biệt thự', ktrix: 'Biệt thự' },
+  'villa': { slug: 'biet-thu-nha-lien-ke', name: 'Biệt thự', ktrix: 'Biệt thự' },
+  'nha-xuong-kho': { slug: 'kho-nha-xuong-dat-cong-nghiep', name: 'Kho nhà xưởng', ktrix: 'Kho, nhà xưởng' },
+  'warehouse': { slug: 'kho-nha-xuong-dat-cong-nghiep', name: 'Kho nhà xưởng', ktrix: 'Kho, nhà xưởng' },
+  'shophouse': { slug: 'shophouse-nha-pho-thuong-mai', name: 'Shophouse', ktrix: 'Shophouse' },
 };
 
 /**
  * Construire l'URL Alonhadat pour la recherche
  */
 function buildAlonhadatUrl(params) {
-  const { city = 'ho-chi-minh', propertyType = 'nha-dat', page = 1, transactionType = 'can-ban' } = params;
+  const { city = 'ho-chi-minh', propertyType = 'nha', page = 1 } = params;
   
-  const propType = PROPERTY_TYPE_MAPPING[propertyType] || PROPERTY_TYPE_MAPPING['nha-dat'];
-  const cityData = CITY_MAPPING[city] || CITY_MAPPING['ho-chi-minh'];
+  const propType = PROPERTY_TYPE_MAPPING[propertyType] || PROPERTY_TYPE_MAPPING['nha'];
   
-  // Format sans /trang-- pour la première page
-  if (page === 1) {
-    return `https://alonhadat.com.vn/nha-dat/${transactionType}/${propertyType}/${propType.code}/${city}.html`;
+  // Format: https://alonhadat.com.vn/can-ban-{type}/{ville}
+  // Page 2+: https://alonhadat.com.vn/can-ban-{type}/{ville}/trang--{page}
+  
+  let url = `https://alonhadat.com.vn/can-ban-${propType.slug}/${city}`;
+  
+  if (page > 1) {
+    url += `/trang--${page}`;
   }
-  return `https://alonhadat.com.vn/nha-dat/${transactionType}/${propertyType}/${propType.code}/${city}/trang--${page}.html`;
+  
+  return url;
 }
 
 /**
