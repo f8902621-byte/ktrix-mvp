@@ -18,19 +18,52 @@ const cityMapping = {
   'lam dong': 'lam-dong',
   'binh dinh': 'quy-nhon-bdd',
   'quy nhon': 'quy-nhon-bdd',
+  'vung tau': 'ba-ria-vung-tau',
+'ba ria': 'ba-ria-vung-tau',
 };
 
-// Mapping des types de biens
 const PROPERTY_TYPE_MAPPING = {
   'can ho chung cu': 'ban-can-ho-chung-cu',
+  'can ho': 'ban-can-ho-chung-cu',
+  'chung cu': 'ban-can-ho-chung-cu',
+  'apartment': 'ban-can-ho-chung-cu',
+  'can ho mini': 'ban-can-ho-chung-cu-mini',
+  'studio': 'ban-can-ho-chung-cu-mini',
+  'nha biet thu': 'ban-nha-biet-thu-lien-ke',
+  'biet thu': 'ban-nha-biet-thu-lien-ke',
+  'villa': 'ban-nha-biet-thu-lien-ke',
+  'lien ke': 'ban-nha-biet-thu-lien-ke',
+  'nha mat pho': 'ban-nha-mat-pho',
+  'mat pho': 'ban-nha-mat-pho',
+  'nha rieng': 'ban-nha-rieng',
   'nha o': 'ban-nha-rieng',
-  'nha biet thu': 'ban-biet-thu-lien-ke',
-  'dat': 'ban-dat',
+  'house': 'ban-nha-rieng',
+  'shophouse': 'ban-shophouse-nha-pho-thuong-mai',
+  'nha pho thuong mai': 'ban-shophouse-nha-pho-thuong-mai',
   'dat nen': 'ban-dat-nen-du-an',
-  'shophouse': 'ban-shophouse',
-  'van phong': 'ban-van-phong',
-  'mat bang': 'ban-mat-bang-kinh-doanh',
+  'dat du an': 'ban-dat-nen-du-an',
+  'dat': 'ban-dat',
+  'land': 'ban-dat',
+  'trang trai': 'ban-trang-trai-khu-nghi-duong',
+  'khu nghi duong': 'ban-trang-trai-khu-nghi-duong',
+  'resort': 'ban-trang-trai-khu-nghi-duong',
+  'kho': 'ban-kho-nha-xuong',
+  'nha xuong': 'ban-kho-nha-xuong',
+  'warehouse': 'ban-kho-nha-xuong',
+  'van phong': 'ban-loai-bat-dong-san-khac',
+  'office': 'ban-loai-bat-dong-san-khac',
+  'khac': 'ban-loai-bat-dong-san-khac',
 };
+```
+
+**Note importante :** La structure URL de Batdongsan est `/{type}-{ville}`, donc le slug type ne doit PAS inclure la ville. Le code construit l'URL comme ceci :
+```
+url = typeSlug + '-' + citySlug
+```
+
+Donc si `typeSlug = 'ban-can-ho-chung-cu'` et `citySlug = 'tp-hcm'`, on obtient :
+```
+ban-can-ho-chung-cu-tp-hcm
 
 function normalizeString(str) {
   if (!str) return '';
