@@ -279,15 +279,21 @@ if (priceInDong2 > 100000000) {
       listing.price = extractedPrice;
       listing.price_raw = extractedPriceRaw;
     }
-    if (priceMatch && !listing.price) {
+if (priceMatch && !listing.price) {
       var priceValue = parseFloat(priceMatch[1].replace(',', '.'));
       if (isTrieu) {
         priceValue = priceValue / 1000; // Convertir triệu en tỷ
       }
-      if (!isNaN(priceValue) && priceValue > 0) {
+      // Validation: prix entre 100 triệu (0.1 tỷ) et 500 tỷ
+      if (!isNaN(priceValue) && priceValue >= 0.1 && priceValue <= 500) {
         listing.price = Math.round(priceValue * 1000000000);
         listing.price_raw = priceMatch[0];
       }
+    }
+    
+    // Si toujours pas de prix, ne pas inclure cette annonce
+    if (!listing.price) {
+      continue; // Skip cette annonce
     }
     
     if (areaMatch) {
