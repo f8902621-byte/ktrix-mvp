@@ -89,13 +89,11 @@ function buildSearchUrl(params) {
 }
 
 async function scrapeWithScraperAPI(targetUrl) {
-  // render=true pour executer le JavaScript et obtenir les images
-  // Coute 5 credits au lieu de 1, mais necessaire pour BDS
   var scraperUrl = 'https://api.scraperapi.com/?api_key=' + SCRAPER_API_KEY + 
     '&url=' + encodeURIComponent(targetUrl) + 
-    '&country_code=vn&render=true';
+    '&country_code=vn';
   
-  console.log('[BDS] Scraping with render: ' + targetUrl);
+  console.log('[BDS] Scraping: ' + targetUrl);
   var startTime = Date.now();
   
   var response = await fetch(scraperUrl);
