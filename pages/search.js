@@ -935,7 +935,12 @@ const availableSources = [
                 {sortResults(results).map((prop) => (
                   <div key={prop.id} className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition">
                     <div className="relative h-48 bg-slate-200">
-                      <img src={prop.imageUrl} alt={prop.title} className="w-full h-full object-cover" />
+                      <img 
+  src={prop.imageUrl || (prop.source === 'batdongsan.com.vn' ? 'https://batdongsan.com.vn/images/logo-social.png' : '/placeholder-property.png')} 
+  alt={prop.title} 
+  className="w-full h-full object-cover"
+  onError={(e) => { e.target.src = 'https://via.placeholder.com/400x300?text=No+Image'; }}
+/>
                       {prop.isNew && <div className="absolute top-2 left-2 bg-sky-100 text-sky-700 px-3 py-1 rounded-full text-xs font-bold animate-pulse">{t.newListing}</div>}
                       {prop.urgentKeywords && prop.urgentKeywords.length > 0 && (
                         <div className="absolute top-2 right-2 bg-orange-500 text-white px-3 py-1 rounded-full text-xs font-bold animate-pulse">
