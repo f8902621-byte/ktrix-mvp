@@ -18,8 +18,8 @@ const cityMapping = {
   'lam dong': 'lam-dong',
   'binh dinh': 'quy-nhon-bdd',
   'quy nhon': 'quy-nhon-bdd',
-'vung tau': 'vung-tau-vt',
-'ba ria': 'vung-tau-vt',
+  'vung tau': 'vung-tau-vt',
+  'ba ria': 'vung-tau-vt',
 };
 
 const PROPERTY_TYPE_MAPPING = {
@@ -135,52 +135,41 @@ function parseListings(html, city, propertyType) {
       .replace(/-pr\d+.*$/, '')
       .replace(/-/g, ' ');
     
-    // Chercher le prix dans le HTML autour de cette URL
+    // Variables pour l'extraction
     var priceMatch = null;
     var areaMatch = null;
     var bedroomMatch = null;
+    var isTrieu = false;
     
     // Chercher le contexte autour de l'URL
     var urlIndex = html.indexOf(url);
     if (urlIndex > 0) {
       var context = html.substring(Math.max(0, urlIndex - 500), Math.min(html.length, urlIndex + 1000));
       
-// Prix - Extraction améliorée
-var priceRegex = /([\d,.]+)\s*t[yỷ]/gi;
-priceMatch = priceRegex.exec(context);
-
-// Si pas trouvé, essayer dans l'URL (format "gia-X-Y-ty")
-if (!priceMatch) {
-  var urlPriceRegex = /(\d+)[,-]?(\d*)\s*t[yỷ]/gi;
-  priceMatch = urlPriceRegex.exec(url);
-}
-
-// Essayer les prix en triệu/tr
-if (!priceMatch) {
-  var trieuRegex = /([\d,.]+)\s*(?:trieu|triệu|tr)\b/gi;
-  priceMatch = trieuRegex.exec(context) || trieuRegex.exec(url);
-  if (priceMatch) {
-    priceMatch.isTrieu = true;
-  }
-}
-
-// Si pas trouvé, essayer d'extraire depuis le titre/URL
-if (!priceMatch) {
-  // Format "gia X Y ty" ou "X,Y ty" ou "X.Y ty"
-  var titlePriceRegex = /gia[^\d]*([\d]+[\s,.]?[\d]*)\s*ty/gi;
-  priceMatch = titlePriceRegex.exec(url + ' ' + context);
-}
-
-// Essayer aussi les prix en triệu/tr
-if (!priceMatch) {
-  var trieuRegex = /([\d,.]+)\s*(?:trieu|tr)\b/gi;
-  var trieuMatch = trieuRegex.exec(context);
-  if (trieuMatch) {
-    // Convertir triệu en tỷ pour le stocker
-    priceMatch = trieuMatch;
-    priceMatch.isTrieu = true;
-  }
-}
+      // Prix - Extraction améliorée
+      var priceRegex = /([\d,.]+)\s*t[yỷ]/gi;
+      priceMatch = priceRegex.exec(context);
+      
+      // Si pas trouvé, essayer dans l'URL (format "gia-X-Y-ty")
+      if (!priceMatch) {
+        var urlPriceRegex = /(\d+)[,-]?(\d*)\s*t[yỷ]/gi;
+        priceMatch = urlPriceRegex.exec(url);
+      }
+      
+      // Essayer les prix en triệu/tr
+      if (!priceMatch) {
+        var trieuRegex = /([\d,.]+)\s*(?:trieu|triệu|tr)\b/gi;
+        priceMatch = trieuRegex.exec(context) || trieuRegex.exec(url);
+        if (priceMatch) {
+          isTrieu = true;
+        }
+      }
+      
+      // Si pas trouvé, essayer d'extraire depuis le titre/URL
+      if (!priceMatch) {
+        var titlePriceRegex = /gia[^\d]*([\d]+[\s,.]?[\d]*)\s*ty/gi;
+        priceMatch = titlePriceRegex.exec(url + ' ' + context);
+      }
       
       // Surface
       var areaRegex = /([\d,.]+)\s*m/gi;
@@ -201,21 +190,16 @@ if (!priceMatch) {
       scraped_at: new Date().toISOString()
     };
     
-if (priceMatch) {
-  var priceValue = parseFloat(priceMatch[1].replace(',', '.'));
-  if (priceMatch.isTrieu) {
-    priceValue = priceValue / 1000; // Convertir triệu en tỷ
-  }
-  if (!isNaN(priceValue) && priceValue > 0) {
-    listing.price = Math.round(priceValue * 1000000000);
-    listing.price_raw = priceMatch[0];
-  }
-}
-```
-
-Commit et teste :
-```
-https://ktrix-vn.netlify.app/.netlify/functions/scraper-batdongsan?city=Binh%20Dinh&propertyType=Can%20ho%20chung%20cu&priceMax=20
+    if (priceMatch) {
+      var priceValue = parseFloat(priceMatch[1].replace(',', '.'));
+      if (isTrieu) {
+        priceValue = priceValue / 1000; // Convertir triệu en tỷ
+      }
+      if (!isNaN(priceValue) && priceValue > 0) {
+        listing.price = Math.round(priceValue * 1000000000);
+        listing.price_raw = priceMatch[0];
+      }
+    }
     
     if (areaMatch) {
       var areaValue = parseFloat(areaMatch[1].replace(',', '.'));
