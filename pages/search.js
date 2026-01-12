@@ -935,23 +935,13 @@ const availableSources = [
                 {sortResults(results).map((prop) => (
                   <div key={prop.id} className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition">
                   <div className="relative h-48 bg-slate-200">
-                   {prop.imageUrl ? (
-  <img 
-    src={prop.imageUrl} 
-    alt={prop.title} 
-    className="w-full h-full object-cover"
-    onError={(e) => { 
-      e.target.onerror = null; 
-      e.target.src = 'https://via.placeholder.com/400x300/0066cc/ffffff?text=BDS'; 
-    }}
-  />
-) : (
-  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-500 to-blue-600">
-    <div className="text-center text-white">
-      <div className="text-4xl mb-2">🏠</div>
-      <div className="text-sm font-medium">{prop.source}</div>
-    </div>
-  </div>
+                      {prop.imageUrl ? (
+                        <img src={prop.imageUrl} alt={prop.title} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-blue-500">
+                          <span className="text-white text-4xl">🏠</span>
+                        </div>
+                      )}
 )}
 
                       {prop.isNew && <div className="absolute top-2 left-2 bg-sky-100 text-sky-700 px-3 py-1 rounded-full text-xs font-bold animate-pulse">{t.newListing}</div>}
