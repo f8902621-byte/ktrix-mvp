@@ -934,7 +934,24 @@ const availableSources = [
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {sortResults(results).map((prop) => (
                   <div key={prop.id} className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition">
-                    <div className="relative h-48 bg-slate-200">
+                   {prop.imageUrl ? (
+  <img 
+    src={prop.imageUrl} 
+    alt={prop.title} 
+    className="w-full h-full object-cover"
+    onError={(e) => { 
+      e.target.onerror = null; 
+      e.target.src = 'https://via.placeholder.com/400x300/0066cc/ffffff?text=BDS'; 
+    }}
+  />
+) : (
+  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-500 to-blue-600">
+    <div className="text-center text-white">
+      <div className="text-4xl mb-2">🏠</div>
+      <div className="text-sm font-medium">{prop.source}</div>
+    </div>
+  </div>
+)}
                       <img 
   src={prop.imageUrl || (prop.source === 'batdongsan.com.vn' ? 'https://batdongsan.com.vn/images/logo-social.png' : '/placeholder-property.png')} 
   alt={prop.title} 
