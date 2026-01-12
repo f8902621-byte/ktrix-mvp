@@ -159,10 +159,10 @@ function parseListings(html, city, propertyType) {
         var jsonMatch = jsonPriceRegex.exec(productBlock);
         if (jsonMatch) {
           var priceInDong = parseInt(jsonMatch[1]);
-          if (priceInDong > 100000000) {
-            listing.price = priceInDong;
-            listing.price_raw = (priceInDong / 1000000000).toFixed(2) + ' tỷ (JSON)';
-            priceMatch = true;
+if (priceInDong > 100000000) {
+  var extractedPrice = priceInDong;
+  var extractedPriceRaw = (priceInDong / 1000000000).toFixed(2) + ' tỷ (JSON)';
+  priceMatch = true;
           }
         }
       }
@@ -173,10 +173,10 @@ function parseListings(html, city, propertyType) {
         var jsonMatch2 = jsonPriceRegex2.exec(context);
         if (jsonMatch2) {
           var priceInDong2 = parseInt(jsonMatch2[1]);
-          if (priceInDong2 > 100000000) {
-            listing.price = priceInDong2;
-            listing.price_raw = (priceInDong2 / 1000000000).toFixed(2) + ' tỷ (JSON)';
-            priceMatch = true;
+if (priceInDong2 > 100000000) {
+  var extractedPrice = priceInDong2;
+  var extractedPriceRaw = (priceInDong2 / 1000000000).toFixed(2) + ' tỷ (JSON)';
+  priceMatch = true;
           }
         }
       }
@@ -271,7 +271,10 @@ function parseListings(html, city, propertyType) {
       property_type: propertyType,
       scraped_at: new Date().toISOString()
     };
-    
+    if (extractedPrice) {
+      listing.price = extractedPrice;
+      listing.price_raw = extractedPriceRaw;
+    }
     if (priceMatch && !listing.price) {
       var priceValue = parseFloat(priceMatch[1].replace(',', '.'));
       if (isTrieu) {
