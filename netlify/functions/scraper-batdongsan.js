@@ -139,12 +139,13 @@ function parseListings(html, city, propertyType) {
     var priceMatch = null;
     var areaMatch = null;
     var bedroomMatch = null;
+    var imageUrl = null;
     var isTrieu = false;
     
     // Chercher le contexte autour de l'URL
     var urlIndex = html.indexOf(url);
     if (urlIndex > 0) {
-      var context = html.substring(Math.max(0, urlIndex - 500), Math.min(html.length, urlIndex + 1000));
+      var context = html.substring(Math.max(0, urlIndex - 1000), Math.min(html.length, urlIndex + 2000));
       
       // Prix - Extraction améliorée
       var priceRegex = /([\d,.]+)\s*t[yỷ]/gi;
@@ -178,6 +179,33 @@ function parseListings(html, city, propertyType) {
       // Chambres
       var bedroomRegex = /(\d+)\s*(?:PN|pn)/gi;
       bedroomMatch = bedroomRegex.exec(context);
+      
+      // Image - chercher les URLs amcdn.vn (CDN de Batdongsan)
+      var imageRegex = /https?:\/\/[^"'\s]*amcdn\.vn\/[^"'\s]+/gi;
+      var imageMatch = imageRegex.exec(context);
+      if (imageMatch) {
+        imageUrl = imageMatch[0];
+        // Nettoyer l'URL (enlever les caractères de fin non valides)
+        imageUrl = imageUrl.replace(/[&<>]/g, '');
+      }
+      
+      // Alternative : chercher data-src ou src avec image jpg/png/webp
+      if (!imageUrl) {
+        var imgSrcRegex = /(?:data-src|src)=["']([^"']*(?:\.jpg|\.jpeg|\.png|\.webp)[^"']*)["']/gi;
+        var imgMatch = imgSrcRegex.exec(context);
+        if (imgMatch && imgMatch[1]) {
+          imageUrl = imgMatch[1];
+        }
+      }
+      
+      // Autre pattern : URLs cloudinary ou autres CDN
+      if (!imageUrl) {
+        var cdnRegex = /https?:\/\/[^"'\s]*(?:cloudinary|imgix|imagekit)[^"'\s]*\.(?:jpg|jpeg|png|webp)/gi;
+        var cdnMatch = cdnRegex.exec(context);
+        if (cdnMatch) {
+          imageUrl = cdnMatch[0];
+        }
+      }
     }
     
     var listing = {
@@ -210,6 +238,10 @@ function parseListings(html, city, propertyType) {
     
     if (bedroomMatch) {
       listing.bedrooms = parseInt(bedroomMatch[1]);
+    }
+    
+    if (imageUrl) {
+      listing.image_url = imageUrl;
     }
     
     listings.push(listing);
