@@ -1575,11 +1575,6 @@ if (sources?.includes('batdongsan')) {
       .catch(e => { console.log(`Batdongsan erreur: ${e.message}`); return { source: 'batdongsan', results: [] }; })
   );
 }
-  const fetchPromise = fetchBatdongsan({ city, propertyType, priceMax })
-    .then(results => ({ source: 'batdongsan', results }))
-    .catch(e => { console.log(`Batdongsan erreur: ${e.message}`); return { source: 'batdongsan', results: [] }; });
-  sourcePromises.push(Promise.race([fetchPromise, timeoutPromise]));
-}
 
 // ALONHADAT - avec timeout 15s
 if (sources?.includes('alonhadat')) {
