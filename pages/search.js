@@ -858,6 +858,24 @@ setLoading(true);
       {/* Results */}
       {!showSearch && (
         <div className="max-w-7xl mx-auto px-4 py-6">
+        {/* BDS Loading Banner */}
+{bdsStatus === 'polling' && (
+  <div className="mb-4 bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-6 py-3 rounded-xl flex items-center justify-between shadow-lg animate-pulse">
+    <div className="flex items-center gap-3">
+      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+      <span className="font-medium">🔄 Recherche Batdongsan en cours... {bdsProgress}%</span>
+      {bdsCount > 0 && <span className="bg-white/20 px-2 py-1 rounded-full text-sm">{bdsCount} trouvées</span>}
+    </div>
+  </div>
+)}
+
+{/* BDS Completed Banner */}
+{bdsStatus === 'completed' && bdsCount > 0 && (
+  <div className="mb-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white px-6 py-3 rounded-xl flex items-center gap-3 shadow-lg">
+    <span>✅</span>
+    <span className="font-medium">{bdsCount} annonces Batdongsan ajoutées !</span>
+  </div>
+)}
         {/* Database Stats Dashboard */}
            <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl shadow-lg p-4 mb-6 border border-indigo-100">
             <div className="flex items-center justify-between mb-3">
