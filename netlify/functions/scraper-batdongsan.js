@@ -4,7 +4,7 @@
  */
 
 const SCRAPER_API_KEY = process.env.SCRAPER_API_KEY;
-const MAX_DETAIL_PAGES = 10; // Limite pour économiser les crédits
+const MAX_DETAIL_PAGES = 5; // Limite pour éviter timeout Netlify
 
 // Mapping des villes
 const cityMapping = {
