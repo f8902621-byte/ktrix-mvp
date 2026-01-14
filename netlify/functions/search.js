@@ -798,120 +798,183 @@ async function fetchNhadat247(propertyType) {
 }
 
 // ============================================
-// BATDONGSAN - SCRAPING VIA SCRAPERAPI
+// BATDONGSAN - SCRAPING DIRECT VIA SCRAPERAPI
 // ============================================
+const SCRAPER_API_KEY = process.env.SCRAPER_API_KEY;
+
 async function fetchBatdongsan(params) {
   const { city, propertyType, priceMax } = params;
   
+  if (!SCRAPER_API_KEY) {
+    console.log('Batdongsan: SCRAPER_API_KEY non configuré');
+    return [];
+  }
+  
   try {
-    const baseUrl = process.env.URL || 'https://ktrix-vn.netlify.app';
-    
-    // Mapper la ville
+    // Mapping des villes pour BDS
     const cityMapping = {
-      'ho chi minh': 'Ho Chi Minh',
-      'ha noi': 'Ha Noi',
-      'da nang': 'Da Nang',
-      'binh duong': 'Binh Duong',
-      'khanh hoa': 'Khanh Hoa',
-      'can tho': 'Can Tho',
-      'hai phong': 'Hai Phong',
-      'ba ria vung tau': 'Ba Ria Vung Tau',
-      'vung tau': 'Vung Tau',
-'ba ria': 'Vung Tau',
-        'lam dong': 'Lam Dong',
-    'binh dinh': 'Binh Dinh',
-    'quy nhon': 'Binh Dinh',
-};
+      'ho chi minh': 'tp-hcm',
+      'ha noi': 'ha-noi',
+      'da nang': 'da-nang',
+      'binh duong': 'binh-duong',
+      'khanh hoa': 'khanh-hoa',
+      'can tho': 'can-tho',
+      'hai phong': 'hai-phong',
+      'ba ria vung tau': 'vung-tau-vt',
+      'vung tau': 'vung-tau-vt',
+      'ba ria': 'vung-tau-vt',
+      'lam dong': 'lam-dong',
+      'binh dinh': 'quy-nhon-bdd',
+      'quy nhon': 'quy-nhon-bdd',
+    };
     
- const typeMapping = {
-  'can ho chung cu': 'Can ho chung cu',
-  'can ho': 'Can ho chung cu',
-  'chung cu': 'Can ho chung cu',
-  'apartment': 'Can ho chung cu',
-  'nha o': 'Nha o',
-  'nha rieng': 'Nha o',
-  'house': 'Nha o',
-  'nha biet thu': 'Nha biet thu',
-  'biet thu': 'Nha biet thu',
-  'villa': 'villa',
-  'dat': 'dat',
-  'dat nen': 'dat nen',
-  'land': 'dat',
-  'shophouse': 'shophouse',
-  'nha pho thuong mai': 'shophouse',
-  'van phong': 'van phong',
-  'office': 'office',
-  'kho': 'kho',
-  'nha xuong': 'nha xuong',
-  'warehouse': 'warehouse',
-  'khu nghi duong': 'khu nghi duong',
-  'resort': 'resort',
-};
+    const typeMapping = {
+      'can ho chung cu': 'ban-can-ho-chung-cu',
+      'can ho': 'ban-can-ho-chung-cu',
+      'chung cu': 'ban-can-ho-chung-cu',
+      'apartment': 'ban-can-ho-chung-cu',
+      'nha o': 'ban-nha-rieng',
+      'nha rieng': 'ban-nha-rieng',
+      'house': 'ban-nha-rieng',
+      'nha biet thu': 'ban-nha-biet-thu-lien-ke',
+      'biet thu': 'ban-nha-biet-thu-lien-ke',
+      'villa': 'ban-nha-biet-thu-lien-ke',
+      'dat': 'ban-dat',
+      'dat nen': 'ban-dat-nen-du-an',
+      'land': 'ban-dat',
+      'shophouse': 'ban-shophouse-nha-pho-thuong-mai',
+    };
     
     const cityNorm = removeVietnameseAccents(city || '').toLowerCase();
     const typeNorm = removeVietnameseAccents(propertyType || '').toLowerCase();
     
-    let cityParam = 'Ho Chi Minh';
+    let citySlug = 'tp-hcm';
     for (const [key, value] of Object.entries(cityMapping)) {
-      if (cityNorm.includes(key)) { cityParam = value; break; }
+      if (cityNorm.includes(key)) { citySlug = value; break; }
     }
     
-    let typeParam = 'Can ho chung cu';
+    let typeSlug = 'ban-can-ho-chung-cu';
     for (const [key, value] of Object.entries(typeMapping)) {
-      if (typeNorm.includes(key)) { typeParam = value; break; }
+      if (typeNorm.includes(key)) { typeSlug = value; break; }
     }
     
-    const url = `${baseUrl}/.netlify/functions/scraper-batdongsan?city=${encodeURIComponent(cityParam)}&propertyType=${encodeURIComponent(typeParam)}&priceMax=${priceMax || 10}`;
+    // Construire l'URL BDS
+    let bdsUrl = `https://batdongsan.com.vn/${typeSlug}-${citySlug}`;
+    if (priceMax) {
+      bdsUrl += `?gcn=${priceMax}-ty`;
+    }
     
-    console.log(`Batdongsan: Fetching ${cityParam}/${typeParam}`);
+    console.log(`Batdongsan: Scraping ${bdsUrl}`);
     
-    const response = await fetch(url);
-    if (!response.ok) {
-      console.log('Batdongsan: API error', response.status);
+    // Étape 1: Récupérer la page de liste
+    const scraperUrl = `https://api.scraperapi.com/?api_key=${SCRAPER_API_KEY}&url=${encodeURIComponent(bdsUrl)}&country_code=vn`;
+    const listResponse = await fetch(scraperUrl);
+    
+    if (!listResponse.ok) {
+      console.log('Batdongsan: Erreur liste', listResponse.status);
       return [];
     }
     
-    const data = await response.json();
-    if (!data.success || !data.listings) {
-      console.log('Batdongsan: No listings');
-      return [];
+    const listHtml = await listResponse.text();
+    
+    // Extraire les URLs des annonces
+    const urlRegex = /href="(\/ban-[^"]*-pr(\d+)[^"]*)"/gi;
+    const urls = [];
+    const seen = {};
+    let match;
+    
+    while ((match = urlRegex.exec(listHtml)) !== null) {
+      const path = match[1];
+      const id = match[2];
+      if (!seen[id]) {
+        seen[id] = true;
+        urls.push({ id, path, fullUrl: 'https://batdongsan.com.vn' + path });
+      }
     }
     
-    console.log(`Batdongsan: ${data.listings.length} annonces`);
+    console.log(`Batdongsan: ${urls.length} URLs trouvées`);
     
-    return data.listings.map(item => {
-      const nlp = analyzeListingText(item.title, '');
-      return {
-        id: item.external_id || `bds_${Date.now()}_${Math.random()}`,
-        title: item.title || '',
-        body: '',
-        price: item.price || 0,
-        area: item.area || 0,
-        address: item.address || '',
-        district: item.district || '',
-        city: item.city || city || '',
-        bedrooms: item.bedrooms || null,
-        bathrooms: item.bathrooms || null,
-        thumbnail: item.image || '',
-        images: item.image ? [item.image] : [],
-        url: item.url || '',
-        source: 'batdongsan.com.vn',
-        postedOn: item.posted_date || '',
-        list_time: 0,
-        propertyType: item.property_type || '',
-        floors: nlp.extractedFloors,
-        streetWidth: nlp.extractedStreetWidth,
-        facadeWidth: nlp.extractedFacade,
-        nlpAnalysis: nlp,
-        extractedRentalIncome: nlp.extractedRentalIncome,
-        hasMetroNearby: nlp.hasMetroNearby,
-        hasNewRoad: nlp.hasNewRoad,
-        hasInvestmentPotential: nlp.hasInvestmentPotential,
-        hasLegalIssue: nlp.hasLegalIssue,
-        hasPlanningRisk: nlp.hasPlanningRisk,
-        detectedKeywords: nlp.detectedKeywords,
-      };
-    });
+    // Étape 2: Scraper 1 page de détail (pour éviter timeout)
+    const MAX_DETAILS = 1;
+    const listings = [];
+    
+    for (let i = 0; i < Math.min(urls.length, MAX_DETAILS); i++) {
+      const urlInfo = urls[i];
+      
+      try {
+        const detailUrl = `https://api.scraperapi.com/?api_key=${SCRAPER_API_KEY}&url=${encodeURIComponent(urlInfo.fullUrl)}&country_code=vn`;
+        const detailResponse = await fetch(detailUrl);
+        
+        if (!detailResponse.ok) continue;
+        
+        const html = await detailResponse.text();
+        
+        // Extraire les données
+        const listing = {
+          id: `bds_${urlInfo.id}`,
+          source: 'batdongsan.com.vn',
+          url: urlInfo.fullUrl,
+          city: city || '',
+          propertyType: propertyType || '',
+        };
+        
+        // Titre
+        const titleMatch = html.match(/<title>([^<]+)<\/title>/i);
+        if (titleMatch) {
+          listing.title = titleMatch[1].replace(/ - Batdongsan.com.vn$/i, '').substring(0, 150);
+        }
+        
+        // Prix depuis JSON
+        const priceMatch = html.match(/price:\s*(\d{8,12})[,\s]/);
+        if (priceMatch) {
+          listing.price = parseInt(priceMatch[1]);
+        }
+        
+        // Surface
+        const areaMatch = html.match(/area:\s*(\d+)/);
+        if (areaMatch) {
+          listing.area = parseInt(areaMatch[1]);
+        }
+        
+        // Chambres
+        const bedroomMatch = html.match(/bedroom[s]?:\s*(\d+)/i) || html.match(/(\d+)\s*(?:PN|phòng ngủ)/i);
+        if (bedroomMatch) {
+          listing.bedrooms = parseInt(bedroomMatch[1]);
+        }
+        
+        // Salles de bain
+        const bathroomMatch = html.match(/bathroom[s]?:\s*(\d+)/i) || html.match(/(\d+)\s*(?:WC|phòng tắm)/i);
+        if (bathroomMatch) {
+          listing.bathrooms = parseInt(bathroomMatch[1]);
+        }
+        
+        // Image
+        const ogImageMatch = html.match(/property="og:image"\s+content="([^"]+)"/i) ||
+                            html.match(/content="([^"]+)"\s+property="og:image"/i);
+        if (ogImageMatch) {
+          listing.thumbnail = ogImageMatch[1];
+          listing.images = [ogImageMatch[1]];
+        } else {
+          const cdnMatch = html.match(/https:\/\/file4\.batdongsan\.com\.vn\/[^"'\s]+\.(?:jpg|jpeg|png|webp)/i);
+          if (cdnMatch) {
+            listing.thumbnail = cdnMatch[0];
+            listing.images = [cdnMatch[0]];
+          }
+        }
+        
+        // Ne garder que si on a un prix
+        if (listing.price && listing.price > 0) {
+          listings.push(listing);
+        }
+        
+      } catch (e) {
+        console.log(`Batdongsan: Erreur détail ${urlInfo.id}: ${e.message}`);
+      }
+    }
+    
+    console.log(`Batdongsan: ${listings.length} annonces avec prix`);
+    return listings;
+    
   } catch (error) {
     console.error('Batdongsan error:', error.message);
     return [];
@@ -1504,11 +1567,14 @@ if (sources?.includes('chotot')) {
   );
 }
 
-// BATDONGSAN - avec timeout 25s (scrape pages de détail)
+// BATDONGSAN - Scraping direct (pas de timeout car intégré)
 if (sources?.includes('batdongsan')) {
-  const timeoutPromise = new Promise((resolve) => 
-    setTimeout(() => resolve({ source: 'batdongsan', results: [], timeout: true }), 22000)
+  sourcePromises.push(
+    fetchBatdongsan({ city, propertyType, priceMax })
+      .then(results => ({ source: 'batdongsan', results }))
+      .catch(e => { console.log(`Batdongsan erreur: ${e.message}`); return { source: 'batdongsan', results: [] }; })
   );
+}
   const fetchPromise = fetchBatdongsan({ city, propertyType, priceMax })
     .then(results => ({ source: 'batdongsan', results }))
     .catch(e => { console.log(`Batdongsan erreur: ${e.message}`); return { source: 'batdongsan', results: [] }; });
