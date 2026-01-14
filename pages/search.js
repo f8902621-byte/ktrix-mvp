@@ -572,6 +572,9 @@ setLoading(true);
               <span className="text-xl font-bold text-gray-900">K Trix</span>
               <span className="text-xs bg-orange-100 text-orange-600 px-2 py-1 rounded-full font-medium">MVP</span>
             </div>
+    <button onClick={() => router.push('/monitoring')} className="px-3 py-1 bg-slate-100 text-slate-600 rounded-lg text-sm hover:bg-slate-200" title="Monitoring">
+              🔍
+            </button>
             <button onClick={() => setShowSearch(!showSearch)} className="px-4 py-2 bg-gradient-to-r from-blue-500 to-sky-400 text-white rounded-lg font-medium flex items-center gap-2 shadow-md">
               <Search className="w-4 h-4" />
               {t.searchParams}
