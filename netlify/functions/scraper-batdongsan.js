@@ -1,9 +1,10 @@
 /**
  * K Trix - Batdongsan Scraper via ScraperAPI
- * Le site le plus protege du Vietnam - enfin accessible !
+ * Version 2: Scrape les pages de détail pour prix et images exacts
  */
 
 const SCRAPER_API_KEY = process.env.SCRAPER_API_KEY;
+const MAX_DETAIL_PAGES = 10; // Limite pour économiser les crédits
 
 // Mapping des villes
 const cityMapping = {
@@ -54,7 +55,6 @@ const PROPERTY_TYPE_MAPPING = {
   'office': 'ban-loai-bat-dong-san-khac',
   'khac': 'ban-loai-bat-dong-san-khac',
 };
-
 
 function normalizeString(str) {
   if (!str) return '';
@@ -108,200 +108,130 @@ async function scrapeWithScraperAPI(targetUrl) {
   return await response.text();
 }
 
-function parseListings(html, city, propertyType) {
-  var listings = [];
-  var urls = {};
+// Extraire les URLs des annonces depuis la page de liste
+function extractListingUrls(html) {
+  var urls = [];
+  var seen = {};
   
-  // Pattern pour extraire les URLs d'annonces avec leur ID
   var urlRegex = /href="(\/ban-[^"]*-pr(\d+)[^"]*)"/gi;
   var match;
   
   while ((match = urlRegex.exec(html)) !== null) {
     var url = match[1];
     var id = match[2];
-    if (!urls[id]) {
-      urls[id] = url;
+    if (!seen[id]) {
+      seen[id] = true;
+      urls.push({
+        id: id,
+        path: url,
+        fullUrl: 'https://batdongsan.com.vn' + url
+      });
     }
   }
   
-  var urlCount = Object.keys(urls).length;
-  console.log('[BDS] Found ' + urlCount + ' unique listing URLs');
+  console.log('[BDS] Found ' + urls.length + ' unique listing URLs');
+  return urls;
+}
+
+// Extraire les données depuis une page de détail
+function parseDetailPage(html, urlInfo, city, propertyType) {
+  var listing = {
+    external_id: 'bds_' + urlInfo.id,
+    source: 'batdongsan.com.vn',
+    url: urlInfo.fullUrl,
+    city: city,
+    property_type: propertyType,
+    scraped_at: new Date().toISOString()
+  };
   
-  // Creer des listings depuis les URLs trouvees
-  for (var id in urls) {
-    var url = urls[id];
-    
-    // Extraire le titre depuis l'URL
-    var titleFromUrl = url
-      .replace(/^\/ban-/, '')
-      .replace(/-pr\d+.*$/, '')
-      .replace(/-/g, ' ');
-    
-    // Variables pour l'extraction
-    var priceMatch = null;
-    var areaMatch = null;
-    var bedroomMatch = null;
-    var imageUrl = null;
-    var isTrieu = false;
-    
-    // Chercher le contexte autour de l'URL
-    var urlIndex = html.indexOf(url);
-    if (urlIndex > 0) {
-      var context = html.substring(Math.max(0, urlIndex - 2000), Math.min(html.length, urlIndex + 3000));
-      
-// Prix - Extraction depuis JSON embarqué (méthode la plus fiable)
-      // Chercher dans tout le HTML avec l'ID du produit
-      var productIdRegex = new RegExp('productId["\']?:\\s*' + id + '[,\\s]');
-      var productBlockStart = html.search(productIdRegex);
-      if (productBlockStart > 0) {
-        var productBlock = html.substring(productBlockStart, productBlockStart + 500);
-        var jsonPriceRegex = /price["\']?:\s*(\d{6,12})[,\s]/g;
-        var jsonMatch = jsonPriceRegex.exec(productBlock);
-        if (jsonMatch) {
-          var priceInDong = parseInt(jsonMatch[1]);
-          if (priceInDong > 100000000) {
-            listing.price = priceInDong;
-            listing.price_raw = (priceInDong / 1000000000).toFixed(2) + ' tỷ (JSON)';
-            priceMatch = true;
-          }
-        }
-      }
-      
-      // Fallback: chercher price: dans le contexte local
-      if (!priceMatch) {
-        var jsonPriceRegex2 = /price:\s*(\d{6,12}),/g;
-        var jsonMatch2 = jsonPriceRegex2.exec(context);
-        if (jsonMatch2) {
-          var priceInDong2 = parseInt(jsonMatch2[1]);
-          if (priceInDong2 > 100000000) {
-            listing.price = priceInDong2;
-            listing.price_raw = (priceInDong2 / 1000000000).toFixed(2) + ' tỷ (JSON)';
-            priceMatch = true;
-          }
-        }
-      }
-      
-      // Si pas trouvé en JSON, essayer les patterns textuels
-      if (!priceMatch) {
-        var pricePatterns = [
-          /([\d]+[,.][\d]+)\s*t[yỷ]/gi,
-          /([\d]+)\s*t[yỷ]/gi,
-          />([\d]+[,.][\d]+)\s*t[yỷ]/gi,
-          />([\d]+)\s*t[yỷ]/gi,
-        ];
-        
-        for (var pi = 0; pi < pricePatterns.length && !priceMatch; pi++) {
-          priceMatch = pricePatterns[pi].exec(context);
-        }
-      }
-      
-      // Si pas trouvé, essayer dans l'URL (format "1ty750" = 1.75 tỷ)
-      if (!priceMatch) {
-        var urlPriceRegex2 = /(\d+)ty(\d+)/gi;
-        var urlMatch = urlPriceRegex2.exec(url);
-        if (urlMatch) {
-          var mainPart = urlMatch[1];
-          var decimalPart = urlMatch[2];
-          if (decimalPart.length === 3) decimalPart = decimalPart.substring(0, 2);
-          var combinedPrice = mainPart + '.' + decimalPart;
-          priceMatch = [combinedPrice + ' tỷ', combinedPrice];
-        }
-      }
-      
-      // Fallback: format simple dans l'URL
-      if (!priceMatch) {
-        var urlPriceRegex = /(\d+)[,-]?(\d*)\s*t[yỷ]/gi;
-        priceMatch = urlPriceRegex.exec(url);
-      }
-      
-      // Essayer les prix en triệu/tr
-      if (!priceMatch) {
-        var trieuPatterns = [
-          /([\d]+)\s*(?:triệu|trieu|tr)\b/gi,
-          />([\d]+)\s*(?:triệu|trieu|tr)/gi,
-        ];
-        for (var ti = 0; ti < trieuPatterns.length && !priceMatch; ti++) {
-          priceMatch = trieuPatterns[ti].exec(context);
-          if (priceMatch) {
-            isTrieu = true;
-          }
-        }
-      }
-      
-      // Surface
-      var areaRegex = /([\d,.]+)\s*m/gi;
-      areaMatch = areaRegex.exec(context);
-      
-      // Chambres
-      var bedroomRegex = /(\d+)\s*(?:PN|pn)/gi;
-      bedroomMatch = bedroomRegex.exec(context);
-      
-      // Image - chercher les URLs amcdn.vn (CDN de Batdongsan)
-      var imageRegex = /https?:\/\/[^"'\s<>]*amcdn\.vn\/[^"'\s<>]+\.(?:jpg|jpeg|png|webp)/gi;
-      var imageMatch = imageRegex.exec(context);
-      if (imageMatch) {
-        imageUrl = imageMatch[0];
-      }
-      
-      // Alternative : chercher data-src ou src avec image
-      if (!imageUrl) {
-        var imgSrcRegex = /(?:data-src|src)=["']([^"']*\.(?:jpg|jpeg|png|webp)[^"']*)["']/gi;
-        var imgMatch = imgSrcRegex.exec(context);
-        if (imgMatch && imgMatch[1] && !imgMatch[1].includes('logo') && !imgMatch[1].includes('icon')) {
-          imageUrl = imgMatch[1];
-        }
-      }
-      
-      // Pattern pour background-image: url(...)
-      if (!imageUrl) {
-        var bgRegex = /background-image:\s*url\(['"]?([^'")\s]+\.(?:jpg|jpeg|png|webp)[^'")\s]*)['"]?\)/gi;
-        var bgMatch = bgRegex.exec(context);
-        if (bgMatch && bgMatch[1]) {
-          imageUrl = bgMatch[1];
-        }
-      }
-    }
-    
-    var listing = {
-      external_id: 'bds_' + id,
-      source: 'batdongsan',
-      url: 'https://batdongsan.com.vn' + url,
-      title: titleFromUrl.substring(0, 150),
-      city: city,
-      property_type: propertyType,
-      scraped_at: new Date().toISOString()
-    };
-    
-    if (priceMatch && !listing.price) {
-      var priceValue = parseFloat(priceMatch[1].replace(',', '.'));
-      if (isTrieu) {
-        priceValue = priceValue / 1000; // Convertir triệu en tỷ
-      }
-      if (!isNaN(priceValue) && priceValue > 0) {
-        listing.price = Math.round(priceValue * 1000000000);
-        listing.price_raw = priceMatch[0];
-      }
-    }
-    
-    if (areaMatch) {
-      var areaValue = parseFloat(areaMatch[1].replace(',', '.'));
-      if (!isNaN(areaValue) && areaValue > 0 && areaValue < 10000) {
-        listing.area = areaValue;
-      }
-    }
-    
-    if (bedroomMatch) {
-      listing.bedrooms = parseInt(bedroomMatch[1]);
-    }
-    
-    if (imageUrl) {
-      listing.image_url = imageUrl;
-    }
-    
-    listings.push(listing);
+  // Extraire le titre depuis <title> ou <h1>
+  var titleMatch = html.match(/<title>([^<]+)<\/title>/i);
+  if (titleMatch) {
+    listing.title = titleMatch[1]
+      .replace(/ - Batdongsan.com.vn$/i, '')
+      .replace(/ \| Batdongsan$/i, '')
+      .substring(0, 150);
   }
   
-  return listings;
+  // Chercher le JSON avec price dans le JavaScript
+  // Format: price: 1850000000,
+  var priceMatch = html.match(/price:\s*(\d{8,12})[,\s]/);
+  if (priceMatch) {
+    var priceValue = parseInt(priceMatch[1]);
+    if (priceValue > 100000000) { // > 100 millions VND
+      listing.price = priceValue;
+    }
+  }
+  
+  // Chercher pricePerM2
+  var priceM2Match = html.match(/pricePerM2:\s*([\d.]+)/);
+  if (priceM2Match) {
+    listing.pricePerSqm = Math.round(parseFloat(priceM2Match[1]));
+  }
+  
+  // Chercher area (surface)
+  var areaMatch = html.match(/area:\s*(\d+)/);
+  if (areaMatch) {
+    listing.area = parseInt(areaMatch[1]);
+  }
+  
+  // Chercher bedrooms
+  var bedroomMatch = html.match(/bedroom[s]?:\s*(\d+)/i);
+  if (!bedroomMatch) {
+    bedroomMatch = html.match(/(\d+)\s*(?:PN|phòng ngủ)/i);
+  }
+  if (bedroomMatch) {
+    listing.bedrooms = parseInt(bedroomMatch[1]);
+  }
+  
+  // Chercher bathrooms
+  var bathroomMatch = html.match(/bathroom[s]?:\s*(\d+)/i);
+  if (!bathroomMatch) {
+    bathroomMatch = html.match(/(\d+)\s*(?:WC|phòng tắm)/i);
+  }
+  if (bathroomMatch) {
+    listing.bathrooms = parseInt(bathroomMatch[1]);
+  }
+  
+  // Chercher l'image principale
+  // Pattern 1: og:image meta tag
+  var ogImageMatch = html.match(/property="og:image"\s+content="([^"]+)"/i);
+  if (!ogImageMatch) {
+    ogImageMatch = html.match(/content="([^"]+)"\s+property="og:image"/i);
+  }
+  if (ogImageMatch && ogImageMatch[1]) {
+    listing.image_url = ogImageMatch[1];
+  }
+  
+  // Pattern 2: Images dans le CDN file4.batdongsan.com.vn
+  if (!listing.image_url) {
+    var cdnImageMatch = html.match(/https:\/\/file4\.batdongsan\.com\.vn\/[^"'\s]+\.(?:jpg|jpeg|png|webp)/i);
+    if (cdnImageMatch) {
+      listing.image_url = cdnImageMatch[0];
+    }
+  }
+  
+  // Pattern 3: Images amcdn.vn
+  if (!listing.image_url) {
+    var amcdnMatch = html.match(/https?:\/\/[^"'\s<>]*amcdn\.vn\/[^"'\s<>]+\.(?:jpg|jpeg|png|webp)/i);
+    if (amcdnMatch) {
+      listing.image_url = amcdnMatch[0];
+    }
+  }
+  
+  // Chercher l'adresse
+  var addressMatch = html.match(/address["\']?:\s*["\']([^"\']+)["\']/i);
+  if (addressMatch) {
+    listing.address = addressMatch[1];
+  }
+  
+  // Chercher le district
+  var districtMatch = html.match(/district["\']?:\s*["\']([^"\']+)["\']/i);
+  if (districtMatch) {
+    listing.district = districtMatch[1];
+  }
+  
+  return listing;
 }
 
 exports.handler = async function(event, context) {
@@ -328,41 +258,51 @@ exports.handler = async function(event, context) {
     var city = params.city || 'Ho Chi Minh';
     var propertyType = params.propertyType || 'Can ho chung cu';
     var priceMax = params.priceMax || 10;
-    var maxPages = Math.min(parseInt(params.maxPages) || 1, 3);
+    var maxListings = Math.min(parseInt(params.maxListings) || MAX_DETAIL_PAGES, 15);
     
-    console.log('[BDS] Search: city=' + city + ', type=' + propertyType + ', priceMax=' + priceMax);
+    console.log('[BDS] Search: city=' + city + ', type=' + propertyType + ', priceMax=' + priceMax + ', maxListings=' + maxListings);
     
-    var allListings = [];
+    // Étape 1: Récupérer la page de liste
+    var listUrl = buildSearchUrl({ city: city, propertyType: propertyType, priceMax: priceMax, page: 1 });
+    var listHtml = await scrapeWithScraperAPI(listUrl);
     
-    for (var page = 1; page <= maxPages; page++) {
-      var url = buildSearchUrl({ city: city, propertyType: propertyType, priceMax: priceMax, page: page });
+    // Étape 2: Extraire les URLs des annonces
+    var listingUrls = extractListingUrls(listHtml);
+    
+    // Limiter le nombre d'annonces à scraper
+    listingUrls = listingUrls.slice(0, maxListings);
+    console.log('[BDS] Will scrape ' + listingUrls.length + ' detail pages');
+    
+    // Étape 3: Scraper chaque page de détail
+    var listings = [];
+    
+    for (var i = 0; i < listingUrls.length; i++) {
+      var urlInfo = listingUrls[i];
       
       try {
-        var html = await scrapeWithScraperAPI(url);
-        var listings = parseListings(html, city, propertyType);
-        allListings = allListings.concat(listings);
+        console.log('[BDS] Detail ' + (i + 1) + '/' + listingUrls.length + ': ' + urlInfo.id);
         
-        console.log('[BDS] Page ' + page + ': ' + listings.length + ' listings');
+        var detailHtml = await scrapeWithScraperAPI(urlInfo.fullUrl);
+        var listing = parseDetailPage(detailHtml, urlInfo, city, propertyType);
         
-        if (page < maxPages) {
-          await new Promise(function(r) { setTimeout(r, 2000); });
+        // Ne garder que les annonces avec un prix valide
+        if (listing.price && listing.price > 0) {
+          listings.push(listing);
+        } else {
+          console.log('[BDS] Skipped ' + urlInfo.id + ' - no valid price');
         }
+        
+        // Pause entre les requêtes pour éviter le rate limiting
+        if (i < listingUrls.length - 1) {
+          await new Promise(function(r) { setTimeout(r, 500); });
+        }
+        
       } catch (e) {
-        console.log('[BDS] Page ' + page + ' error: ' + e.message);
-        break;
+        console.log('[BDS] Detail error for ' + urlInfo.id + ': ' + e.message);
       }
     }
     
-    // Dedupliquer
-    var seen = {};
-    var uniqueListings = [];
-    for (var i = 0; i < allListings.length; i++) {
-      var listing = allListings[i];
-      if (!seen[listing.external_id]) {
-        seen[listing.external_id] = true;
-        uniqueListings.push(listing);
-      }
-    }
+    console.log('[BDS] Final: ' + listings.length + ' listings with valid prices');
     
     return {
       statusCode: 200,
@@ -372,8 +312,8 @@ exports.handler = async function(event, context) {
         source: 'batdongsan',
         city: city,
         propertyType: propertyType,
-        totalListings: uniqueListings.length,
-        listings: uniqueListings
+        totalListings: listings.length,
+        listings: listings
       }, null, 2)
     };
     
