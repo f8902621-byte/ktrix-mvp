@@ -1691,17 +1691,34 @@ for (const { source, results, timeout } of sourceResults) {
       const before = unique.length;
       // Si l'utilisateur n'a pas sélectionné de mots-clés, utiliser la liste complète
       const keywordsToUse = (keywords && keywords.length > 0) ? keywords : [
-        'bán gấp', 'bán nhanh', 'cần bán nhanh', 'kẹt tiền', 'cần tiền',
-        'giá rẻ', 'ngộp bank', 'chính chủ', 'miễn trung gian',
-        'giá thương lượng', 'bán lỗ', 'cắt lỗ', 'hạ giá', 'thanh lý'
+        'bán gấp', 'ban gap', 'bán nhanh', 'ban nhanh', 'cần bán nhanh', 'can ban nhanh',
+        'kẹt tiền', 'ket tien', 'cần tiền', 'can tien',
+        'giá rẻ', 'gia re', 'ngộp bank', 'ngop bank', 'chính chủ', 'chinh chu',
+        'miễn trung gian', 'mien trung gian',
+        'giá thương lượng', 'gia thuong luong', 'bán lỗ', 'ban lo',
+        'cắt lỗ', 'cat lo', 'hạ giá', 'ha gia', 'thanh lý', 'thanh ly',
+        'gấp', 'gap', 'nhanh', 'lỗ', 'lo', 'rẻ', 're'
       ];
+      
+      console.log(`keywordsOnly: Checking ${unique.length} items against ${keywordsToUse.length} keywords`);
+      
       unique = unique.filter(item => {
-        const title = removeVietnameseAccents(item.title || '');
-        const body = removeVietnameseAccents(item.body || '');
+        const title = removeVietnameseAccents((item.title || '').toLowerCase());
+        const body = removeVietnameseAccents((item.body || '').toLowerCase());
         const combined = title + ' ' + body;
-        return keywordsToUse.some(kw => combined.includes(removeVietnameseAccents(kw)));
+        
+        const found = keywordsToUse.some(kw => {
+          const kwNorm = removeVietnameseAccents(kw.toLowerCase());
+          return combined.includes(kwNorm);
+        });
+        
+        if (found) {
+          console.log(`MATCH: "${item.title?.substring(0, 50)}..."`);
+        }
+        return found;
       });
-      console.log(`Filtre keywordsOnly: ${before} → ${unique.length} (mots-clés: ${keywordsToUse.length})`);
+      
+      console.log(`Filtre keywordsOnly: ${before} → ${unique.length}`);
     }
     
     let sortedResults = [...unique];
