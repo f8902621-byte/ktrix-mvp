@@ -329,7 +329,7 @@ async function scrapeBdsListPage(city, propertyType, priceMax) {
   
   console.log(`BDS Background: Scraping liste ${bdsUrl}`);
   
-  cconst scraperUrl = `https://api.scraperapi.com/?api_key=${SCRAPER_API_KEY}&url=${encodeURIComponent(bdsUrl)}&render=true`;
+  const scraperUrl = `https://api.scraperapi.com/?api_key=${SCRAPER_API_KEY}&url=${encodeURIComponent(bdsUrl)}&render=true`;
   const response = await fetch(scraperUrl);
   
   if (!response.ok) {
