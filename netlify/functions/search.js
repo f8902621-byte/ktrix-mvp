@@ -1211,11 +1211,13 @@ function calculateNegotiationScore(item, avgPricePerM2) {
   };
   
   const title = (item.title || '').toLowerCase();
+  const body = (item.body || '').toLowerCase();
+  const textToSearch = title + ' ' + body;
   
   // 1. Mots-clés urgents (max 25 points - on prend le plus fort)
   let maxUrgentWeight = 0;
   for (const kw of URGENT_KEYWORDS) {
-    if (kw.pattern.test(title) || kw.pattern.test(item.title || '')) {
+    if (kw.pattern.test(title) || kw.pattern.test(body) || kw.pattern.test(item.title || '') || kw.pattern.test(item.body || '')) {
       details.urgentKeywords.push(kw.label);
       if (kw.weight > maxUrgentWeight) {
         maxUrgentWeight = kw.weight;
