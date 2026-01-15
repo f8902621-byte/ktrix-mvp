@@ -1031,7 +1031,7 @@ const typeMapping = {
   
   try {
     const baseUrl = process.env.URL || 'https://ktrix-vn.netlify.app';
-    const url = `${baseUrl}/.netlify/functions/alonhadat?city=${citySlug}&propertyType=${typeSlug}&maxPages=2`;
+    const url = `${baseUrl}/.netlify/functions/alonhadat?city=${citySlug}&propertyType=${typeSlug}&maxPages=1`;
     
     console.log(`Alonhadat: Fetching ${citySlug}/${typeSlug}`);
     
@@ -1637,7 +1637,7 @@ if (keywordsOnly && sources?.includes('batdongsan')) {
 // ALONHADAT - avec timeout 15s
 if (sources?.includes('alonhadat')) {
   const timeoutPromise = new Promise((resolve) => 
-    setTimeout(() => resolve({ source: 'alonhadat', results: [], timeout: true }), 20000)
+    setTimeout(() => resolve({ source: 'alonhadat', results: [], timeout: true }), 45000)
   );
   const fetchPromise = fetchAlonhadat({ city, propertyType })
     .then(results => ({ source: 'alonhadat', results }))
