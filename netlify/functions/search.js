@@ -1686,7 +1686,14 @@ for (const { source, results, timeout } of sourceResults) {
     // Calculer les stats par district
     const districtStats = calculateDistrictStats(unique);
     console.log(`Stats districts calculées: ${Object.keys(districtStats).length} districts`);
-// Filtre keywordsOnly - ne garder que les annonces avec mots-clés urgents
+// DEBUG: Afficher quelques titres pour vérifier
+    console.log(`DEBUG avant keywordsOnly: ${unique.length} items`);
+    if (unique.length > 0) {
+      console.log(`Premier titre: "${unique[0]?.title}"`);
+      console.log(`Deuxième titre: "${unique[1]?.title}"`);
+      console.log(`Troisième titre: "${unique[2]?.title}"`);
+    }
+    // Filtre keywordsOnly - ne garder que les annonces avec mots-clés urgents
     if (keywordsOnly) {
       const before = unique.length;
       // Si l'utilisateur n'a pas sélectionné de mots-clés, utiliser la liste complète
