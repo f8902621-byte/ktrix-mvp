@@ -1696,15 +1696,12 @@ for (const { source, results, timeout } of sourceResults) {
     // Filtre keywordsOnly - ne garder que les annonces avec mots-clés urgents
     if (keywordsOnly) {
       const before = unique.length;
-      // Si l'utilisateur n'a pas sélectionné de mots-clés, utiliser la liste complète
-      const keywordsToUse = (keywords && keywords.length > 0) ? keywords : [
-        'bán gấp', 'ban gap', 'bán nhanh', 'ban nhanh', 'cần bán nhanh', 'can ban nhanh',
-        'kẹt tiền', 'ket tien', 'cần tiền', 'can tien',
-        'giá rẻ', 'gia re', 'ngộp bank', 'ngop bank', 'chính chủ', 'chinh chu',
-        'miễn trung gian', 'mien trung gian',
-        'giá thương lượng', 'gia thuong luong', 'bán lỗ', 'ban lo',
-        'cắt lỗ', 'cat lo', 'hạ giá', 'ha gia', 'thanh lý', 'thanh ly',
-        'gấp', 'gap', 'nhanh', 'lỗ', 'lo', 'rẻ', 're'
+// Toujours utiliser la liste complète optimisée (sans accents)
+      const keywordsToUse = [
+        'ban gap', 'ban nhanh', 'can ban', 'ket tien', 'can tien',
+        'gia re', 'ngop bank', 'chinh chu', 'mien trung gian',
+        'thuong luong', 'ban lo', 'cat lo', 'ha gia', 'thanh ly',
+        'gap', 'nhanh', 'lo', 're'
       ];
       
       console.log(`keywordsOnly: Checking ${unique.length} items against ${keywordsToUse.length} keywords`);
