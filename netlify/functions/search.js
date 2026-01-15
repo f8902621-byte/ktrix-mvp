@@ -1682,16 +1682,22 @@ for (const { source, results, timeout } of sourceResults) {
     // Calculer les stats par district
     const districtStats = calculateDistrictStats(unique);
     console.log(`Stats districts calculées: ${Object.keys(districtStats).length} districts`);
-// Filtre keywordsOnly - ne garder que les annonces avec mots-clés sélectionnés par l'utilisateur
-    if (keywordsOnly && keywords && keywords.length > 0) {
+// Filtre keywordsOnly - ne garder que les annonces avec mots-clés urgents
+    if (keywordsOnly) {
       const before = unique.length;
+      // Si l'utilisateur n'a pas sélectionné de mots-clés, utiliser la liste complète
+      const keywordsToUse = (keywords && keywords.length > 0) ? keywords : [
+        'bán gấp', 'bán nhanh', 'cần bán nhanh', 'kẹt tiền', 'cần tiền',
+        'giá rẻ', 'ngộp bank', 'chính chủ', 'miễn trung gian',
+        'giá thương lượng', 'bán lỗ', 'cắt lỗ', 'hạ giá', 'thanh lý'
+      ];
       unique = unique.filter(item => {
         const title = removeVietnameseAccents(item.title || '');
         const body = removeVietnameseAccents(item.body || '');
         const combined = title + ' ' + body;
-        return keywords.some(kw => combined.includes(removeVietnameseAccents(kw)));
+        return keywordsToUse.some(kw => combined.includes(removeVietnameseAccents(kw)));
       });
-      console.log(`Filtre keywordsOnly: ${before} → ${unique.length} (mots-clés: ${keywords.join(', ')})`);
+      console.log(`Filtre keywordsOnly: ${before} → ${unique.length} (mots-clés: ${keywordsToUse.length})`);
     }
     
     let sortedResults = [...unique];
