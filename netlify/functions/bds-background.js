@@ -124,7 +124,7 @@ async function saveBdsListings(taskId, listings) {
       title: item.title || '',
       price: item.price || 0,
       area: item.area || 0,
-      price_per_m2: item.area > 0 && item.price > 0 ? Math.round(item.price / item.area) : 0,
+     price_per_m2: (item.price > 0 && item.area > 0) ? Math.round(item.price / item.area) : 0,
       district: item.district || '',
       ward: item.ward || '',
       city: item.city || '',
@@ -217,6 +217,12 @@ async function scrapeDetailPage(urlInfo) {
       if (areaTitleMatch) {
         listing.area = parseFloat(areaTitleMatch[1].replace(',', '.'));
       }
+    }
+    // 🆕 NOUVEAU: Calcul sécurisé du prix au m²
+    if (listing.price && listing.area && listing.price > 0 && listing.area > 0) {
+      listing.pricePerSqm = Math.round(listing.price / listing.area);
+    } else {
+      listing.pricePerSqm = 0; // Valeur par défaut sûre
     }
     // Chambres
     const bedroomMatch = html.match(/bedroom[s]?:\s*(\d+)/i) || html.match(/(\d+)\s*(?:PN|phòng ngủ)/i);
