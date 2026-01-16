@@ -346,17 +346,18 @@ async function scrapeBdsListPage(city, propertyType, priceMax) {
   const html = await response.text();
   
   // Extraire les URLs des annonces
-  const urlRegex = /href="(\/ban-[^"]*-pr(\d+)[^"]*)"/gi;
+  const urlRegex = /href="(\/ban-[^"]*-pr(\d+)[^"]*)"|href="([^"]*batdongsan[^"]*-pr(\d+)[^"]*)"/gi;
   const urls = [];
   const seen = {};
   let match;
   
-  while ((match = urlRegex.exec(html)) !== null) {
-    const path = match[1];
-    const id = match[2];
-    if (!seen[id]) {
+while ((match = urlRegex.exec(html)) !== null) {
+    const path = match[1] || match[3];
+    const id = match[2] || match[4];
+    if (path && id && !seen[id]) {
       seen[id] = true;
-      urls.push({ id, path, fullUrl: 'https://batdongsan.com.vn' + path });
+      const fullUrl = path.startsWith('http') ? path : 'https://batdongsan.com.vn' + path;
+      urls.push({ id, path, fullUrl });
     }
   }
   
