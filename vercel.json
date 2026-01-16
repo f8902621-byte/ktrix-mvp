@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "name": "ktrix-mvp",
+  "functions": {
+    "netlify/functions/**/*.js": {
+      "memory": 1024,
+      "maxDuration": 60
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "/netlify/functions/:path*"
+    },
+    {
+      "source": "/.netlify/functions/:path*",
+      "destination": "/netlify/functions/:path*"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/netlify/functions/(.*)",
+      "dest": "/netlify/functions/$1"
+    }
+  ]
+}
