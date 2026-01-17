@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Menu, Download, MapPin, AlertCircle, Loader, Home, Info } from 'lucide-react';
+import { Search, Menu, Download, MapPin, AlertCircle, Loader, Home, Info, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { useRouter } from 'next/router';
 
 export default function SearchPage() {
@@ -10,13 +10,12 @@ export default function SearchPage() {
   const [showSearch, setShowSearch] = useState(true);
   const [results, setResults] = useState([]);
   const [stats, setStats] = useState(null);
-  const [dbStats, setDbStats] = useState(null);
-  const [showDbStats, setShowDbStats] = useState(false);
-  const [statsCategory, setStatsCategory] = useState('');
+  const [marketStats, setMarketStats] = useState([]);
+  const [showMarketStats, setShowMarketStats] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   
-  // 🆕 NOUVEAU: Stats par source
+  // Stats par source
   const [sourceStats, setSourceStats] = useState({});
   
   // BDS Background Polling
@@ -78,13 +77,6 @@ export default function SearchPage() {
   }, []);
 
   useEffect(() => {
-    if (results.length > 0 && !showSearch) {
-      loadDbStats(searchParams.city, statsCategory);
-      setShowDbStats(true);
-    }
-  }, [results, statsCategory]);
-
-  useEffect(() => {
     if (!bdsTaskId || bdsStatus !== 'polling') return;
     
     const pollInterval = setInterval(async () => {
@@ -121,23 +113,6 @@ export default function SearchPage() {
     return () => clearInterval(pollInterval);
   }, [bdsTaskId, bdsStatus]);
 
-  const loadDbStats = async (city = '', category = '') => {
-    try {
-      let url = '/api/stats?';
-      if (city) url += `city=${encodeURIComponent(city)}&`;
-      if (category) url += `category=${encodeURIComponent(category)}`;
-      const response = await fetch(url);
-      const data = await response.json();
-      console.log('Stats reçues:', data);
-      if (data.success) {
-        setDbStats(data);
-        console.log('dbStats mis à jour:', data.global);
-      }
-    } catch (err) {
-      console.error('Error loading DB stats:', err);
-    }
-  };
-
   const t = {
     vn: {
       menu: 'Menu', searchParams: 'Tham số Tìm kiếm', backToHome: 'Trang chủ',
@@ -167,6 +142,9 @@ export default function SearchPage() {
       comingSoon: 'Sắp ra mắt',
       searchCriteria: 'Tiêu chí tìm kiếm',
       sourceResults: 'Kết quả theo nguồn',
+      marketStats: 'Thống kê thị trường',
+      avgPrice: 'Giá TB/m²',
+      listings: 'Tin đăng',
     },
     en: {
       menu: 'Menu', searchParams: 'Search Parameters', backToHome: 'Home',
@@ -196,6 +174,9 @@ export default function SearchPage() {
       comingSoon: 'Coming soon',
       searchCriteria: 'Search criteria',
       sourceResults: 'Results by source',
+      marketStats: 'Market Statistics',
+      avgPrice: 'Avg price/m²',
+      listings: 'Listings',
     },
     fr: {
       menu: 'Menu', searchParams: 'Paramètres', backToHome: 'Accueil',
@@ -225,6 +206,9 @@ export default function SearchPage() {
       comingSoon: 'Bientôt',
       searchCriteria: 'Critères de recherche',
       sourceResults: 'Résultats par source',
+      marketStats: 'Statistiques du marché',
+      avgPrice: 'Prix moy/m²',
+      listings: 'Annonces',
     }
   }[language];
 
@@ -307,6 +291,7 @@ export default function SearchPage() {
     setBdsProgress(0);
     setBdsCount(0);
     setSourceStats({});
+    setMarketStats([]);
     
     try {
       const response = await fetch('/api/search', {
@@ -320,7 +305,12 @@ export default function SearchPage() {
       setResults(data.results || []);
       setStats(data.stats);
       
-      // 🆕 NOUVEAU: Calculer les stats par source
+      // Market Stats par district
+      if (data.marketStats && data.marketStats.length > 0) {
+        setMarketStats(data.marketStats);
+      }
+      
+      // Stats par source
       if (data.results && data.results.length > 0) {
         const statsBySource = {};
         data.results.forEach(result => {
@@ -351,6 +341,11 @@ export default function SearchPage() {
       return `${(price / 1000000000).toFixed(1).replace('.', ',')} Tỷ`;
     }
     return `$${(price / 25000).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`;
+  };
+
+  const formatPricePerM2 = (price) => {
+    if (!price) return '-';
+    return `${Math.round(price / 1000000)} tr/m²`;
   };
 
   const toggleKeyword = (keyword) => {
@@ -403,7 +398,6 @@ export default function SearchPage() {
     return categories;
   };
 
-  // 🆕 NOUVEAU: Fonction pour générer le résumé des critères
   const getSearchCriteriaSummary = () => {
     const criteria = [];
     if (searchParams.city) criteria.push(`${t.city}: ${searchParams.city}`);
@@ -419,9 +413,80 @@ export default function SearchPage() {
     return criteria;
   };
 
+  // ============================================
+  // COMPOSANT MARKET STATS
+  // ============================================
+  const MarketStatsTable = ({ data }) => {
+    if (!data || data.length === 0) return null;
+    
+    return (
+      <div className="bg-white rounded-xl shadow-lg overflow-hidden mb-6">
+        <div 
+          className="bg-gradient-to-r from-indigo-500 to-purple-500 px-6 py-4 flex items-center justify-between cursor-pointer"
+          onClick={() => setShowMarketStats(!showMarketStats)}
+        >
+          <h3 className="text-white font-bold flex items-center gap-2">
+            📊 {t.marketStats}
+            <span className="bg-white/20 px-2 py-0.5 rounded-full text-sm">{data.length} districts</span>
+          </h3>
+          <button className="text-white/80 hover:text-white">
+            {showMarketStats ? '▼' : '▶'}
+          </button>
+        </div>
+        
+        {showMarketStats && (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-slate-50 border-b">
+                <tr>
+                  <th className="text-left px-6 py-3 text-sm font-semibold text-gray-700">{t.district}</th>
+                  <th className="text-center px-6 py-3 text-sm font-semibold text-gray-700">#</th>
+                  <th className="text-center px-6 py-3 text-sm font-semibold text-gray-700">{t.avgPrice}</th>
+                  <th className="text-center px-6 py-3 text-sm font-semibold text-gray-700">Min</th>
+                  <th className="text-center px-6 py-3 text-sm font-semibold text-gray-700">Max</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.slice(0, 10).map((district, index) => (
+                  <tr 
+                    key={district.district} 
+                    className={`border-b hover:bg-slate-50 transition ${index % 2 === 0 ? 'bg-white' : 'bg-slate-25'}`}
+                  >
+                    <td className="px-6 py-4">
+                      <span className="font-medium text-gray-800">{district.district}</span>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <span className="font-bold text-indigo-600">{district.count}</span>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <span className="font-semibold text-emerald-600">
+                        {formatPricePerM2(district.avgPricePerM2)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-center text-sm text-gray-500">
+                      {formatPricePerM2(district.minPricePerM2)}
+                    </td>
+                    <td className="px-6 py-4 text-center text-sm text-gray-500">
+                      {formatPricePerM2(district.maxPricePerM2)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {data.length > 10 && (
+              <div className="px-6 py-3 bg-slate-50 text-center text-sm text-gray-500">
+                +{data.length - 10} autres districts
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Header - 🎨 CORRECTION #8: Logo agrandi, texte "K Trix" enlevé */}
+      {/* Header */}
       <header className="bg-white shadow-sm border-b sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -429,9 +494,7 @@ export default function SearchPage() {
               <Home className="w-5 h-5" />
             </button>
             <div className="flex items-center gap-2">
-              {/* 🎨 Logo plus grand (w-14 h-14 au lieu de w-10 h-10) */}
               <img src="https://raw.githubusercontent.com/f8902621-byte/traxhome-mvp/main/Ktrixlogo.png" alt="K Trix" className="w-14 h-14 object-contain" />
-              {/* Texte "K Trix" enlevé, gardé seulement le badge MVP */}
               <span className="text-xs bg-orange-100 text-orange-600 px-2 py-1 rounded-full font-medium">MVP</span>
             </div>
             <button onClick={() => router.push('/monitoring')} className="px-3 py-1 bg-slate-100 text-slate-600 rounded-lg text-sm hover:bg-slate-200" title="Monitoring">
@@ -489,7 +552,7 @@ export default function SearchPage() {
       {showSearch && (
         <div className="max-w-6xl mx-auto px-4 py-6">
           <div className="bg-white rounded-xl shadow-lg p-6 space-y-6">
-            {/* 🆕 CORRECTION #4: Sources avec meilleure UI */}
+            {/* Sources */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">🌐 {t.sources}</label>
               <div className="flex flex-wrap gap-2">
@@ -718,7 +781,7 @@ export default function SearchPage() {
       {/* Results */}
       {!showSearch && (
         <div className="max-w-7xl mx-auto px-4 py-6">
-          {/* 🆕 CORRECTION #2: Bandeau des critères de recherche */}
+          {/* Search Criteria Banner */}
           {results.length > 0 && (
             <div className="bg-gradient-to-r from-sky-50 to-blue-50 border border-sky-200 rounded-xl p-4 mb-4 shadow-sm">
               <div className="flex items-start gap-3">
@@ -740,7 +803,7 @@ export default function SearchPage() {
             </div>
           )}
 
-          {/* 🆕 CORRECTION #3: Stats par source */}
+          {/* Stats par source */}
           {Object.keys(sourceStats).length > 0 && (
             <div className="bg-white rounded-xl shadow-lg p-4 mb-4">
               <p className="text-sm font-bold text-gray-700 mb-3">🌐 {t.sourceResults}</p>
@@ -764,6 +827,9 @@ export default function SearchPage() {
               </div>
             </div>
           )}
+
+          {/* 📊 MARKET STATS TABLE */}
+          <MarketStatsTable data={marketStats} />
 
           {/* BDS Loading Banner */}
           {bdsStatus === 'polling' && (
@@ -840,7 +906,6 @@ export default function SearchPage() {
                       <h3 className="font-bold text-lg mb-2 line-clamp-2">{prop.title}</h3>
                       <div className="flex items-baseline gap-2 mb-2">
                         <p className="text-2xl font-bold text-sky-600">{formatPrice(prop.price)}</p>
-                        {/* 🔧 CORRECTION #5: Fix prix au m² */}
                         {prop.pricePerSqm && prop.pricePerSqm > 0 && (
                           <p className="text-sm text-gray-500">{Math.round(prop.pricePerSqm / 1000000)} tr/m²</p>
                         )}
@@ -890,7 +955,7 @@ export default function SearchPage() {
         </div>
       )}
 
-      {/* Property Modal - Unchanged for now */}
+      {/* Property Modal */}
       {selectedProperty && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
@@ -898,9 +963,8 @@ export default function SearchPage() {
               <h2 className="text-xl font-bold">📊 {t.propertyDetails}</h2>
               <button onClick={() => setSelectedProperty(null)} className="p-2 hover:bg-slate-100 rounded-full text-xl">✕</button>
             </div>
-            {/* Modal content unchanged... */}
             <div className="p-6">
-              <p className="text-gray-500">Modal content here (unchanged from original)</p>
+              <p className="text-gray-500">Modal content here</p>
               <button 
                 onClick={() => setSelectedProperty(null)} 
                 className="mt-4 px-6 py-3 border border-slate-300 rounded-lg font-medium hover:bg-slate-50 transition"
