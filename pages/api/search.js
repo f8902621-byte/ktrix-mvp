@@ -25,11 +25,7 @@ async function getArchiveStatsByDistrict(city, propertyType) {
   try {
     // Construire la requête pour récupérer les annonces archivées
     // On prend les annonces des 90 derniers jours pour avoir assez de données
-    const ninetyDaysAgo = new Date();
-    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
-    const dateFilter = ninetyDaysAgo.toISOString().split('T')[0];
-
-    let url = `${SUPABASE_URL}/rest/v1/archive?select=district,price,area,price_per_m2,created_at&created_at=gte.${dateFilter}`;
+let url = `${SUPABASE_URL}/rest/v1/archive?select=district,price,area,price_per_m2,city,created_at`;
     
     // Filtrer par ville si spécifiée
     if (city) {
