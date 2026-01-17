@@ -1653,9 +1653,19 @@ export default async function handler(req, res) {
       totalAvailable: unique.length,
     };
 
-    console.log(`FINAL: ${results.length} résultats`);
+    // Formater les stats par district pour le frontend
+    const marketStats = Object.entries(districtStats).map(([district, data]) => ({
+      district: district.charAt(0).toUpperCase() + district.slice(1),
+      count: data.count,
+      avgPricePerM2: data.avgPricePerM2,
+      medianPricePerM2: data.medianPricePerM2,
+      minPricePerM2: data.minPricePerM2,
+      maxPricePerM2: data.maxPricePerM2,
+    })).sort((a, b) => b.count - a.count);
 
-    return res.status(200).json({ success: true, results, stats });
+    console.log(`FINAL: ${results.length} résultats, ${marketStats.length} districts`);
+
+    return res.status(200).json({ success: true, results, stats, marketStats });
 
   } catch (error) {
     console.error('Error:', error);
