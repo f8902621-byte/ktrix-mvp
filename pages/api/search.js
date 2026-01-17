@@ -1,9 +1,11 @@
 // ============================================
 // KTRIX - API SEARCH (Vercel Compatible)
+// Version avec 3 sources: Chotot, Alonhadat, Batdongsan
 // ============================================
 
 const APIFY_API_TOKEN = process.env.APIFY_API_TOKEN;
 const APIFY_ACTOR_ID = process.env.APIFY_ACTOR_ID;
+const SCRAPER_API_KEY = process.env.SCRAPER_API_KEY;
 
 // ============================================
 // SUPABASE - STOCKAGE DES ANNONCES
@@ -90,6 +92,78 @@ const CHOTOT_REGIONS = {
   'lam dong': '9057',
   'da lat': '9057',
   'dalat': '9057',
+};
+
+// ============================================
+// MAPPING DES VILLES ALONHADAT
+// ============================================
+const ALONHADAT_CITY_MAPPING = {
+  'ho chi minh': 'ho-chi-minh',
+  'ha noi': 'ha-noi',
+  'da nang': 'da-nang',
+  'binh duong': 'binh-duong',
+  'khanh hoa': 'khanh-hoa',
+  'can tho': 'can-tho',
+  'hai phong': 'hai-phong',
+  'ba ria vung tau': 'ba-ria-vung-tau',
+  'lam dong': 'lam-dong',
+  'dong nai': 'dong-nai',
+  'quang ninh': 'quang-ninh',
+  'thanh hoa': 'thanh-hoa',
+  'nghe an': 'nghe-an',
+  'thua thien hue': 'thua-thien-hue',
+  'binh dinh': 'binh-dinh',
+  'quy nhon': 'binh-dinh',
+  'vung tau': 'ba-ria-vung-tau',
+};
+
+// ============================================
+// MAPPING DES VILLES BATDONGSAN
+// ============================================
+const BATDONGSAN_CITY_MAPPING = {
+  'ho chi minh': 'tp-hcm',
+  'ha noi': 'ha-noi',
+  'da nang': 'da-nang',
+  'binh duong': 'binh-duong',
+  'khanh hoa': 'khanh-hoa',
+  'can tho': 'can-tho',
+  'hai phong': 'hai-phong',
+  'ba ria vung tau': 'vung-tau-vt',
+  'lam dong': 'lam-dong',
+  'binh dinh': 'quy-nhon-bdd',
+  'quy nhon': 'quy-nhon-bdd',
+  'vung tau': 'vung-tau-vt',
+  'ba ria': 'vung-tau-vt',
+};
+
+// ============================================
+// MAPPING TYPE ALONHADAT
+// ============================================
+const ALONHADAT_PROPERTY_TYPE = {
+  'nha o': 'nha',
+  'can ho chung cu': 'can-ho-chung-cu',
+  'dat': 'dat-tho-cu-dat-o',
+  'biet thu': 'biet-thu-nha-lien-ke',
+  'nha biet thu': 'biet-thu-nha-lien-ke',
+  'villa': 'biet-thu-nha-lien-ke',
+  'kho nha xuong': 'kho-nha-xuong-dat-cong-nghiep',
+  'warehouse': 'kho-nha-xuong-dat-cong-nghiep',
+  'shophouse': 'shophouse-nha-pho-thuong-mai',
+};
+
+// ============================================
+// MAPPING TYPE BATDONGSAN
+// ============================================
+const BATDONGSAN_PROPERTY_TYPE = {
+  'can ho chung cu': 'ban-can-ho-chung-cu',
+  'nha biet thu': 'ban-nha-biet-thu-lien-ke',
+  'biet thu': 'ban-nha-biet-thu-lien-ke',
+  'villa': 'ban-nha-biet-thu-lien-ke',
+  'nha o': 'ban-nha-rieng',
+  'dat': 'ban-dat',
+  'shophouse': 'ban-shophouse-nha-pho-thuong-mai',
+  'kho nha xuong': 'ban-kho-nha-xuong',
+  'warehouse': 'ban-kho-nha-xuong',
 };
 
 // ============================================
@@ -649,6 +723,343 @@ async function fetchChotot(params) {
   return results;
 }
 
+// ============================================
+// ALONHADAT SCRAPER
+// ============================================
+async function fetchAlonhadat(params) {
+  const { city, propertyType, priceMax } = params;
+  
+  if (!SCRAPER_API_KEY) {
+    console.log('Alonhadat: SCRAPER_API_KEY non configuré, skip');
+    return [];
+  }
+  
+  const cityNormalized = removeVietnameseAccents(city || 'ho chi minh');
+  const typeNormalized = removeVietnameseAccents(propertyType || 'nha o');
+  
+  // Mapping ville
+  let citySlug = 'ho-chi-minh';
+  for (const [key, value] of Object.entries(ALONHADAT_CITY_MAPPING)) {
+    if (cityNormalized.includes(key) || key.includes(cityNormalized)) {
+      citySlug = value;
+      break;
+    }
+  }
+  
+  // Mapping type
+  let typeSlug = 'nha';
+  for (const [key, value] of Object.entries(ALONHADAT_PROPERTY_TYPE)) {
+    if (typeNormalized.includes(key) || key.includes(typeNormalized)) {
+      typeSlug = value;
+      break;
+    }
+  }
+  
+  const targetUrl = `https://alonhadat.com.vn/can-ban-${typeSlug}/${citySlug}`;
+  const scraperUrl = `https://api.scraperapi.com/?api_key=${SCRAPER_API_KEY}&url=${encodeURIComponent(targetUrl)}&render=true`;
+  
+  console.log(`Alonhadat: scraping ${targetUrl}`);
+  
+  try {
+    const response = await fetch(scraperUrl);
+    if (!response.ok) {
+      console.log(`Alonhadat: HTTP ${response.status}`);
+      return [];
+    }
+    
+    const html = await response.text();
+    console.log(`Alonhadat: reçu ${(html.length/1024).toFixed(1)}KB`);
+    
+    // Parser les annonces
+    const listings = parseAlonhadatHtml(html, city);
+    console.log(`Alonhadat: ${listings.length} annonces parsées`);
+    
+    return listings;
+  } catch (error) {
+    console.log(`Alonhadat erreur: ${error.message}`);
+    return [];
+  }
+}
+
+function parseAlonhadatHtml(html, city) {
+  const listings = [];
+  
+  // Regex pour extraire les articles
+  const articleRegex = /<article\s+class=["']property-item["'][^>]*>([\s\S]*?)<\/article>/gi;
+  let match;
+  
+  while ((match = articleRegex.exec(html)) !== null) {
+    const articleHtml = match[1];
+    
+    try {
+      const listing = {};
+      
+      // URL et ID
+      const urlMatch = articleHtml.match(/href=["']([^"']*\.html)["']/i);
+      if (urlMatch) {
+        const href = urlMatch[1];
+        listing.url = href.startsWith('http') ? href : `https://alonhadat.com.vn${href}`;
+        const memberIdMatch = articleHtml.match(/data-memberid=["'](\d+)["']/i);
+        listing.id = memberIdMatch ? `alonhadat_${memberIdMatch[1]}` : `alonhadat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      }
+      
+      // Titre
+      const titleMatch = articleHtml.match(/itemprop=["']name["'][^>]*>([^<]+)</i) ||
+                         articleHtml.match(/<h3[^>]*>([^<]+)</i);
+      listing.title = titleMatch ? titleMatch[1].trim() : 'Sans titre';
+      
+      // Prix
+      const priceMatch = articleHtml.match(/itemprop=["']price["']\s+content=["'](\d+)["']/i);
+      if (priceMatch) {
+        listing.price = parseInt(priceMatch[1]);
+      } else {
+        const priceTextMatch = articleHtml.match(/([\d,\.]+)\s*tỷ/i);
+        if (priceTextMatch) {
+          listing.price = Math.round(parseFloat(priceTextMatch[1].replace(',', '.')) * 1000000000);
+        }
+      }
+      
+      // Surface
+      const areaMatch = articleHtml.match(/itemprop=["']value["'][^>]*>(\d+)/i) ||
+                        articleHtml.match(/>(\d+)\s*m²</i);
+      if (areaMatch) {
+        listing.area = parseInt(areaMatch[1]);
+      }
+      
+      // Adresse
+      const localityMatch = articleHtml.match(/itemprop=["']addressLocality["'][^>]*>([^<]+)</i);
+      const regionMatch = articleHtml.match(/itemprop=["']addressRegion["'][^>]*>([^<]+)</i);
+      listing.district = localityMatch ? localityMatch[1].trim() : '';
+      listing.city = regionMatch ? regionMatch[1].trim() : city;
+      
+      // Image
+      const imageMatch = articleHtml.match(/src=["']([^"']*(?:thumbnail|files)[^"']*)["']/i);
+      if (imageMatch) {
+        listing.thumbnail = imageMatch[1].startsWith('http') ? imageMatch[1] : `https://alonhadat.com.vn${imageMatch[1]}`;
+      }
+      
+      // Chambres
+      const bedroomMatch = articleHtml.match(/itemprop=["']numberOfBedrooms["'][^>]*>(\d+)/i) ||
+                           articleHtml.match(/>(\d+)\s*(?:pn|phòng ngủ|PN)</i);
+      if (bedroomMatch) {
+        listing.bedrooms = parseInt(bedroomMatch[1]);
+      }
+      
+      // Étages
+      const floorMatch = articleHtml.match(/>(\d+)\s*tầng</i);
+      if (floorMatch) {
+        listing.floors = parseInt(floorMatch[1]);
+      }
+      
+      listing.source = 'alonhadat.com.vn';
+      listing.images = listing.thumbnail ? [listing.thumbnail] : [];
+      
+      if (listing.title && listing.price > 0) {
+        listings.push(listing);
+      }
+    } catch (e) {
+      // Skip invalid listings
+    }
+  }
+  
+  return listings;
+}
+
+// ============================================
+// BATDONGSAN SCRAPER
+// ============================================
+async function fetchBatdongsan(params) {
+  const { city, propertyType, priceMax } = params;
+  
+  if (!SCRAPER_API_KEY) {
+    console.log('Batdongsan: SCRAPER_API_KEY non configuré, skip');
+    return [];
+  }
+  
+  const cityNormalized = removeVietnameseAccents(city || 'ho chi minh');
+  const typeNormalized = removeVietnameseAccents(propertyType || 'can ho chung cu');
+  
+  // Mapping ville
+  let citySlug = 'tp-hcm';
+  for (const [key, value] of Object.entries(BATDONGSAN_CITY_MAPPING)) {
+    if (cityNormalized.includes(key) || key.includes(cityNormalized)) {
+      citySlug = value;
+      break;
+    }
+  }
+  
+  // Mapping type
+  let typeSlug = 'ban-can-ho-chung-cu';
+  for (const [key, value] of Object.entries(BATDONGSAN_PROPERTY_TYPE)) {
+    if (typeNormalized.includes(key) || key.includes(typeNormalized)) {
+      typeSlug = value;
+      break;
+    }
+  }
+  
+  let targetUrl = `https://batdongsan.com.vn/${typeSlug}-${citySlug}`;
+  if (priceMax) {
+    targetUrl += `?gcn=${priceMax}-ty`;
+  }
+  
+  const scraperUrl = `https://api.scraperapi.com/?api_key=${SCRAPER_API_KEY}&url=${encodeURIComponent(targetUrl)}&country_code=vn`;
+  
+  console.log(`Batdongsan: scraping ${targetUrl}`);
+  
+  try {
+    const response = await fetch(scraperUrl);
+    if (!response.ok) {
+      console.log(`Batdongsan: HTTP ${response.status}`);
+      return [];
+    }
+    
+    const html = await response.text();
+    console.log(`Batdongsan: reçu ${(html.length/1024).toFixed(1)}KB`);
+    
+    // Extraire les URLs des annonces
+    const listingUrls = extractBdsListingUrls(html);
+    console.log(`Batdongsan: ${listingUrls.length} URLs trouvées`);
+    
+    // Limiter à 5 pour éviter timeout
+    const maxListings = 5;
+    const urlsToScrape = listingUrls.slice(0, maxListings);
+    
+    // Scraper les pages de détail
+    const listings = [];
+    for (let i = 0; i < urlsToScrape.length; i++) {
+      const urlInfo = urlsToScrape[i];
+      try {
+        const detailUrl = `https://api.scraperapi.com/?api_key=${SCRAPER_API_KEY}&url=${encodeURIComponent(urlInfo.fullUrl)}&country_code=vn`;
+        const detailResponse = await fetch(detailUrl);
+        if (detailResponse.ok) {
+          const detailHtml = await detailResponse.text();
+          const listing = parseBdsDetailPage(detailHtml, urlInfo, city, propertyType);
+          if (listing && listing.price > 0) {
+            listings.push(listing);
+          }
+        }
+        // Pause entre requêtes
+        if (i < urlsToScrape.length - 1) {
+          await new Promise(r => setTimeout(r, 200));
+        }
+      } catch (e) {
+        console.log(`Batdongsan detail error: ${e.message}`);
+      }
+    }
+    
+    console.log(`Batdongsan: ${listings.length} annonces avec prix valide`);
+    return listings;
+  } catch (error) {
+    console.log(`Batdongsan erreur: ${error.message}`);
+    return [];
+  }
+}
+
+function extractBdsListingUrls(html) {
+  const urls = [];
+  const seen = {};
+  
+  const urlRegex = /href="(\/ban-[^"]*-pr(\d+)[^"]*)"/gi;
+  let match;
+  
+  while ((match = urlRegex.exec(html)) !== null) {
+    const url = match[1];
+    const id = match[2];
+    if (!seen[id]) {
+      seen[id] = true;
+      urls.push({
+        id: id,
+        path: url,
+        fullUrl: 'https://batdongsan.com.vn' + url
+      });
+    }
+  }
+  
+  return urls;
+}
+
+function parseBdsDetailPage(html, urlInfo, city, propertyType) {
+  const listing = {
+    id: `bds_${urlInfo.id}`,
+    source: 'batdongsan.com.vn',
+    url: urlInfo.fullUrl,
+    city: city,
+    propertyType: propertyType,
+  };
+  
+  // Titre
+  const titleMatch = html.match(/<title>([^<]+)<\/title>/i);
+  if (titleMatch) {
+    listing.title = titleMatch[1]
+      .replace(/ - Batdongsan.com.vn$/i, '')
+      .replace(/ \| Batdongsan$/i, '')
+      .substring(0, 150);
+  }
+  
+  // Prix depuis JS: price: 1850000000,
+  const priceMatch = html.match(/price:\s*(\d{8,12})[,\s]/);
+  if (priceMatch) {
+    listing.price = parseInt(priceMatch[1]);
+  }
+  
+  // Prix/m2
+  const priceM2Match = html.match(/pricePerM2:\s*([\d.]+)/);
+  if (priceM2Match) {
+    listing.pricePerSqm = Math.round(parseFloat(priceM2Match[1]));
+  }
+  
+  // Surface
+  const areaMatch = html.match(/area:\s*(\d+)/);
+  if (areaMatch) {
+    listing.area = parseInt(areaMatch[1]);
+  }
+  
+  // Chambres
+  const bedroomMatch = html.match(/bedroom[s]?:\s*(\d+)/i) ||
+                       html.match(/(\d+)\s*(?:PN|phòng ngủ)/i);
+  if (bedroomMatch) {
+    listing.bedrooms = parseInt(bedroomMatch[1]);
+  }
+  
+  // SDB
+  const bathroomMatch = html.match(/bathroom[s]?:\s*(\d+)/i) ||
+                        html.match(/(\d+)\s*(?:WC|phòng tắm)/i);
+  if (bathroomMatch) {
+    listing.bathrooms = parseInt(bathroomMatch[1]);
+  }
+  
+  // Image
+  const ogImageMatch = html.match(/property="og:image"\s+content="([^"]+)"/i) ||
+                       html.match(/content="([^"]+)"\s+property="og:image"/i);
+  if (ogImageMatch) {
+    listing.thumbnail = ogImageMatch[1];
+  } else {
+    const cdnMatch = html.match(/https:\/\/file4\.batdongsan\.com\.vn\/[^"'\s]+\.(?:jpg|jpeg|png|webp)/i);
+    if (cdnMatch) {
+      listing.thumbnail = cdnMatch[0];
+    }
+  }
+  
+  listing.images = listing.thumbnail ? [listing.thumbnail] : [];
+  
+  // Adresse
+  const addressMatch = html.match(/address["\']?:\s*["\']([^"\']+)["\']/i);
+  if (addressMatch) {
+    listing.address = addressMatch[1];
+  }
+  
+  // District
+  const districtMatch = html.match(/district["\']?:\s*["\']([^"\']+)["\']/i);
+  if (districtMatch) {
+    listing.district = districtMatch[1];
+  }
+  
+  return listing;
+}
+
+// ============================================
+// FILTRES ET UTILITAIRES
+// ============================================
 function filterByKeywords(results, includeKeywords, excludeKeywords) {
   return results.filter(item => {
     const title = removeVietnameseAccents(item.title || '');
@@ -1089,11 +1500,30 @@ export default async function handler(req, res) {
   try {
     const sourcePromises = [];
     
+    // CHOTOT
     if (sources?.includes('chotot')) {
       sourcePromises.push(
         fetchChotot({ city, priceMin, priceMax, sortBy, propertyType })
           .then(results => ({ source: 'chotot', results }))
           .catch(e => { console.log(`Chotot erreur: ${e.message}`); return { source: 'chotot', results: [] }; })
+      );
+    }
+    
+    // ALONHADAT
+    if (sources?.includes('alonhadat')) {
+      sourcePromises.push(
+        fetchAlonhadat({ city, propertyType, priceMax })
+          .then(results => ({ source: 'alonhadat', results }))
+          .catch(e => { console.log(`Alonhadat erreur: ${e.message}`); return { source: 'alonhadat', results: [] }; })
+      );
+    }
+    
+    // BATDONGSAN
+    if (sources?.includes('batdongsan')) {
+      sourcePromises.push(
+        fetchBatdongsan({ city, propertyType, priceMax })
+          .then(results => ({ source: 'batdongsan', results }))
+          .catch(e => { console.log(`Batdongsan erreur: ${e.message}`); return { source: 'batdongsan', results: [] }; })
       );
     }
 
@@ -1103,6 +1533,8 @@ export default async function handler(req, res) {
     const typeMapping = getPropertyTypeMapping(propertyType);
 
     for (const { source, results } of sourceResults) {
+      console.log(`${source}: ${results.length} résultats bruts`);
+      
       if (results && results.length > 0) {
         let typeFiltered = results;
         if (typeMapping.include.length > 0 || typeMapping.exclude.length > 0) {
