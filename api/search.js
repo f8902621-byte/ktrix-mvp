@@ -1173,7 +1173,17 @@ export default async function handler(req, res) {
         id: item.id || i,
         title: item.title || 'Sans titre',
         price: item.price || 0,
-        pricePerSqm: item.area > 0 ? Math.round(item.price / item.area) : 0,
+        pricePerSqm: (() => {
+  const area = item.area || item.floorAreaSqm || item.floorArea || item.size || 0;
+  const price = item.price || 0;
+  if (area > 0 && price > 0) {
+    const ppm2 = Math.round(price / area);
+    if (ppm2 >= 1000000 && ppm2 <= 500000000) return ppm2;
+  }
+  if (item.pricePerM2 && item.pricePerM2 > 0) return Math.round(item.pricePerM2);
+  if (item.price_million_per_m2 && item.price_million_per_m2 > 0) return Math.round(item.price_million_per_m2 * 1000000);
+  return null;
+})(),
         avgPricePerSqm: Math.round(avgPricePerM2),
         city: item.city || city || '',
         district: item.district || '',
