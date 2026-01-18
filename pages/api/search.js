@@ -1789,11 +1789,12 @@ export default async function handler(req, res) {
       const archiveData = archiveStats[districtLower] || null;
       const archiveCount = totalArchive[districtLower] || 0;
       
-      // Calculer le trend si on a assez de données archive
-      let trend = null;
-      let trendPercent = null;
-      
-      if (archiveData && archiveData.avgPricePerM2 > 0 && archiveData.count >= 5) {
+// Calculer le trend si on a assez de données archive
+// DÉSACTIVÉ - Besoin de 6+ mois de données (minimum 500 annonces archivées)
+let trend = null;
+let trendPercent = null;
+
+if (false && archiveData && archiveData.avgPricePerM2 > 0 && archiveData.count >= 500) {
         // Comparer prix actuel vs prix archive
         const currentAvg = data.avgPricePerM2;
         const archiveAvg = archiveData.avgPricePerM2;
