@@ -127,8 +127,8 @@ exports.handler = async (event) => {
     // 4. Calculer les stats par district
     const districtStats = {};
     const today = new Date();
-    cconst oneWeekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-const twoWeeksAgo = new Date(today.getTime() - 14 * 24 * 60 * 60 * 1000);
+    const oneWeekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const twoWeeksAgo = new Date(today.getTime() - 14 * 24 * 60 * 60 * 1000);
 
     for (const listing of finalListings) {
       const district = (listing.district || 'Inconnu').trim();
@@ -177,23 +177,10 @@ const twoWeeksAgo = new Date(today.getTime() - 14 * 24 * 60 * 60 * 1000);
 
       const avgPricePerM2 = stats.pricesPerM2.reduce((a, b) => a + b, 0) / stats.pricesPerM2.length;
       
+      // TREND DÉSACTIVÉ - Pas assez de données historiques (besoin 6+ mois minimum)
+      // On retourne null pour que le frontend affiche "-"
       let priceTrend = null;
-      let priceTrendPercent = 0;
-      
-      if (false) { // DÉSACTIVÉ - Pas assez de données pour un trend fiable (besoin 6+ mois)
-        const avgThisWeek = stats.pricesPerM2ThisWeek.reduce((a, b) => a + b, 0) / stats.pricesPerM2ThisWeek.length;
-        const avgLastWeek = stats.pricesPerM2LastWeek.reduce((a, b) => a + b, 0) / stats.pricesPerM2LastWeek.length;
-        
-        priceTrendPercent = Math.round(((avgThisWeek - avgLastWeek) / avgLastWeek) * 100);
-        
-        if (priceTrendPercent > 2) {
-          priceTrend = 'up';
-        } else if (priceTrendPercent < -2) {
-          priceTrend = 'down';
-        } else {
-          priceTrend = 'stable';
-        }
-      }
+      let priceTrendPercent = null;
 
       results.push({
         district: district,
