@@ -873,12 +873,16 @@ async function fetchAlonhadat(params) {
     }
   }
   
-  // Mapping type
-  let typeSlug = 'nha';
-  for (const [key, value] of Object.entries(ALONHADAT_PROPERTY_TYPE)) {
-    if (typeNormalized.includes(key) || key.includes(typeNormalized)) {
-      typeSlug = value;
-      break;
+// Mapping type
+  let typeSlug = 'nha-dat'; // DÉFAUT: tous les biens immobiliers
+  
+  // Si "Tất cả" ou vide → garder 'nha-dat' (tous types)
+  if (typeNormalized && !typeNormalized.includes('tat ca') && typeNormalized !== 'nha dat') {
+    for (const [key, value] of Object.entries(ALONHADAT_PROPERTY_TYPE)) {
+      if (typeNormalized.includes(key) || key.includes(typeNormalized)) {
+        typeSlug = value;
+        break;
+      }
     }
   }
   
