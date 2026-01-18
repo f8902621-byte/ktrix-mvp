@@ -1245,7 +1245,7 @@ function applyFilters(results, filters) {
     });
   }
   
-  if (district) {
+if (district) {
     const d = removeVietnameseAccents(district.toLowerCase());
     const beforeCount = filtered.length;
     filtered = filtered.filter(item => {
@@ -1253,8 +1253,14 @@ function applyFilters(results, filters) {
       const itemTitle = removeVietnameseAccents((item.title || '').toLowerCase());
       const itemAddress = removeVietnameseAccents((item.address || '').toLowerCase());
       const combined = itemDistrict + ' ' + itemTitle + ' ' + itemAddress;
-      return combined.includes(d);
+      const matches = combined.includes(d);
+      // DEBUG LOG
+      if (!matches && itemDistrict) {
+        console.log(`District filter: "${d}" not in "${itemDistrict}" | title: ${itemTitle.substring(0, 30)}`);
+      }
+      return matches;
     });
+    console.log(`District filter: "${d}" → ${beforeCount} → ${filtered.length}`);
   }
   if (ward) {
     const w = removeVietnameseAccents(ward.toLowerCase());
