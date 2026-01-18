@@ -202,6 +202,40 @@ async function saveListingsToSupabase(listings) {
 // ============================================
 // MAPPING DES VILLES → CODE RÉGION CHOTOT
 // ============================================
+const CHOTOT_REGIONS = {
+  'ho chi minh': '13000',
+  'ha noi': '12000',
+  'da nang': '3017',
+  'binh duong': '2011',
+  'khanh hoa': '7044',
+  'nha trang': '7044',
+  'can tho': '5027',
+  'hai phong': '4019',
+  'ba ria': '2010',
+  'vung tau': '2010',
+  'ba ria vung tau': '2010',
+  'quy nhon': '7043',
+  'binh dinh': '7043',
+  'lam dong': '9057',
+  'da lat': '9057',
+  'dalat': '9057',
+};
+```
+
+Donc ça devrait ressembler à :
+```
+202  // ============================================
+203  // MAPPING DES VILLES → CODE RÉGION CHOTOT
+204  // ============================================
+205  const CHOTOT_REGIONS = {
+206    'ho chi minh': '13000',
+       ...
+     };
+
+     // ============================================
+     // MAPPING DISTRICTS → CODE CHOTOT
+     // ============================================
+     const CHOTOT_DISTRICTS = {
 // ============================================
 // MAPPING DISTRICTS → CODE CHOTOT
 // ============================================
