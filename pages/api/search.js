@@ -220,22 +220,7 @@ const CHOTOT_REGIONS = {
   'da lat': '9057',
   'dalat': '9057',
 };
-```
 
-Donc ça devrait ressembler à :
-```
-202  // ============================================
-203  // MAPPING DES VILLES → CODE RÉGION CHOTOT
-204  // ============================================
-205  const CHOTOT_REGIONS = {
-206    'ho chi minh': '13000',
-       ...
-     };
-
-     // ============================================
-     // MAPPING DISTRICTS → CODE CHOTOT
-     // ============================================
-     const CHOTOT_DISTRICTS = {
 // ============================================
 // MAPPING DISTRICTS → CODE CHOTOT
 // ============================================
