@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Search, Menu, Download, MapPin, AlertCircle, Loader, Home, Info, TrendingUp, TrendingDown, Minus, Database } from 'lucide-react';
 import { useRouter } from 'next/router';
+import { wardsByDistrict, premiumWards } from '../lib/wards-data';
 
 export default function SearchPage() {
   const router = useRouter();
@@ -31,6 +32,7 @@ export default function SearchPage() {
   const [searchParams, setSearchParams] = useState({
     city: '',
     district: '',
+    ward: '',
     propertyType: '',
     priceMin: '',
     priceMax: '',
@@ -280,6 +282,7 @@ export default function SearchPage() {
   };
 
   const currentDistricts = districtsByCity[searchParams.city] || [];
+  const currentWards = wardsByDistrict[searchParams.district] || [];
 
   const handleSearch = async () => {
     if (!searchParams.city || !searchParams.propertyType || !searchParams.priceMax) {
@@ -649,11 +652,18 @@ export default function SearchPage() {
               </div>
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">{t.district}</label>
-                <select value={searchParams.district} onChange={(e) => setSearchParams({...searchParams, district: e.target.value})} className="w-full px-4 py-2.5 border rounded-lg" disabled={!searchParams.city}>
+                <select value={searchParams.district} onChange={(e) => setSearchParams({...searchParams, district: e.target.value, ward: ''})} className="w-full px-4 py-2.5 border rounded-lg" disabled={!searchParams.city}>
                   <option value="">{t.allDistricts}</option>
                   {currentDistricts.map((d, i) => <option key={i} value={d}>{d}</option>)}
                 </select>
               </div>
+                                        <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">🏘️ Phường/Xã</label>
+              <select value={searchParams.ward} onChange={(e) => setSearchParams({...searchParams, ward: e.target.value})} className="w-full px-4 py-2.5 border rounded-lg" disabled={!searchParams.district}>
+                <option value="">Tất cả phường/xã</option>
+                {currentWards.map((w, i) => <option key={i} value={w}>{premiumWards[w] ? `⭐ ${w}` : w}</option>)}
+              </select>
+            </div>
               <div className="md:col-span-2">
                 <label className="block text-sm font-bold text-gray-700 mb-2">{t.propertyType} <span className="text-orange-500">*</span></label>
                 <select value={searchParams.propertyType} onChange={(e) => setSearchParams({...searchParams, propertyType: e.target.value})} className="w-full px-4 py-2.5 border rounded-lg">
