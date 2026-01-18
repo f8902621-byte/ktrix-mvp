@@ -425,14 +425,14 @@ export default function SearchPage() {
       
       if (trend === 'up') {
         return (
-          <span className="flex items-center gap-1 text-red-500 font-semibold">
+          <span className="flex items-center gap-1 text-emerald-600 font-semibold">
             <TrendingUp className="w-4 h-4" />
             +{trendPercent}%
           </span>
         );
       } else if (trend === 'down') {
         return (
-          <span className="flex items-center gap-1 text-green-500 font-semibold">
+          <span className="flex items-center gap-1 text-red-500 font-semibold">
             <TrendingDown className="w-4 h-4" />
             {trendPercent}%
           </span>
