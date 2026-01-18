@@ -245,7 +245,7 @@ const CHOTOT_DISTRICTS = {
     'phu nhuan': '13016',
     'tan binh': '13017',
     'tan phu': '13018',
-    'thu duc': '13096', 'thanh pho thu duc': '13096', 'tp thu duc': '13096', 'tp. thu duc': '13096',
+    'thu duc': '13019', 'thanh pho thu duc': '13019', 'tp thu duc': '13019', 'tp. thu duc': '13019',
     'binh chanh': '13020', 'huyen binh chanh': '13020',
     'can gio': '13021', 'huyen can gio': '13021',
     'cu chi': '13022', 'huyen cu chi': '13022',
@@ -829,11 +829,11 @@ async function fetchChotot(params) {
   baseParams.append('region_v2', regionCode);
   baseParams.append('st', 's,k');
   baseParams.append('limit', '50');
-  // Filtre par district si spécifié
+// Filtre par district si spécifié
   const districtCode = getChototDistrictCode(regionCode, district);
   if (districtCode) {
-    baseParams.append('area', districtCode);
-    console.log(`Chotot: district="${district}" → area=${districtCode}`);
+    // baseParams.append('area', districtCode);  // TEMPORAIREMENT DÉSACTIVÉ
+    console.log(`Chotot: district="${district}" → area=${districtCode} (DISABLED)`);
   }
   
   if (priceMin || priceMax) {
