@@ -440,7 +440,6 @@ function analyzeListingText(title, body) {
     hasInvestmentPotential: false,
     hasLegalIssue: false,
     hasPlanningRisk: false,
-    detectedKeywords: []
   };
 
   const bodyText = (body || '').toLowerCase();
@@ -465,7 +464,6 @@ function analyzeListingText(title, body) {
         const width = parseFloat(match[1].replace(',', '.'));
         if (width >= 1 && width <= 15) {
           analysis.extractedStreetWidth = width;
-          analysis.detectedKeywords.push(`Hẻm ${width}m`);
           streetWidthFound = true;
           break;
         }
@@ -483,8 +481,7 @@ function analyzeListingText(title, body) {
           const width = parseFloat(match[1].replace(',', '.'));
           if (width >= 1 && width <= 15) {
             analysis.extractedStreetWidth = width;
-            analysis.detectedKeywords.push(`Hẻm ${width}m`);
-            break;
+                break;
           }
         }
       }
@@ -500,8 +497,7 @@ function analyzeListingText(title, body) {
     const match = text.match(pattern);
     if (match && parseInt(match[1]) <= 20) {
       analysis.extractedFloors = parseInt(match[1]);
-      analysis.detectedKeywords.push(`${analysis.extractedFloors} tầng`);
-      break;
+        break;
     }
   }
 
@@ -517,8 +513,7 @@ function analyzeListingText(title, body) {
       const facade = parseFloat(match[1].replace(',', '.'));
       if (facade >= 2 && facade <= 30) {
         analysis.extractedFacade = facade;
-        analysis.detectedKeywords.push(`MT ${facade}m`);
-        break;
+           break;
       }
     }
   }
@@ -531,8 +526,7 @@ function analyzeListingText(title, body) {
     const match = text.match(pattern);
     if (match) {
       analysis.extractedDirection = match[1].charAt(0).toUpperCase() + match[1].slice(1);
-      analysis.detectedKeywords.push(`Hướng ${analysis.extractedDirection}`);
-      break;
+         break;
     }
   }
 
@@ -545,8 +539,7 @@ function analyzeListingText(title, body) {
     const match = text.match(pattern);
     if (match) {
       analysis.extractedRentalIncome = parseInt(match[1]) * 1000000;
-      analysis.detectedKeywords.push(`Thu nhập ${match[1]}tr/tháng`);
-      break;
+          break;
     }
   }
 
@@ -558,32 +551,26 @@ function analyzeListingText(title, body) {
     const match = text.match(pattern);
     if (match) {
       analysis.extractedPricePerM2 = parseInt(match[1]) * 1000000;
-      analysis.detectedKeywords.push(`${match[1]}tr/m²`);
-      break;
+         break;
     }
   }
 
   if (/metro|tàu\s*điện/i.test(text)) {
     analysis.hasMetroNearby = true;
-    analysis.detectedKeywords.push('🚇 Gần Metro');
-  }
+    }
   if (/mở\s*đường|sắp\s*mở|đường\s*mới|quy\s*hoạch\s*đường/i.test(text)) {
     analysis.hasNewRoad = true;
-    analysis.detectedKeywords.push('🛣️ Sắp mở đường');
-  }
+     }
   if (/đầu\s*tư|sinh\s*lời|tăng\s*giá|tiềm\s*năng/i.test(text)) {
     analysis.hasInvestmentPotential = true;
-    analysis.detectedKeywords.push('📈 Tiềm năng đầu tư');
-  }
+    }
 
   if (/chưa\s*(có\s*)?sổ|giấy\s*tay|không\s*sổ/i.test(text)) {
     analysis.hasLegalIssue = true;
-    analysis.detectedKeywords.push('⚠️ Chưa có sổ');
-  }
+    }
   if (/giải\s*tỏa|quy\s*hoạch\s*(treo|đỏ)|tranh\s*chấp/i.test(text)) {
     analysis.hasPlanningRisk = true;
-    analysis.detectedKeywords.push('🚨 Rủi ro quy hoạch');
-  }
+    }
 
   return analysis;
 }
@@ -917,8 +904,7 @@ async function fetchChotot(params) {
         hasInvestmentPotential: nlpAnalysis.hasInvestmentPotential,
         hasLegalIssue: nlpAnalysis.hasLegalIssue,
         hasPlanningRisk: nlpAnalysis.hasPlanningRisk,
-        detectedKeywords: nlpAnalysis.detectedKeywords,
-      };
+             };
     });
   
   // if (typeMapping.include.length > 0 || typeMapping.exclude.length > 0) {
@@ -1941,8 +1927,7 @@ urgentKeywords: [],
         hasInvestmentPotential: item.hasInvestmentPotential || false,
         hasLegalIssue: item.hasLegalIssue || false,
         hasPlanningRisk: item.hasPlanningRisk || false,
-        detectedKeywords: item.detectedKeywords || [],
-   
+       
       };
     });
 
