@@ -3,6 +3,8 @@
 // Version avec Market Stats + Archive Trends
 // ============================================
 
+import { computeKOS } from '../../lib/Scoring/kosCalculator';
+
 const APIFY_API_TOKEN = process.env.APIFY_API_TOKEN;
 const APIFY_ACTOR_ID = process.env.APIFY_ACTOR_ID;
 const SCRAPER_API_KEY = process.env.SCRAPER_API_KEY;
