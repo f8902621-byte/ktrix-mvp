@@ -1891,9 +1891,16 @@ export default async function handler(req, res) {
       ? validPricePerM2.reduce((a, b) => a + b, 0) / validPricePerM2.length 
       : 50000000;
 
-    const results = sortedResults.slice(0, 200).map((item, i) => {
-      // const negotiation = calculateNegotiationScore(item, avgPricePerM2);
-      const pricePosition = analyzePricePosition(item, districtStats);
+const results = sortedResults.slice(0, 200).map(item => ({
+  id: item.id || null,
+  title: item.title || '',
+  price: item.price || 0,
+  area: item.area || 0,
+  source: item.source || 'unknown',
+  url: item.url || '',
+  imageUrl: item.thumbnail || '',
+}));
+
 
       const districtKey = (item.district || '').toLowerCase().trim();
 // const kos = computeKOS(item, districtStats[districtKey]);
