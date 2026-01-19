@@ -1803,6 +1803,7 @@ export default async function handler(req, res) {
       getArchiveStatsByDistrict(city, propertyType),
       getTotalArchiveByDistrict(city),
       // Sources
+      console.log('🚨 FETCH CHOTOT APPELÉ');
       ...(sources?.includes('chotot') ? [
         fetchChotot({ city, district, ward, priceMin, priceMax, sortBy, propertyType })
           .then(results => ({ source: 'chotot', results }))
