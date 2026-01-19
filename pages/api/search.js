@@ -921,11 +921,11 @@ async function fetchChotot(params) {
       };
     });
   
-  if (typeMapping.include.length > 0 || typeMapping.exclude.length > 0) {
-    const beforeFilter = results.length;
-    results = filterByKeywords(results, typeMapping.include, typeMapping.exclude);
-    console.log(`Chotot filtre mots-clés: ${beforeFilter} → ${results.length}`);
-  }
+  // if (typeMapping.include.length > 0 || typeMapping.exclude.length > 0) {
+   //  const beforeFilter = results.length;
+   // results = filterByKeywords(results, typeMapping.include, typeMapping.exclude);
+   // console.log(`Chotot filtre mots-clés: ${beforeFilter} → ${results.length}`);
+  // }
 
   return results;
 }
