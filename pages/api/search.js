@@ -1891,15 +1891,18 @@ export default async function handler(req, res) {
       ? validPricePerM2.reduce((a, b) => a + b, 0) / validPricePerM2.length 
       : 50000000;
 
-const results = sortedResults.slice(0, 200).map(item => ({
-  id: item.id || null,
-  title: item.title || '',
+const results = sortedResults.slice(0, 200).map((item, i) => ({
+  id: item.id || i,
+  title: item.title || 'Sans titre',
   price: item.price || 0,
-  area: item.area || 0,
+  area: item.area || item.floorAreaSqm || 0,
   source: item.source || 'unknown',
-  url: item.url || '',
+  url: item.url || '#',
   imageUrl: item.thumbnail || '',
+  district: item.district || null,
+  postedOn: item.postedOn || null,
 }));
+
 
 
 // const kos = computeKOS(item, districtStats[districtKey]);
@@ -1921,8 +1924,6 @@ const results = sortedResults.slice(0, 200).map(item => ({
         url: item.url || '#',
         source: item.source || 'unknown',
        score: null,
-negotiationLevel: null,
-negotiationDetails: null,
 hasUrgentKeyword: false,
 urgentKeywords: [],
         isNew: /hôm nay|phút|today/i.test(item.postedOn || ''),
