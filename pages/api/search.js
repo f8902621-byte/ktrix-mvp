@@ -930,7 +930,7 @@ async function fetchChotot(params) {
 // ALONHADAT SCRAPER
 // ============================================
 async function fetchAlonhadat(params) {
-  const { city, propertyType, priceMax } = params;
+ const { city, district, ward, propertyType, priceMax } = params;
   
   if (!SCRAPER_API_KEY) {
     console.log('Alonhadat: SCRAPER_API_KEY non configuré, skip');
@@ -961,8 +961,49 @@ async function fetchAlonhadat(params) {
       }
     }
   }
+  // Mapping district
+  let districtSlug = '';
+  if (district) {
+    const districtNormalized = removeVietnameseAccents(district.toLowerCase())
+      .replace(/^(quan|huyen|thanh pho|tp\.?|tx\.?|q\.?)\s*/i, '')
+      .trim();
+    
+    const ALONHADAT_DISTRICTS = {
+      'thu duc': 'thanh-pho-thu-duc',
+      '1': 'quan-1', 'quan 1': 'quan-1',
+      '2': 'quan-2', 'quan 2': 'quan-2',
+      '3': 'quan-3', 'quan 3': 'quan-3',
+      '4': 'quan-4', 'quan 4': 'quan-4',
+      '5': 'quan-5', 'quan 5': 'quan-5',
+      '6': 'quan-6', 'quan 6': 'quan-6',
+      '7': 'quan-7', 'quan 7': 'quan-7',
+      '8': 'quan-8', 'quan 8': 'quan-8',
+      '9': 'quan-9', 'quan 9': 'quan-9',
+      '10': 'quan-10', 'quan 10': 'quan-10',
+      '11': 'quan-11', 'quan 11': 'quan-11',
+      '12': 'quan-12', 'quan 12': 'quan-12',
+      'binh tan': 'quan-binh-tan',
+      'binh thanh': 'quan-binh-thanh',
+      'go vap': 'quan-go-vap',
+      'phu nhuan': 'quan-phu-nhuan',
+      'tan binh': 'quan-tan-binh',
+      'tan phu': 'quan-tan-phu',
+      'binh chanh': 'huyen-binh-chanh',
+      'can gio': 'huyen-can-gio',
+      'cu chi': 'huyen-cu-chi',
+      'hoc mon': 'huyen-hoc-mon',
+      'nha be': 'huyen-nha-be',
+    };
+    
+    districtSlug = ALONHADAT_DISTRICTS[districtNormalized] || '';
+    if (districtSlug) {
+      console.log(`Alonhadat: district="${district}" → slug=${districtSlug}`);
+    }
+  }
   
-  const targetUrl = `https://alonhadat.com.vn/can-ban-${typeSlug}/${citySlug}`;
+ const targetUrl = districtSlug 
+    ? `https://alonhadat.com.vn/can-ban-${typeSlug}/${districtSlug}/${citySlug}`
+    : `https://alonhadat.com.vn/can-ban-${typeSlug}/${citySlug}`;
   const scraperUrl = `https://api.scraperapi.com/?api_key=${SCRAPER_API_KEY}&url=${encodeURIComponent(targetUrl)}&render=true`;
   
   console.log(`Alonhadat: scraping ${targetUrl}`);
@@ -1732,12 +1773,12 @@ export default async function handler(req, res) {
           .catch(e => { console.log(`Chotot erreur: ${e.message}`); return { source: 'chotot', results: [] }; })
       ] : []),
       ...(sources?.includes('alonhadat') ? [
-        fetchAlonhadat({ city, propertyType, priceMax })
+        fetchAlonhadat({ city, district, ward, propertyType, priceMax })
           .then(results => ({ source: 'alonhadat', results }))
           .catch(e => { console.log(`Alonhadat erreur: ${e.message}`); return { source: 'alonhadat', results: [] }; })
       ] : []),
       ...(sources?.includes('batdongsan') ? [
-        fetchBatdongsan({ city, propertyType, priceMax })
+        fetchBatdongsan({ city, district, ward, propertyType, priceMax })
           .then(results => ({ source: 'batdongsan', results }))
           .catch(e => { console.log(`Batdongsan erreur: ${e.message}`); return { source: 'batdongsan', results: [] }; })
       ] : [])
