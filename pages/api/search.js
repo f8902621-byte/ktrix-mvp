@@ -832,7 +832,7 @@ async function fetchChotot(params) {
 // Filtre par district si spécifié
   const districtCode = getChototDistrictCode(regionCode, district);
   if (districtCode) {
-    // baseParams.append('area', districtCode);  // TEMPORAIREMENT DÉSACTIVÉ
+    baseParams.append('area', districtCode);  // TEMPORAIREMENT DÉSACTIVÉ
     console.log(`Chotot: district="${district}" → area=${districtCode} (DISABLED)`);
   }
   
@@ -1001,9 +1001,41 @@ async function fetchAlonhadat(params) {
     }
   }
   
- const targetUrl = districtSlug 
-    ? `https://alonhadat.com.vn/can-ban-${typeSlug}/${districtSlug}/${citySlug}`
-    : `https://alonhadat.com.vn/can-ban-${typeSlug}/${citySlug}`;
+// Codes district pour Alonhadat
+  const ALONHADAT_DISTRICT_CODES = {
+    'thanh-pho-thu-duc': 'q150',
+    'quan-1': 'q1',
+    'quan-2': 'q2',
+    'quan-3': 'q3',
+    'quan-4': 'q4',
+    'quan-5': 'q5',
+    'quan-6': 'q6',
+    'quan-7': 'q7',
+    'quan-8': 'q8',
+    'quan-9': 'q9',
+    'quan-10': 'q10',
+    'quan-11': 'q11',
+    'quan-12': 'q12',
+    'quan-binh-tan': 'q52',
+    'quan-binh-thanh': 'q43',
+    'quan-go-vap': 'q48',
+    'quan-phu-nhuan': 'q51',
+    'quan-tan-binh': 'q49',
+    'quan-tan-phu': 'q50',
+    'huyen-binh-chanh': 'q144',
+    'huyen-can-gio': 'q145',
+    'huyen-cu-chi': 'q153',
+    'huyen-hoc-mon': 'q146',
+    'huyen-nha-be': 'q147',
+  };
+  
+  let targetUrl;
+  if (districtSlug && ALONHADAT_DISTRICT_CODES[districtSlug]) {
+    const districtCode = ALONHADAT_DISTRICT_CODES[districtSlug];
+    targetUrl = `https://alonhadat.com.vn/can-ban-${typeSlug}-${districtSlug}-${citySlug}-${districtCode}.htm`;
+  } else {
+    targetUrl = `https://alonhadat.com.vn/can-ban-${typeSlug}/${citySlug}`;
+  }
   const scraperUrl = `https://api.scraperapi.com/?api_key=${SCRAPER_API_KEY}&url=${encodeURIComponent(targetUrl)}&render=true`;
   
   console.log(`Alonhadat: scraping ${targetUrl}`);
