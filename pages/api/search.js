@@ -1785,6 +1785,9 @@ export default async function handler(req, res) {
   console.log('Params:', JSON.stringify({ city, propertyType, priceMin, priceMax, sortBy, sources }));
 
   try {
+    console.log('--- DEBUG SOURCES ---');
+console.log('SOURCES PARAM =', sources);
+
     // Récupérer les stats archive en parallèle des recherches
     const [archiveStats, totalArchive, ...sourceResults] = await Promise.all([
       getArchiveStatsByDistrict(city, propertyType),
@@ -1817,26 +1820,17 @@ export default async function handler(req, res) {
   }))
 );
 
-    const typeMapping = getPropertyTypeMapping(propertyType);
-
-    for (const { source, results } of sourceResults) {
-      console.log(`${source}: ${results.length} résultats bruts`);
-      
-      if (results && results.length > 0) {
-        let typeFiltered = results;
-        
-        // Only apply keyword filtering for Chotot (alonhadat/batdongsan are already filtered by URL)
-if (source === 'chotot') {
-  console.log(`CHOTOT – filtrage type DÉSACTIVÉ (${results.length})`);
-  typeFiltered = results;
+for (const { source, results } of sourceResults) {
+  if (Array.isArray(results) && results.length > 0) {
+    allResults.push(
+      ...results.map(r => ({
+        ...r,
+        source
+      }))
+    );
+  }
 }
 
-        
-        const filtered = applyFilters(typeFiltered, { city, district, ward, priceMin, priceMax, livingAreaMin, livingAreaMax, bedrooms, legalStatus });
-        console.log(`${source}: ${results.length} → ${typeFiltered.length} (type) → ${filtered.length} (autres filtres)`);
-        allResults.push(...filtered);
-      }
-    }
 
     console.log(`TOTAL BRUT: ${allResults.length}`);
     
