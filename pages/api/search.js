@@ -1890,47 +1890,8 @@ const results = sortedResults.slice(0, 200).map((item, i) => ({
 }));
 
 
-
 // const kos = computeKOS(item, districtStats[districtKey]);
       
-      return {
-        id: item.id || i,
-        title: item.title || 'Sans titre',
-        price: item.price || 0,
-        pricePerSqm: item.area > 0 ? Math.round(item.price / item.area) : 0,
-        avgPricePerSqm: Math.round(avgPricePerM2),
-        city: item.city || city || '',
-        district: item.district || '',
-        address: item.address || '',
-        floorArea: item.area || 0,
-        bedrooms: item.bedrooms || 0,
-        bathrooms: item.bathrooms || 0,
-        imageUrl: item.thumbnail || 'https://via.placeholder.com/300x200?text=No+Image',
-        images: item.images || [],
-        url: item.url || '#',
-        source: item.source || 'unknown',
-       score: null,
-hasUrgentKeyword: false,
-urgentKeywords: [],
-        isNew: /hôm nay|phút|today/i.test(item.postedOn || ''),
-        postedOn: item.postedOn || '',
-       daysOnline: 0,
-        legalStatus: item.legalStatus || null,
-        direction: item.direction || null,
-        floors: item.floors || null,
-        streetWidth: item.streetWidth || null,
-        facadeWidth: item.facadeWidth || null,
-        furnishing: item.furnishing || null,
-        extractedRentalIncome: item.extractedRentalIncome || null,
-        hasMetroNearby: item.hasMetroNearby || false,
-        hasNewRoad: item.hasNewRoad || false,
-        hasInvestmentPotential: item.hasInvestmentPotential || false,
-        hasLegalIssue: item.hasLegalIssue || false,
-        hasPlanningRisk: item.hasPlanningRisk || false,
-       
-      };
-    });
-
     const prices = results.map(r => r.price).filter(p => p > 0);
     const stats = {
       lowestPrice: prices.length ? Math.min(...prices) : 0,
