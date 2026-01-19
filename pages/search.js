@@ -285,10 +285,18 @@ export default function SearchPage() {
   const currentWards = wardsByDistrict[searchParams.district] || [];
 
   const handleSearch = async () => {
-    if (!searchParams.city || !searchParams.propertyType || !searchParams.priceMax) {
-      setError(t.required);
-      return;
-    }
+ if (
+  !searchParams.city ||
+  !searchParams.propertyType ||
+  searchParams.priceMax === null ||
+  searchParams.priceMax === undefined ||
+  searchParams.priceMax === '' ||
+  Number(searchParams.priceMax) <= 0
+) {
+  setError(t.required);
+  return;
+}
+
     
     setLoading(true);
     setError(null);
