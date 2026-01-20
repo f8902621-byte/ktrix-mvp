@@ -1905,7 +1905,11 @@ const results = sortedResults.slice(0, 200).map((item, i) => ({
 
 // const kos = computeKOS(item, districtStats[districtKey]);
       
-    const prices = results.map(r => r.price).filter(p => p > 0);
+    const maxAllowed = priceMax ? priceMax * 1_000_000_000 : Infinity;
+const prices = results
+  .map(r => r.price)
+  .filter(p => p > 0 && p <= maxAllowed);
+
     const stats = {
       lowestPrice: prices.length ? Math.min(...prices) : 0,
       highestPrice: prices.length ? Math.max(...prices) : 0,
