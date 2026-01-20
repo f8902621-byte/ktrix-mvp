@@ -827,11 +827,8 @@ async function fetchChotot(params) {
     console.log(`Chotot: district="${district}" → area=${districtCode} (DISABLED)`);
   }
   
-  if (priceMin || priceMax) {
-    const minPrice = priceMin ? Math.round(parseFloat(priceMin) * 1000000000) : 0;
-    const maxPrice = priceMax ? Math.round(parseFloat(priceMax) * 1000000000) : 999999999999;
-    baseParams.append('price', `${minPrice}-${maxPrice}`);
-  }
+// Chotot API: filtre prix désactivé (format incompatible)
+if (false && (priceMin || priceMax)) {}
   
   if (sortBy === 'price_asc') {
     baseParams.append('sort_by', 'price');
