@@ -1378,6 +1378,13 @@ function applyFilters(results, filters) {
   const maxTy = parseFloat(priceMax);
 
   filtered = filtered.filter(item => {
+    console.log(
+  "[PRICE DEBUG]",
+  item.source,
+  item.price,
+  typeof item.price
+);
+
     if (!item.price || item.price <= 0) return false;
 
     // Normalisation : si prix > 1000 → c’est du VND
