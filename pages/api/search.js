@@ -1359,7 +1359,7 @@ function filterByKeywords(results, includeKeywords, excludeKeywords) {
 }
 
 function applyFilters(results, filters) {
-  const { city, district, ward, priceMin, priceMax, livingAreaMin, livingAreaMax, bedrooms, legalStatus, streetWidthMin } = filters;
+  const { city, district, ward, priceMin, priceMax, livingAreaMin, livingAreaMax, bedrooms, legalStatus, streetWidthMin, propertyType } = filters;
   let filtered = [...results];
   
   if (priceMin) {
@@ -1376,6 +1376,10 @@ function applyFilters(results, filters) {
   const maxTy = parseFloat(priceMax);
 
   filtered = filtered.filter(item => {
+    // Debug toutes les sources
+if (item.source === 'alonhadat') {
+  console.log(`[ALONHADAT PRICE DEBUG] price=${item.price}, title=${item.title?.substring(0, 30)}`);
+}
     console.log(
   "[PRICE DEBUG]",
   item.source,
@@ -1446,7 +1450,26 @@ if (district) {
       return true;
     });
   }
+  // Filtre par type de bien
+if (propertyType) {
+  const typeMapping = getPropertyTypeMapping(propertyType);
+  const excludeKw = typeMapping.exclude || [];
   
+  const beforeType = filtered.length;
+  filtered = filtered.filter(item => {
+    const title = removeVietnameseAccents((item.title || '').toLowerCase());
+    const itemType = removeVietnameseAccents((item.propertyType || '').toLowerCase());
+    const combined = title + ' ' + itemType;
+    
+    for (const kw of excludeKw) {
+      if (combined.includes(removeVietnameseAccents(kw))) {
+        return false;
+      }
+    }
+    return true;
+  });
+  console.log(`Filtre propertyType: ${beforeType} → ${filtered.length}`);
+}
   if (streetWidthMin) {
     filtered = filtered.filter(item => {
       if (!item.streetWidth) return false;
@@ -1847,16 +1870,11 @@ for (const { source, results } of sourceResults) {
     
     let unique = deduplicateResults(allResults);
     // APPLIQUER LES FILTRES (prix, district, surface, etc.)
-unique = applyFilters(unique, { 
-  city, 
-  district, 
-  ward, 
-  priceMin, 
-  priceMax, 
-  livingAreaMin, 
-  livingAreaMax, 
-  bedrooms, 
-  legalStatus 
+
+    unique = applyFilters(unique, { 
+  city, district, ward, priceMin, priceMax, 
+  livingAreaMin, livingAreaMax, bedrooms, legalStatus,
+  propertyType
 });
 console.log(`Après applyFilters: ${unique.length} résultats`);
     const districtStats = calculateDistrictStats(unique);
