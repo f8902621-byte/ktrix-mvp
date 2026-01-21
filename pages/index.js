@@ -181,7 +181,7 @@ export default function Landing() {
 const sources = [
   { name: 'Chotot.com', logo: '🛒', active: true },
   { name: 'Alonhadat.com.vn', logo: '📍', active: true },
-  { name: 'Batdongsan.com.vn', logo: '🏠', active: false },
+  { name: 'Batdongsan.com.vn', logo: '🏠', active: false, status: 'maintenance' },
   { name: 'Nhadat247.com.vn', logo: '🏘️', active: false },
   { name: 'Homedy.com', logo: '🏡', active: false },
 ];
@@ -254,7 +254,7 @@ const sources = [
                 <div className="w-12 h-12 bg-sky-100 rounded-xl flex items-center justify-center mb-4">
                   <BarChart3 className="w-6 h-6 text-sky-500" />
                 </div>
-                <p className="text-3xl font-bold text-gray-900">3+</p>
+                <p className="text-3xl font-bold text-gray-900">2</p>
                 <p className="text-gray-500">{t.statSources}</p>
               </div>
               <div className="bg-white rounded-2xl p-6 shadow-xl shadow-gray-200/50 border border-gray-100">
