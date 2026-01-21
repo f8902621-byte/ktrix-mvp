@@ -1161,7 +1161,6 @@ function parseAlonhadatHtml(html, city) {
           listing.bedrooms = parseInt(bedroomMatch[1]);
         }
       }
-      }  // fin du bloc extraction titre
 
       // Si toujours pas de chambres, chercher dans l'URL
       if (!listing.bedrooms && listing.url) {
