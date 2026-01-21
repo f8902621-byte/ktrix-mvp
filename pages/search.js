@@ -112,7 +112,12 @@ export default function SearchPage() {
     
     return () => clearInterval(pollInterval);
   }, [bdsTaskId, bdsStatus]);
-
+// Relancer la recherche quand le tri change
+  useEffect(() => {
+    if (results.length > 0 && !loading) {
+      handleSearch();
+    }
+  }, [sortBy]);
   const t = {
     vn: {
       menu: 'Menu', searchParams: 'Tham số Tìm kiếm', backToHome: 'Trang chủ',
