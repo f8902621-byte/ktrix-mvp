@@ -1118,6 +1118,20 @@ function parseAlonhadatHtml(html, city) {
           }
         }
       }
+      // Si toujours pas de surface, chercher dans l'URL
+      if (!listing.area && listing.url) {
+        const urlAreaMatch = listing.url.match(/(\d+)-?(\d*)m2/i) || listing.url.match(/(\d+)-?(\d*)m²/i);
+        if (urlAreaMatch) {
+          let areaValue = parseInt(urlAreaMatch[1]);
+          // Gérer les décimales (64-5m2 = 64.5)
+          if (urlAreaMatch[2]) {
+            areaValue = parseFloat(`${urlAreaMatch[1]}.${urlAreaMatch[2]}`);
+          }
+          if (areaValue >= 10 && areaValue <= 10000) {
+            listing.area = Math.round(areaValue);
+          }
+        }
+      }
       // DEBUG: log si pas de surface trouvée
       if (!listing.area && listing.title) {
         console.log(`[ALONHADAT NO AREA] title="${listing.title.substring(0, 40)}", html_sample="${articleHtml.substring(0, 200)}"`);
