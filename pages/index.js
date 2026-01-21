@@ -13,7 +13,7 @@ export default function Landing() {
       tagline: 'Nền tảng Tìm kiếm BĐS Thông minh',
       login: 'Đăng nhập',
       heroTitle: 'Tìm kiếm BĐS trên',
-      heroHighlight: '85% thị trường',
+      heroHighlight: '65% thị trường',
       heroSubtitle: 'Việt Nam',
       heroDesc: 'K Trix tổng hợp dữ liệu từ nhiều nguồn uy tín, giúp môi giới tiết kiệm thời gian và không bỏ lỡ cơ hội.',
       tryBeta: 'Dùng thử miễn phí',
@@ -60,7 +60,7 @@ export default function Landing() {
       tagline: 'Smart Real Estate Search Platform',
       login: 'Login',
       heroTitle: 'Search properties across',
-      heroHighlight: '85% of the market',
+      heroHighlight: '65% of the market',
       heroSubtitle: 'in Vietnam',
       heroDesc: 'K Trix aggregates data from multiple trusted sources, helping agents save time and never miss an opportunity.',
       tryBeta: 'Try for free',
@@ -107,7 +107,7 @@ export default function Landing() {
       tagline: 'Plateforme de Recherche Immobilière Intelligente',
       login: 'Connexion',
       heroTitle: 'Recherchez sur',
-      heroHighlight: '85% du marché',
+      heroHighlight: '65% du marché',
       heroSubtitle: 'immobilier au Vietnam',
       heroDesc: 'K Trix agrège les données de multiples sources fiables, aidant les agents à gagner du temps et ne jamais manquer une opportunité.',
       tryBeta: 'Essai gratuit',
@@ -190,13 +190,10 @@ const sources = [
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-b z-50">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <img src="https://raw.githubusercontent.com/f8902621-byte/traxhome-mvp/main/Ktrixlogo.png" alt="K Trix" className="w-10 h-10 object-contain" />
-            <div>
-              <span className="text-xl font-bold text-gray-900">K Trix</span>
-              <span className="ml-2 text-xs bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full font-medium">BETA</span>
-            </div>
-          </div>
+<div className="flex items-center gap-3">
+  <img src="https://raw.githubusercontent.com/f8902621-byte/traxhome-mvp/main/Ktrixlogo.png" alt="K Trix" className="w-14 h-14 object-contain" />
+  <span className="text-xs bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full font-medium">BETA</span>
+</div>
           <div className="flex items-center gap-4">
             <select
               value={language}
@@ -268,7 +265,7 @@ const sources = [
                 <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-4">
                   <Shield className="w-6 h-6 text-blue-500" />
                 </div>
-                <p className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-sky-400">85%</p>
+                <p className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-sky-400">65%</p>
                 <p className="text-gray-500">{t.statCoverage}</p>
               </div>
               <div className="bg-white rounded-2xl p-6 shadow-xl shadow-gray-200/50 border border-gray-100">
@@ -417,12 +414,9 @@ const sources = [
       <footer className="py-12 px-6 bg-gray-900 text-gray-400">
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-            <div className="flex items-center gap-3">
-              <img src="https://raw.githubusercontent.com/f8902621-byte/traxhome-mvp/main/Ktrixlogo.png" alt="K Trix" className="w-10 h-10 object-contain" />
-              <div>
-                <span className="text-white font-bold">K Trix</span>
-                <p className="text-sm">{t.footerDesc}</p>
-              </div>
+<div className="flex items-center gap-3">
+              <img src="https://raw.githubusercontent.com/f8902621-byte/traxhome-mvp/main/Ktrixlogo.png" alt="K Trix" className="w-14 h-14 object-contain" />
+              <p className="text-sm">{t.footerDesc}</p>
             </div>
             <div className="flex gap-6 text-sm">
               <a href="mailto:contact@ktrix.ai" className="hover:text-white transition">{t.footerContact}</a>
