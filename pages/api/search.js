@@ -1910,15 +1910,14 @@ console.log(`Après applyFilters: ${unique.length} résultats`);
     
  let sortedResults = [...unique];
 
-// Mélanger les sources par défaut pour équilibrer Chotot/Alonhadat/Batdongsan
-if (!sortBy || (sortBy !== 'price_asc' && sortBy !== 'price_desc')) {
-  sortedResults.sort(() => Math.random() - 0.5);
-}
-
+// Tri des résultats
 if (sortBy === 'price_asc') {
-  sortedResults.sort((a, b) => a.price - b.price);
+  sortedResults.sort((a, b) => (a.price || 0) - (b.price || 0));
 } else if (sortBy === 'price_desc') {
-  sortedResults.sort((a, b) => b.price - a.price);
+  sortedResults.sort((a, b) => (b.price || 0) - (a.price || 0));
+} else {
+  // Mélanger seulement si PAS de tri par prix demandé
+  sortedResults.sort(() => Math.random() - 0.5);
 }
 
 // Log pour debug
@@ -1934,7 +1933,17 @@ console.log('SOURCES DANS FINAL 200:', sourceCounts);
     const avgPricePerM2 = validPricePerM2.length > 0 
       ? validPricePerM2.reduce((a, b) => a + b, 0) / validPricePerM2.length 
       : 50000000;
-
+// Calculer le score de négociation pour chaque annonce
+const avgPricePerM2ForScore = avgPricePerM2 || 50000000;
+sortedResults = sortedResults.map(item => {
+  const scoreData = calculateNegotiationScore(item, avgPricePerM2ForScore);
+  return {
+    ...item,
+    negotiationScore: scoreData.score,
+    negotiationLevel: scoreData.level,
+    scoreDetails: scoreData.details
+  };
+});
 const results = sortedResults.slice(0, 200).map((item, i) => ({
   id: item.id || i,
   title: item.title || 'Sans titre',
@@ -1944,7 +1953,19 @@ const results = sortedResults.slice(0, 200).map((item, i) => ({
   url: item.url || '#',
   imageUrl: item.thumbnail || '',
   district: item.district || null,
+  ward: item.ward || null,
   postedOn: item.postedOn || null,
+  // CHAMPS MANQUANTS
+  bedrooms: item.bedrooms || null,
+  bathrooms: item.bathrooms || null,
+  floors: item.floors || null,
+  pricePerSqm: item.pricePerSqm || item.pricePerM2 || null,
+  legalStatus: item.legalStatus || null,
+  direction: item.direction || null,
+  streetWidth: item.streetWidth || null,
+  propertyType: item.propertyType || null,
+  // SCORE
+  score: item.negotiationScore || item.score || 0,
 }));
 
 
