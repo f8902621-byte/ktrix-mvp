@@ -2114,10 +2114,11 @@ const results = sortedResults.slice(0, 200).map((item, i) => ({
   direction: item.direction || null,
   streetWidth: item.streetWidth || null,
   propertyType: item.propertyType || null,
-  // SCORE
-  score: item.negotiationScore || item.score || 0,
-}));
-
+// SCORE
+      score: item.negotiationScore || item.score || 0,
+      // MATCHED KEYWORDS
+      matchedKeywords: item.matchedKeywords || [],
+    }));
 
 // const kos = computeKOS(item, districtStats[districtKey]);
       
