@@ -1967,7 +1967,44 @@ console.log(`Après applyFilters: ${unique.length} résultats`);
       
       console.log(`Filtre keywordsOnly: ${before} → ${unique.length}`);
     }
-    
+    // Filtre par keywords sélectionnés dans l'UI
+    if (keywords && Array.isArray(keywords) && keywords.length > 0) {
+      const before = unique.length;
+      
+      const KEYWORD_PATTERNS = {
+        'urgent_sale': ['ban gap'],
+        'quick_sale': ['ban nhanh'],
+        'need_quick_sale': ['can ban gap', 'can ban nhanh'],
+        'need_money': ['can tien'],
+        'need_cash': ['ket tien'],
+        'cheap_price': ['gia re', 'gia tot'],
+        'bank_pressure': ['ngop bank', 'ngop ngan hang'],
+        'direct_owner': ['chinh chu'],
+        'no_agent': ['mien trung gian', 'khong qua moi gioi'],
+        'negotiable_price': ['gia thuong luong'],
+        'selling_at_loss': ['ban lo', 'cat lo', 'lo von', 'ha gia'],
+      };
+      
+      const patternsToMatch = [];
+      for (const kw of keywords) {
+        const patterns = KEYWORD_PATTERNS[kw];
+        if (patterns) {
+          patternsToMatch.push(...patterns);
+        }
+      }
+      
+      if (patternsToMatch.length > 0) {
+        unique = unique.filter(item => {
+          const title = removeVietnameseAccents((item.title || '').toLowerCase());
+          const body = removeVietnameseAccents((item.body || '').toLowerCase());
+          const combined = ' ' + title + ' ' + body + ' ';
+          
+          return patternsToMatch.some(p => combined.includes(p));
+        });
+        
+        console.log(`Filtre keywords UI: ${before} → ${unique.length}`);
+      }
+    }
  let sortedResults = [...unique];
 
 // Le tri sera fait APRÈS le calcul du score
