@@ -2048,7 +2048,6 @@ if (patternsToMatch.length > 0) {
   });
 
   console.log(`Filtre keywords UI: ${before} → ${unique.length}`);
-}
       }
     }
  let sortedResults = [...unique];
