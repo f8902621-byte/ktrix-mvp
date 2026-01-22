@@ -312,15 +312,17 @@ export default function SearchPage() {
     setBdsCount(0);
     setSourceStats({});
     setMarketStats([]);
-    
+    console.log('DEBUG searchParams avant fetch:', JSON.stringify(searchParams));
 try {
   const response = await fetch('/api/search', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      ...searchParams,
-      sortBy: sortBy === 'priceAsc' ? 'price_asc' : sortBy === 'priceDesc' ? 'price_desc' : 'score_desc'
-    })
+body: JSON.stringify({
+          ...searchParams,
+          keywords: searchParams.keywords || [],
+          keywordsOnly: searchParams.keywordsOnly || false,
+          sortBy: sortBy === 'priceAsc' ? 'price_asc' : sortBy === 'priceDesc' ? 'price_desc' : 'score_desc'
+        })
   });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Search error');
