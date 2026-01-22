@@ -2009,16 +2009,46 @@ const KEYWORD_PATTERNS = {
         console.log('DEBUG: patternsToMatch=', patternsToMatch);
       }
       console.log('DEBUG keywords:', { keywords, patternsToMatch });
-      if (patternsToMatch.length > 0) {
-        unique = unique.filter(item => {
-          const title = removeVietnameseAccents((item.title || '').toLowerCase());
-          const body = removeVietnameseAccents((item.body || '').toLowerCase());
-          const combined = ' ' + title + ' ' + body + ' ';
-          
-          return patternsToMatch.some(p => combined.includes(p));
-        });
-        
-        console.log(`Filtre keywords UI: ${before} → ${unique.length}`);
+if (patternsToMatch.length > 0) {
+  // Convertir les patterns vietnamiens en labels lisibles
+  const PATTERN_TO_LABEL = {
+    'ban gap': 'Bán gấp',
+    'ban nhanh': 'Bán nhanh',
+    'can ban nhanh': 'Cần bán nhanh',
+    'can ban gap': 'Cần bán gấp',
+    'ket tien': 'Kẹt tiền',
+    'can tien': 'Cần tiền',
+    'gia re': 'Giá rẻ',
+    'gia tot': 'Giá tốt',
+    'ngop bank': 'Ngộp bank',
+    'ngop ngan hang': 'Ngộp ngân hàng',
+    'chinh chu': 'Chính chủ',
+    'mien trung gian': 'Miễn trung gian',
+    'khong qua moi gioi': 'Không qua môi giới',
+    'gia thuong luong': 'Giá thương lượng',
+    'ban lo': 'Bán lỗ',
+    'cat lo': 'Cắt lỗ',
+    'lo von': 'Lỗ vốn',
+    'ha gia': 'Hạ giá'
+  };
+
+  unique = unique.filter(item => {
+    const title = removeVietnameseAccents((item.title || '').toLowerCase());
+    const body = removeVietnameseAccents((item.body || '').toLowerCase());
+    const combined = ' ' + title + ' ' + body + ' ';
+
+    // Trouver les mots-clés qui matchent
+    const matched = patternsToMatch.filter(p => combined.includes(p));
+
+    if (matched.length > 0) {
+      item.matchedKeywords = matched.map(p => PATTERN_TO_LABEL[p] || p);
+      return true;
+    }
+    return false;
+  });
+
+  console.log(`Filtre keywords UI: ${before} → ${unique.length}`);
+}
       }
     }
  let sortedResults = [...unique];
