@@ -1079,6 +1079,19 @@ body: JSON.stringify({
               
               {/* Titre et Prix */}
               <h3 className="text-2xl font-bold text-gray-900 mb-2">{selectedProperty.title}</h3>
+                {/* Mots-clés détectés */}
+{selectedProperty.matchedKeywords && selectedProperty.matchedKeywords.length > 0 && (
+  <div className="flex flex-wrap gap-2 mb-4">
+    {selectedProperty.matchedKeywords.map((kw, idx) => (
+      <span
+        key={idx}
+        className="px-3 py-1 text-sm font-bold bg-orange-100 text-orange-600 rounded-full border border-orange-200"
+      >
+        🔥 {kw}
+      </span>
+    ))}
+  </div>
+)}
               <div className="flex items-baseline gap-3 mb-4">
                 <span className="text-3xl font-bold text-sky-600">{formatPrice(selectedProperty.price)}</span>
                 {selectedProperty.area > 0 && (
