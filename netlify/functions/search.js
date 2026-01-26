@@ -1033,6 +1033,7 @@ const typeMapping = {
 const baseUrl = process.env.URL || 'https://ktrix-vn.netlify.app';
 const maxResultsValue = body.maxResults || 200;
 const maxPages = maxResultsValue >= 200 ? 5 : maxResultsValue >= 100 ? 3 : 2;
+console.log(`[DEBUG] maxResultsValue = ${maxResultsValue}, maxPages = ${maxPages}`);
 const url = `${baseUrl}/.netlify/functions/alonhadat?city=${citySlug}&propertyType=${typeSlug}&maxPages=${maxPages}`;
     
     console.log(`Alonhadat: Fetching ${citySlug}/${typeSlug}`);
