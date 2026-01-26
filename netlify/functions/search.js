@@ -1031,7 +1031,7 @@ const typeMapping = {
   
   try {
     const baseUrl = process.env.URL || 'https://ktrix-vn.netlify.app';
-    const url = `${baseUrl}/.netlify/functions/alonhadat?city=${citySlug}&propertyType=${typeSlug}&maxPages=1`;
+    const url = `${baseUrl}/.netlify/functions/alonhadat?city=${citySlug}&propertyType=${typeSlug}&maxPages=3`;
     
     console.log(`Alonhadat: Fetching ${citySlug}/${typeSlug}`);
     
