@@ -994,6 +994,74 @@ async function fetchAlonhadat(params) {
   console.log(`Alonhadat TOTAL: ${allListings.length} annonces`);
   return allListings;
 }
+function parseAlonhadatHtml(html, city) {
+  const listings = [];
+  
+  const articleRegex = /<article\s+class=["']property-item["'][^>]*>([\s\S]*?)<\/article>/gi;
+  let match;
+  
+  while ((match = articleRegex.exec(html)) !== null) {
+    const articleHtml = match[1];
+    
+    try {
+      const listing = {};
+      
+      const urlMatch = articleHtml.match(/href=["']([^"']*\.html)["']/i);
+      if (urlMatch) {
+        const href = urlMatch[1];
+        listing.url = href.startsWith('http') ? href : `https://alonhadat.com.vn${href}`;
+        const memberIdMatch = articleHtml.match(/data-memberid=["'](\d+)["']/i);
+        listing.id = memberIdMatch ? `alonhadat_${memberIdMatch[1]}_${Date.now()}` : `alonhadat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      }
+      
+      const titleMatch = articleHtml.match(/itemprop=["']name["'][^>]*>([^<]+)</i) ||
+                         articleHtml.match(/<h3[^>]*>([^<]+)</i);
+      listing.title = titleMatch ? titleMatch[1].trim() : 'Sans titre';
+      
+      const priceMatch = articleHtml.match(/itemprop=["']price["']\s+content=["'](\d+)["']/i);
+      if (priceMatch) {
+        listing.price = parseInt(priceMatch[1]);
+      } else {
+        const priceTextMatch = articleHtml.match(/([\d,\.]+)\s*tỷ/i);
+        if (priceTextMatch) {
+          listing.price = Math.round(parseFloat(priceTextMatch[1].replace(',', '.')) * 1000000000);
+        }
+      }
+      
+      const areaPatterns = [/(\d+)\s*m²/i, /(\d+)\s*m2/i, /(\d+)m²/i];
+      for (const pattern of areaPatterns) {
+        const areaMatch = articleHtml.match(pattern);
+        if (areaMatch) {
+          const areaValue = parseInt(areaMatch[1]);
+          if (areaValue >= 10 && areaValue <= 10000) {
+            listing.area = areaValue;
+            break;
+          }
+        }
+      }
+      
+      const localityMatch = articleHtml.match(/itemprop=["']addressLocality["'][^>]*>([^<]+)</i);
+      listing.district = localityMatch ? localityMatch[1].trim() : '';
+      listing.city = city;
+      
+      const imageMatch = articleHtml.match(/src=["']([^"']*(?:thumbnail|files)[^"']*)["']/i);
+      if (imageMatch) {
+        listing.thumbnail = imageMatch[1].startsWith('http') ? imageMatch[1] : `https://alonhadat.com.vn${imageMatch[1]}`;
+      }
+      
+      listing.source = 'alonhadat.com.vn';
+      listing.images = listing.thumbnail ? [listing.thumbnail] : [];
+      
+      if (listing.title && listing.price > 0) {
+        listings.push(listing);
+      }
+    } catch (e) {
+      // Skip invalid listings
+    }
+  }
+  
+  return listings;
+}
 
 // ============================================
 // BATDONGSAN SCRAPER
