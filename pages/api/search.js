@@ -1877,13 +1877,14 @@ export default async function handler(req, res) {
   console.log('=== NOUVELLE RECHERCHE V4 ===');
   console.log('Params:', JSON.stringify({ city, propertyType, priceMin, priceMax, sortBy, sources, keywords, keywordsOnly }));
 console.log(`[DEBUG] maxResults = ${maxResults}`);
-```
+const { city, district, ward, propertyType, priceMin, priceMax, livingAreaMin, livingAreaMax, bedrooms, sources, sortBy, keywords, keywordsOnly, legalStatus, maxResults } = req.body || {};
 
-### Modification 3 - Cherche le slice
+console.log('=== NOUVELLE RECHERCHE V4 ===');
+console.log('Params:', JSON.stringify({ city, propertyType, priceMin, priceMax, sortBy, sources, keywords, keywordsOnly }));
+console.log(`[DEBUG] maxResults = ${maxResults}`);
 
-Maintenant cherche avec **Ctrl+F** :
-```
-.slice(0,
+try {
+  console.log('--- DEBUG SOURCES ---');
   try {
     console.log('--- DEBUG SOURCES ---');
 console.log('SOURCES PARAM =', sources);
