@@ -1030,8 +1030,9 @@ const typeMapping = {
   }
   
   try {
-    const baseUrl = process.env.URL || 'https://ktrix-vn.netlify.app';
-    const maxPages = maxResults >= 200 ? 5 : maxResults >= 100 ? 3 : 2;
+const baseUrl = process.env.URL || 'https://ktrix-vn.netlify.app';
+const maxResultsValue = body.maxResults || 200;
+const maxPages = maxResultsValue >= 200 ? 5 : maxResultsValue >= 100 ? 3 : 2;
 const url = `${baseUrl}/.netlify/functions/alonhadat?city=${citySlug}&propertyType=${typeSlug}&maxPages=${maxPages}`;
     
     console.log(`Alonhadat: Fetching ${citySlug}/${typeSlug}`);
@@ -1784,7 +1785,7 @@ while (hasMore && mixedResults.length < 150) {
 // Remplacer sortedResults par mixedResults
 sortedResults = mixedResults;
     // Limiter à 100 résultats
-const results = sortedResults.slice(0, maxResults || 200).map((item, i) => {
+const results = sortedResults.slice(0, body.maxResults || 200).map((item, i) => {
       const negotiation = calculateNegotiationScore(item, avgPricePerM2);
       const pricePosition = analyzePricePosition(item, districtStats);
       
