@@ -1873,11 +1873,17 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { city, district, ward, propertyType, priceMin, priceMax, livingAreaMin, livingAreaMax, bedrooms, sources, sortBy, keywords, keywordsOnly, legalStatus } = req.body || {};
-
+  const { city, district, ward, propertyType, priceMin, priceMax, livingAreaMin, livingAreaMax, bedrooms, sources, sortBy, keywords, keywordsOnly, legalStatus, maxResults } = req.body || {};
   console.log('=== NOUVELLE RECHERCHE V4 ===');
   console.log('Params:', JSON.stringify({ city, propertyType, priceMin, priceMax, sortBy, sources, keywords, keywordsOnly }));
+console.log(`[DEBUG] maxResults = ${maxResults}`);
+```
 
+### Modification 3 - Cherche le slice
+
+Maintenant cherche avec **Ctrl+F** :
+```
+.slice(0,
   try {
     console.log('--- DEBUG SOURCES ---');
 console.log('SOURCES PARAM =', sources);
@@ -2102,7 +2108,7 @@ const surfaceDebug = sortedResults.slice(0, 5).map(r => ({
   title: r.title?.substring(0, 30)
 }));
 console.log('SURFACE DEBUG:', JSON.stringify(surfaceDebug));
-const results = sortedResults.slice(0, Math.min(300, sortedResults.length)).map((item, i) => ({
+const results = sortedResults.slice(0, maxResults || 200).map((item, i) => ({
   id: item.id || i,
   title: item.title || 'Sans titre',
   price: item.price || 0,
