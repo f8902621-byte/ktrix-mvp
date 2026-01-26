@@ -1877,11 +1877,6 @@ export default async function handler(req, res) {
   console.log('=== NOUVELLE RECHERCHE V4 ===');
   console.log('Params:', JSON.stringify({ city, propertyType, priceMin, priceMax, sortBy, sources, keywords, keywordsOnly }));
 console.log(`[DEBUG] maxResults = ${maxResults}`);
-const { city, district, ward, propertyType, priceMin, priceMax, livingAreaMin, livingAreaMax, bedrooms, sources, sortBy, keywords, keywordsOnly, legalStatus, maxResults } = req.body || {};
-
-console.log('=== NOUVELLE RECHERCHE V4 ===');
-console.log('Params:', JSON.stringify({ city, propertyType, priceMin, priceMax, sortBy, sources, keywords, keywordsOnly }));
-console.log(`[DEBUG] maxResults = ${maxResults}`);
 
 try {
   console.log('--- DEBUG SOURCES ---');
