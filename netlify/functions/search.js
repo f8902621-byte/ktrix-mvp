@@ -1031,7 +1031,8 @@ const typeMapping = {
   
   try {
     const baseUrl = process.env.URL || 'https://ktrix-vn.netlify.app';
-    const url = `${baseUrl}/.netlify/functions/alonhadat?city=${citySlug}&propertyType=${typeSlug}&maxPages=3`;
+    const maxPages = maxResults >= 200 ? 5 : maxResults >= 100 ? 3 : 2;
+const url = `${baseUrl}/.netlify/functions/alonhadat?city=${citySlug}&propertyType=${typeSlug}&maxPages=${maxPages}`;
     
     console.log(`Alonhadat: Fetching ${citySlug}/${typeSlug}`);
     
@@ -1593,7 +1594,7 @@ exports.handler = async (event) => {
   let body = {};
   try { body = JSON.parse(event.body || '{}'); } catch (e) { body = {}; }
 
-  const { city, district, propertyType, priceMin, priceMax, livingAreaMin, livingAreaMax, bedrooms, sources, sortBy, keywords, keywordsOnly, legalStatus } = body;
+  const { city, district, propertyType, priceMin, priceMax, livingAreaMin, livingAreaMax, bedrooms, sources, sortBy, keywords, keywordsOnly, legalStatus, maxResults } = body;
 
   console.log('=== NOUVELLE RECHERCHE ===');
   console.log('Params:', JSON.stringify({ city, propertyType, priceMin, priceMax, sortBy, sources }));
@@ -1783,7 +1784,7 @@ while (hasMore && mixedResults.length < 150) {
 // Remplacer sortedResults par mixedResults
 sortedResults = mixedResults;
     // Limiter à 100 résultats
- const results = sortedResults.slice(0, 200).map((item, i) => {
+const results = sortedResults.slice(0, maxResults || 200).map((item, i) => {
       const negotiation = calculateNegotiationScore(item, avgPricePerM2);
       const pricePosition = analyzePricePosition(item, districtStats);
       
