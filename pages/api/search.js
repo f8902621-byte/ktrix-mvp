@@ -1101,6 +1101,7 @@ async function fetchBatdongsan(params) {
   }
   
   const scraperUrl = `https://api.scraperapi.com/?api_key=${SCRAPER_API_KEY}&url=${encodeURIComponent(targetUrl)}&country_code=vn&render=true&keep_headers=true`;
+  console.log('Batdongsan scraperUrl:', scraperUrl);
   
   console.log(`Batdongsan: scraping ${targetUrl}`);
   
