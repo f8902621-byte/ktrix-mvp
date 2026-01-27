@@ -1100,7 +1100,7 @@ async function fetchBatdongsan(params) {
     targetUrl += `?gcn=${priceMax}-ty`;
   }
   
-  const scraperUrl = `https://api.scraperapi.com/?api_key=${SCRAPER_API_KEY}&url=${encodeURIComponent(targetUrl)}&country_code=vn`;
+  const scraperUrl = `https://api.scraperapi.com/?api_key=${SCRAPER_API_KEY}&url=${encodeURIComponent(targetUrl)}&country_code=vn&render=true&keep_headers=true`;
   
   console.log(`Batdongsan: scraping ${targetUrl}`);
   
@@ -1127,7 +1127,7 @@ async function fetchBatdongsan(params) {
     for (let i = 0; i < urlsToScrape.length; i++) {
       const urlInfo = urlsToScrape[i];
       try {
-        const detailUrl = `https://api.scraperapi.com/?api_key=${SCRAPER_API_KEY}&url=${encodeURIComponent(urlInfo.fullUrl)}&country_code=vn`;
+        const detailUrl = `https://api.scraperapi.com/?api_key=${SCRAPER_API_KEY}&url=${encodeURIComponent(urlInfo.fullUrl)}&country_code=vn&render=true`;
         const detailResponse = await fetch(detailUrl);
         if (detailResponse.ok) {
           const detailHtml = await detailResponse.text();
