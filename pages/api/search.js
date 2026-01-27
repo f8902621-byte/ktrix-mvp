@@ -1067,91 +1067,9 @@ function parseAlonhadatHtml(html, city) {
 // BATDONGSAN SCRAPER
 // ============================================
 async function fetchBatdongsan(params) {
-  const { city, propertyType, priceMax } = params;
-  
-  if (!SCRAPER_API_KEY) {
-    console.log('Batdongsan: SCRAPER_API_KEY non configuré, skip');
-    return [];
-  }
-  
-  const cityNormalized = removeVietnameseAccents(city || 'ho chi minh');
-  const typeNormalized = removeVietnameseAccents(propertyType || 'can ho chung cu');
-  
-  // Mapping ville
-  let citySlug = 'tp-hcm';
-  for (const [key, value] of Object.entries(BATDONGSAN_CITY_MAPPING)) {
-    if (cityNormalized.includes(key) || key.includes(cityNormalized)) {
-      citySlug = value;
-      break;
-    }
-  }
-  
-  // Mapping type
-  let typeSlug = 'ban-can-ho-chung-cu';
-  for (const [key, value] of Object.entries(BATDONGSAN_PROPERTY_TYPE)) {
-    if (typeNormalized.includes(key) || key.includes(typeNormalized)) {
-      typeSlug = value;
-      break;
-    }
-  }
-  
-  let targetUrl = `https://batdongsan.com.vn/${typeSlug}-${citySlug}`;
-  if (priceMax) {
-    targetUrl += `?gcn=${priceMax}-ty`;
-  }
-  
-  const scraperUrl = `https://api.scraperapi.com/?api_key=${SCRAPER_API_KEY}&url=${encodeURIComponent(targetUrl)}&country_code=vn&render=true&keep_headers=true`;
-  console.log('Batdongsan scraperUrl:', scraperUrl);
-  
-  console.log(`Batdongsan: scraping ${targetUrl}`);
-  
-  try {
-    const response = await fetch(scraperUrl);
-    if (!response.ok) {
-      console.log(`Batdongsan: HTTP ${response.status}`);
-      return [];
-    }
-
-    const html = await response.text();
-    console.log(`Batdongsan: reçu ${(html.length/1024).toFixed(1)}KB`);
-    
-    // Extraire les URLs des annonces
-    const listingUrls = extractBdsListingUrls(html);
-    console.log(`Batdongsan: ${listingUrls.length} URLs trouvées`);
-    
-    // Limiter à 5 pour éviter timeout
-    const maxListings = 5;
-    const urlsToScrape = listingUrls.slice(0, maxListings);
-    
-    // Scraper les pages de détail
-    const listings = [];
-    for (let i = 0; i < urlsToScrape.length; i++) {
-      const urlInfo = urlsToScrape[i];
-      try {
-        const detailUrl = `https://api.scraperapi.com/?api_key=${SCRAPER_API_KEY}&url=${encodeURIComponent(urlInfo.fullUrl)}&country_code=vn&render=true`;
-        const detailResponse = await fetch(detailUrl);
-        if (detailResponse.ok) {
-          const detailHtml = await detailResponse.text();
-          const listing = parseBdsDetailPage(detailHtml, urlInfo, city, propertyType);
-          if (listing && listing.price > 0) {
-            listings.push(listing);
-          }
-        }
-        // Pause entre requêtes
-        if (i < urlsToScrape.length - 1) {
-          await new Promise(r => setTimeout(r, 200));
-        }
-      } catch (e) {
-        console.log(`Batdongsan detail error: ${e.message}`);
-      }
-    }
-    
-    console.log(`Batdongsan: ${listings.length} annonces avec prix valide`);
-    return listings;
-  } catch (error) {
-    console.log(`Batdongsan erreur: ${error.message}`);
-    return [];
-  }
+  // Temporairement désactivé - HTTP 403 persistant
+  console.log('Batdongsan: temporairement désactivé');
+  return [];
 }
 
 function extractBdsListingUrls(html) {
