@@ -121,27 +121,29 @@ export default async function handler(req, res) {
         };
 
         // Get stats
-        const listingsResponse = await fetch(`${SUPABASE_URL}/rest/v1/listings?select=id`, {
-          headers: {
-            'apikey': SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-          }
-        });
-        if (listingsResponse.ok) {
-          const listings = await listingsResponse.json();
-          report.stats.total_listings = listings.length;
-        }
+       const listingsResponse = await fetch(`${SUPABASE_URL}/rest/v1/listings?select=id&limit=1`, {
+  headers: {
+    'apikey': SUPABASE_ANON_KEY,
+    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+    'Prefer': 'count=exact'
+  }
+});
+if (listingsResponse.ok) {
+  const contentRange = listingsResponse.headers.get('content-range');
+  report.stats.total_listings = contentRange ? parseInt(contentRange.split('/')[1]) : 0;
+}
 
-        const archiveResponse = await fetch(`${SUPABASE_URL}/rest/v1/archive?select=id`, {
-          headers: {
-            'apikey': SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-          }
-        });
-        if (archiveResponse.ok) {
-          const archive = await archiveResponse.json();
-          report.stats.total_archive = archive.length;
-        }
+ const archiveResponse = await fetch(`${SUPABASE_URL}/rest/v1/archive?select=id&limit=1`, {
+  headers: {
+    'apikey': SUPABASE_ANON_KEY,
+    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+    'Prefer': 'count=exact'
+  }
+});
+if (archiveResponse.ok) {
+  const contentRange = archiveResponse.headers.get('content-range');
+  report.stats.total_archive = contentRange ? parseInt(contentRange.split('/')[1]) : 0;
+}
       } else {
         report.services.supabase = {
           status: 'degraded',
