@@ -1006,6 +1006,7 @@ function parseAlonhadatHtml(html, city) {
     try {
       const listing = {};
       
+      // URL et ID
       const urlMatch = articleHtml.match(/href=["']([^"']*\.html)["']/i);
       if (urlMatch) {
         const href = urlMatch[1];
@@ -1014,10 +1015,12 @@ function parseAlonhadatHtml(html, city) {
         listing.id = memberIdMatch ? `alonhadat_${memberIdMatch[1]}_${Date.now()}` : `alonhadat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       }
       
+      // Titre
       const titleMatch = articleHtml.match(/itemprop=["']name["'][^>]*>([^<]+)</i) ||
                          articleHtml.match(/<h3[^>]*>([^<]+)</i);
       listing.title = titleMatch ? titleMatch[1].trim() : 'Sans titre';
       
+      // Prix
       const priceMatch = articleHtml.match(/itemprop=["']price["']\s+content=["'](\d+)["']/i);
       if (priceMatch) {
         listing.price = parseInt(priceMatch[1]);
@@ -1028,6 +1031,7 @@ function parseAlonhadatHtml(html, city) {
         }
       }
       
+      // Surface
       const areaPatterns = [/(\d+)\s*m²/i, /(\d+)\s*m2/i, /(\d+)m²/i];
       for (const pattern of areaPatterns) {
         const areaMatch = articleHtml.match(pattern);
@@ -1040,13 +1044,51 @@ function parseAlonhadatHtml(html, city) {
         }
       }
       
+      // District
       const localityMatch = articleHtml.match(/itemprop=["']addressLocality["'][^>]*>([^<]+)</i);
       listing.district = localityMatch ? localityMatch[1].trim() : '';
       listing.city = city;
       
-      const imageMatch = articleHtml.match(/src=["']([^"']*(?:thumbnail|files)[^"']*)["']/i);
+      // ========== CORRECTION #5 - CHAMBRES ==========
+      const bedroomMatch = articleHtml.match(/itemprop=["']numberOfBedrooms["'][^>]*>(\d+)/i) ||
+                          articleHtml.match(/class=["']bedroom["'][^>]*>(\d+)/i) ||
+                          articleHtml.match(/>(\d+)\s*(?:PN|pn|phòng ngủ)</i) ||
+                          articleHtml.match(/(\d+)\s*(?:PN|pn|phòng ngủ)/i);
+      if (bedroomMatch) {
+        listing.bedrooms = parseInt(bedroomMatch[1]);
+      }
+      
+      // Étages
+      const floorMatch = articleHtml.match(/class=["']floors["'][^>]*>(\d+)/i) ||
+                        articleHtml.match(/>(\d+)\s*tầng</i);
+      if (floorMatch) {
+        listing.floors = parseInt(floorMatch[1]);
+      }
+      
+      // ========== CORRECTION #4 - IMAGES HD ==========
+      // Priorité 1: data-src (lazy loading = image HD)
+      let imageMatch = articleHtml.match(/data-src=["']([^"']+)["']/i);
+      
+      // Priorité 2: data-original
+      if (!imageMatch) {
+        imageMatch = articleHtml.match(/data-original=["']([^"']+)["']/i);
+      }
+      
+      // Priorité 3: src mais PAS thumbnail (chercher /files/ au lieu de /thumbnail/)
+      if (!imageMatch) {
+        imageMatch = articleHtml.match(/src=["']([^"']*\/files\/[^"']*)["']/i);
+      }
+      
+      // Fallback: src standard mais remplacer thumbnail par files si possible
+      if (!imageMatch) {
+        imageMatch = articleHtml.match(/src=["']([^"']*(?:alonhadat|files)[^"']*)["']/i);
+      }
+      
       if (imageMatch) {
-        listing.thumbnail = imageMatch[1].startsWith('http') ? imageMatch[1] : `https://alonhadat.com.vn${imageMatch[1]}`;
+        let imgUrl = imageMatch[1];
+        // Convertir thumbnail en HD si possible
+        imgUrl = imgUrl.replace('/thumbnail/', '/files/').replace('/thumb/', '/files/');
+        listing.thumbnail = imgUrl.startsWith('http') ? imgUrl : `https://alonhadat.com.vn${imgUrl}`;
       }
       
       listing.source = 'alonhadat.com.vn';
