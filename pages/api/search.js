@@ -1064,18 +1064,35 @@ if (bedroomMatch) {
 // Fallback: extraire depuis le titre (ex: "Nhà gồm 05 phòng", "nhà 4PN", "5 phòng ngủ")
 if (!listing.bedrooms && listing.title) {
   const titleBedroomMatch = listing.title.match(/(\d+)\s*(?:PN|pn|phòng ngủ|phòng|phong)/i) ||
-                            listing.title.match(/nhà\s*(?:gồm\s*)?(\d+)\s*phòng/i);
+                            listing.title.match(/nhà\s*(?:gồm\s*)?(\d+)\s*phòng/i) ||
+                            listing.title.match(/(\d+)\s*(?:ngủ|ngu)/i);
   if (titleBedroomMatch) {
     listing.bedrooms = parseInt(titleBedroomMatch[1]);
   }
 }
 
+// Extraire surface depuis le titre (ex: "68,8m2", "100m²", "150 m2")
+if (!listing.area && listing.title) {
+  const titleAreaMatch = listing.title.match(/(\d+(?:[,\.]\d+)?)\s*m[²2]/i);
+  if (titleAreaMatch) {
+    listing.area = parseFloat(titleAreaMatch[1].replace(',', '.'));
+  }
+}
+
 // Extraire statut légal depuis le titre/description
 if (!listing.legalStatus && listing.title) {
-  if (listing.title.match(/sổ\s*(?:hồng|đỏ)/i) || listing.title.match(/shr|shcc/i)) {
+  if (listing.title.match(/sổ\s*(?:hồng|đỏ)/i) || listing.title.match(/shr|shcc/i) || listing.title.match(/chính\s*chủ/i)) {
     listing.legalStatus = 'Sổ hồng/Sổ đỏ';
   } else if (listing.title.match(/gpxd/i)) {
     listing.legalStatus = 'GPXD';
+  }
+}
+
+// Extraire étages depuis le titre (ex: "2Lầu", "3 tầng", "nhà 4 tầng")
+if (!listing.floors && listing.title) {
+  const titleFloorMatch = listing.title.match(/(\d+)\s*(?:lầu|tầng|tang|lau)/i);
+  if (titleFloorMatch) {
+    listing.floors = parseInt(titleFloorMatch[1]);
   }
 }
       if (listing.bedrooms) {
