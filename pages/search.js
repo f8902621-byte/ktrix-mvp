@@ -46,7 +46,7 @@ export default function SearchPage() {
     daysListed: '',
     legalStatus: '',
     customKeyword: '',
-    sources: ['chotot', 'alonhadat', 'batdongsan'],
+    sources: ['chotot', 'alonhadat'],
     keywords: [],
     keywordsOnly: false,
     maxResults: 200
