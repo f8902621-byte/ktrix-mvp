@@ -1087,12 +1087,17 @@ function parseAlonhadatHtml(html, city) {
         imageMatch = articleHtml.match(/src=["']([^"']*(?:alonhadat|files)[^"']*)["']/i);
       }
       
-      if (imageMatch) {
-        let imgUrl = imageMatch[1];
-        // Convertir thumbnail en HD si possible
-        imgUrl = imgUrl.replace('/thumbnail/', '/files/').replace('/thumb/', '/files/');
-        listing.thumbnail = imgUrl.startsWith('http') ? imgUrl : `https://alonhadat.com.vn${imgUrl}`;
-      }
+if (imageMatch) {
+  let imgUrl = imageMatch[1];
+  // Convertir thumbnail en HD : plusieurs patterns possibles
+  imgUrl = imgUrl
+    .replace('/thumbnail/', '/resize/')
+    .replace('/thumb/', '/resize/')
+    .replace(/\/\d+x\d+\//, '/800x600/')  // Remplacer petites dimensions par grandes
+    .replace('_thumb', '')
+    .replace('_small', '');
+  listing.thumbnail = imgUrl.startsWith('http') ? imgUrl : `https://alonhadat.com.vn${imgUrl}`;
+}
       
       listing.source = 'alonhadat.com.vn';
       listing.images = listing.thumbnail ? [listing.thumbnail] : [];
@@ -2023,9 +2028,11 @@ if (false && archiveData && archiveData.avgPricePerM2 > 0 && archiveData.count >
     console.log(`FINAL: ${results.length} résultats, ${marketStats.length} districts avec trends`);
     
 // Sauvegarder les annonces dans Supabase (en arrière-plan, sans bloquer la réponse)
-saveListingsToSupabase(sortedResults.slice(0, 500)).catch(err => {
-  console.error('Erreur sauvegarde Supabase:', err.message);
-});
+saveListingsToSupabase(sortedResults.slice(0, 500))
+  .then(() => console.log('Supabase: sauvegarde OK'))
+  .catch(err => {
+    console.error('Erreur sauvegarde Supabase:', err.message);
+  });
     
     return res.status(200).json({ success: true, results, stats, marketStats });
 
