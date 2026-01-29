@@ -154,7 +154,10 @@ async function saveListingsToSupabase(listings) {
     
     const records = listings.map(item => ({
       id: item.id,
-      source: item.source || 'unknown',
+      source: item.source === 'chotot' ? 'chotot.com' 
+      : item.source === 'alonhadat' ? 'alonhadat.com.vn'
+      : item.source === 'batdongsan' ? 'batdongsan.com.vn'
+      : item.source || 'unknown',
       title: item.title || '',
       price: item.price || 0,
       area: item.floorArea || item.area || 0,
