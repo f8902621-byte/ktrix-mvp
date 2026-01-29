@@ -1060,7 +1060,9 @@ function parseAlonhadatHtml(html, city) {
       if (bedroomMatch) {
         listing.bedrooms = parseInt(bedroomMatch[1]);
       }
-      
+      if (listing.bedrooms) {
+  console.log(`[ALONHADAT BEDROOM DEBUG] ${listing.bedrooms} ch - ${listing.title?.substring(0, 30)}`);
+}
       // Étages
       const floorMatch = articleHtml.match(/class=["']floors["'][^>]*>(\d+)/i) ||
                         articleHtml.match(/>(\d+)\s*tầng</i);
@@ -1090,13 +1092,14 @@ function parseAlonhadatHtml(html, city) {
 if (imageMatch) {
   let imgUrl = imageMatch[1];
   // Convertir thumbnail en HD : plusieurs patterns possibles
-  imgUrl = imgUrl
-    .replace('/thumbnail/', '/resize/')
-    .replace('/thumb/', '/resize/')
-    .replace(/\/\d+x\d+\//, '/800x600/')  // Remplacer petites dimensions par grandes
-    .replace('_thumb', '')
-    .replace('_small', '');
-  listing.thumbnail = imgUrl.startsWith('http') ? imgUrl : `https://alonhadat.com.vn${imgUrl}`;
+imgUrl = imgUrl
+  .replace('/thumbnail/', '/resize/')
+  .replace('/thumb/', '/resize/')
+  .replace(/\/\d+x\d+\//, '/800x600/')
+  .replace('_thumb', '')
+  .replace('_small', '');
+listing.thumbnail = imgUrl.startsWith('http') ? imgUrl : `https://alonhadat.com.vn${imgUrl}`;
+console.log(`[ALONHADAT IMG DEBUG] ${listing.thumbnail?.substring(0, 80)}`);
 }
       
       listing.source = 'alonhadat.com.vn';
