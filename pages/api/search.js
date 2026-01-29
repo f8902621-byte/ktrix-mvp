@@ -1082,10 +1082,18 @@ if (!listing.area && listing.title) {
 
 // Extraire statut légal depuis le titre/description
 if (!listing.legalStatus && listing.title) {
-  if (listing.title.match(/sổ\s*(?:hồng|đỏ)/i) || listing.title.match(/shr|shcc/i) || listing.title.match(/chính\s*chủ/i)) {
+  const titleLower = listing.title.toLowerCase();
+  if (titleLower.match(/sổ\s*(hồng|đỏ|riêng)/i) || 
+      titleLower.match(/shr|shcc|sh\s*riêng/i) || 
+      titleLower.match(/chính\s*chủ/i) ||
+      titleLower.match(/hoàn\s*công/i) ||
+      titleLower.match(/pháp\s*lý\s*rõ/i) ||
+      titleLower.match(/đầy\s*đủ\s*giấy\s*tờ/i)) {
     listing.legalStatus = 'Sổ hồng/Sổ đỏ';
-  } else if (listing.title.match(/gpxd/i)) {
+  } else if (titleLower.match(/gpxd/i) || titleLower.match(/giấy\s*phép\s*xây/i)) {
     listing.legalStatus = 'GPXD';
+  } else if (titleLower.match(/sổ\s*chung/i) || titleLower.match(/sh\s*chung/i)) {
+    listing.legalStatus = 'Sổ chung';
   }
 }
 
@@ -1149,7 +1157,85 @@ console.log(`[ALONHADAT IMG DEBUG] ${listing.thumbnail?.substring(0, 80)}`);
   
   return listings;
 }
+// ========================================
+// ALONHADAT DETAIL SCRAPER (pour statut légal)
+// ========================================
+async function fetchAlonhadatDetails(listing) {
+  if (!listing.url || listing.legalStatus) return listing;
+  
+  try {
+    const scraperUrl = `https://api.scraperapi.com/?api_key=${SCRAPER_API_KEY}&url=${encodeURIComponent(listing.url)}&render=true`;
+    const response = await fetch(scraperUrl);
+    
+    if (!response.ok) return listing;
+    
+    const html = await response.text();
+    
+    // Extraire statut légal depuis le tableau "Các thông tin khác"
+    // Pattern: "Pháp lý" suivi de "Sổ hồng" ou "Sổ đỏ" etc.
+    const legalMatch = html.match(/Pháp\s*lý[^<]*<[^>]*>([^<]+)</i) ||
+                       html.match(/pháp\s*lý[^:]*:\s*([^<,]+)/i);
+    if (legalMatch) {
+      const legalText = legalMatch[1].trim().toLowerCase();
+      if (legalText.includes('hồng') || legalText.includes('đỏ') || legalText.includes('riêng')) {
+        listing.legalStatus = 'Sổ hồng/Sổ đỏ';
+      } else if (legalText.includes('chung')) {
+        listing.legalStatus = 'Sổ chung';
+      } else if (legalText.includes('gpxd') || legalText.includes('giấy phép')) {
+        listing.legalStatus = 'GPXD';
+      } else {
+        listing.legalStatus = legalMatch[1].trim();
+      }
+    }
+    
+    // Extraire chambres si manquant
+    if (!listing.bedrooms) {
+      const bedroomMatch = html.match(/Số\s*phòng\s*ngủ[^<]*<[^>]*>(\d+)/i) ||
+                           html.match(/phòng\s*ngủ[^:]*:\s*(\d+)/i);
+      if (bedroomMatch) {
+        listing.bedrooms = parseInt(bedroomMatch[1]);
+      }
+    }
+    
+    // Extraire surface si manquant
+    if (!listing.area) {
+      const areaMatch = html.match(/Diện\s*tích[^<]*<[^>]*>(\d+(?:[,\.]\d+)?)\s*m/i) ||
+                        html.match(/diện\s*tích[^:]*:\s*(\d+(?:[,\.]\d+)?)\s*m/i);
+      if (areaMatch) {
+        listing.area = parseFloat(areaMatch[1].replace(',', '.'));
+      }
+    }
+    
+    console.log(`[ALONHADAT DETAIL] ${listing.title?.substring(0, 30)} → Legal: ${listing.legalStatus || '?'}`);
+    
+  } catch (e) {
+    console.log(`[ALONHADAT DETAIL ERROR] ${e.message}`);
+  }
+  
+  return listing;
+}
 
+async function enrichTopAlonhadatListings(listings, maxEnrich = 10) {
+  // Filtrer les annonces Alonhadat sans statut légal
+  const alonhadatWithoutLegal = listings.filter(l => 
+    l.source === 'alonhadat' && !l.legalStatus
+  );
+  
+  // Prendre les TOP maxEnrich (déjà triées par score)
+  const toEnrich = alonhadatWithoutLegal.slice(0, maxEnrich);
+  
+  if (toEnrich.length === 0) return listings;
+  
+  console.log(`[ENRICH] Scraping détails pour ${toEnrich.length} annonces Alonhadat...`);
+  
+  // Scraper en parallèle (max 3 à la fois pour éviter rate limiting)
+  for (let i = 0; i < toEnrich.length; i += 3) {
+    const batch = toEnrich.slice(i, i + 3);
+    await Promise.all(batch.map(listing => fetchAlonhadatDetails(listing)));
+  }
+  
+  return listings;
+}
 // ============================================
 // BATDONGSAN SCRAPER
 // ============================================
@@ -1971,6 +2057,8 @@ if (sortBy === 'price_asc') {
   // Tri par score par défaut
   sortedResults.sort((a, b) => (b.negotiationScore || 0) - (a.negotiationScore || 0));
 }
+    // Enrichir les TOP 10 annonces Alonhadat sans statut légal
+  sortedResults = await enrichTopAlonhadatListings(sortedResults, 10);
     // DEBUG surfaces
 const surfaceDebug = sortedResults.slice(0, 5).map(r => ({
   source: r.source,
