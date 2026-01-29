@@ -952,7 +952,7 @@ async function fetchAlonhadat(params) {
   }
 
   // Calculer le nombre de pages selon maxResults
-  const maxPages = maxResults >= 200 ? 5 : maxResults >= 100 ? 3 : 2;
+ const maxPages = maxResults >= 200 ? 3 : maxResults >= 100 ? 2 : 1;
   
   console.log(`Alonhadat: scraping ${maxPages} pages`);
   
@@ -1093,8 +1093,9 @@ if (imageMatch) {
   let imgUrl = imageMatch[1];
   // Convertir thumbnail en HD : plusieurs patterns possibles
 imgUrl = imgUrl
-  .replace('/thumbnail/', '/resize/')
-  .replace('/thumb/', '/resize/')
+ .replace('/thumbnails/', '/upload/')
+.replace('/thumbnail/', '/upload/')
+.replace('/thumb/', '/upload/')
   .replace(/\/\d+x\d+\//, '/800x600/')
   .replace('_thumb', '')
   .replace('_small', '');
