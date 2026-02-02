@@ -998,7 +998,7 @@ onClick={() => {
         ></div>
       </div>
     </div>
-    <p className="text-gray-500 text-sm">⏱️ ~60 secondes en moyenne</p>
+    <p className="text-gray-500 text-sm">Environ 60 secondes</p>
   </div>
 )
           ) : results.length > 0 ? (
