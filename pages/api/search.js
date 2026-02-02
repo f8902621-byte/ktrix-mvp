@@ -843,7 +843,8 @@ if (false && (priceMin || priceMax)) {}
   }
   
   const allAds = [];
-  const offsets = [0, 50, 100, 150, 200, 250];
+ const maxPages = Math.ceil((params.maxResults || 200) / 50);
+  const offsets = [0, 50, 100, 150, 200, 250].slice(0, maxPages);
   console.log(`Chotot URL DEBUG: https://gateway.chotot.com/v1/public/ad-listing?${baseParams.toString()}&o=0`);
   for (const offset of offsets) {
     try {
@@ -1851,7 +1852,7 @@ console.log('SOURCES PARAM =', sources);
       getTotalArchiveByDistrict(city),
       // Sources
       ...(sources?.includes('chotot') ? [
-        fetchChotot({ city, district, ward, priceMin, priceMax, sortBy, propertyType })
+       fetchChotot({ city, district, ward, priceMin, priceMax, sortBy, propertyType, maxResults })
           .then(results => ({ source: 'chotot', results }))
           .catch(e => { console.log(`Chotot erreur: ${e.message}`); return { source: 'chotot', results: [] }; })
       ] : []),
@@ -1877,14 +1878,13 @@ console.log('SOURCES PARAM =', sources);
   }))
 );
 
-for (const { source, results } of sourceResults) {
-  if (Array.isArray(results) && results.length > 0) {
-    allResults.push(
-      ...results.map(r => ({
-        ...r,
-        source
-      }))
-    );
+const perSourceLimit = maxResults || 200;
+
+for (const { source, results: srcResults } of sourceResults) {
+  if (Array.isArray(srcResults) && srcResults.length > 0) {
+    const limited = srcResults.slice(0, perSourceLimit);
+    allResults.push(...limited);
+    console.log(`${source}: ${srcResults.length} brut → ${limited.length} gardés (limit ${perSourceLimit})`);
   }
 }
 
