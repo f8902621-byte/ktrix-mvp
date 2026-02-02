@@ -402,14 +402,21 @@ const toggleKeyword = (keyword) => {
     alert(t.searchSaved);
   };
 
-  const sortResults = (res) => {
-    const sorted = [...res];
-    switch (sortBy) {
-      case 'priceAsc': return sorted.sort((a, b) => a.price - b.price);
-      case 'priceDesc': return sorted.sort((a, b) => b.price - a.price);
-      default: return sorted.sort((a, b) => b.score - a.score);
-    }
-  };
+const sortResults = (res) => {
+  const sorted = [...res];
+  switch (sortBy) {
+    case 'priceAsc': 
+      sorted.sort((a, b) => (a.price || 0) - (b.price || 0));
+      console.log('SORT priceAsc:', sorted.slice(0, 5).map(r => r.price));
+      return sorted;
+    case 'priceDesc': 
+      sorted.sort((a, b) => (b.price || 0) - (a.price || 0));
+      return sorted;
+    default: 
+      sorted.sort((a, b) => (b.score || 0) - (a.score || 0));
+      return sorted;
+  }
+};
 
   const getPropertyTypesByCategory = () => {
     const categories = {
