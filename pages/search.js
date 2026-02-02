@@ -403,19 +403,14 @@ const toggleKeyword = (keyword) => {
   };
 
 const sortResults = (res) => {
+  if (!res || res.length === 0) return [];
   const sorted = [...res];
-  switch (sortBy) {
-    case 'priceAsc': 
-      sorted.sort((a, b) => (a.price || 0) - (b.price || 0));
-      console.log('SORT priceAsc:', sorted.slice(0, 5).map(r => r.price));
-      return sorted;
-    case 'priceDesc': 
-      sorted.sort((a, b) => (b.price || 0) - (a.price || 0));
-      return sorted;
-    default: 
-      sorted.sort((a, b) => (b.score || 0) - (a.score || 0));
-      return sorted;
+  if (sortBy === 'priceAsc') {
+    return sorted.sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0));
+  } else if (sortBy === 'priceDesc') {
+    return sorted.sort((a, b) => (Number(b.price) || 0) - (Number(a.price) || 0));
   }
+  return sorted.sort((a, b) => (Number(b.score) || 0) - (Number(a.score) || 0));
 };
 
   const getPropertyTypesByCategory = () => {
@@ -1008,8 +1003,8 @@ onClick={() => {
               )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {sortResults(results).filter(r => !filterSource || r.source === filterSource).map((prop) => (
-                  <div key={prop.id} className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition">
+                {sortResults(results).filter(r => !filterSource || r.source === filterSource).map((prop, i) => (
+                  <div key={`${prop.id}-${prop.source}-${i}`} className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition">
                     <div className="relative h-48 bg-slate-200">
                       <img src={prop.imageUrl} alt={prop.title} className="w-full h-full object-cover" />
                       {prop.isNew && <div className="absolute top-2 left-2 bg-sky-100 text-sky-700 px-3 py-1 rounded-full text-xs font-bold animate-pulse">{t.newListing}</div>}
