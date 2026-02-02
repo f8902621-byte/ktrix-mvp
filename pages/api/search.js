@@ -1015,7 +1015,7 @@ function parseAlonhadatHtml(html, city) {
         const href = urlMatch[1];
         listing.url = href.startsWith('http') ? href : `https://alonhadat.com.vn${href}`;
         const memberIdMatch = articleHtml.match(/data-memberid=["'](\d+)["']/i);
-        listing.id = memberIdMatch ? `alonhadat_${memberIdMatch[1]}_${Date.now()}` : `alonhadat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        listing.id = memberIdMatch ? `alonhadat_${memberIdMatch[1]}` : `alonhadat_${href.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 50)}`;
       }
       
       // Titre
