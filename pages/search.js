@@ -984,10 +984,10 @@ onClick={() => {
     <div className="w-80 mb-6">
       <div className="flex justify-between mb-2">
         <span className="text-sm font-medium text-sky-700">
-          {searchProgress < 30 ? '🔍 Connexion aux sources...' : 
-           searchProgress < 60 ? '📥 Récupération des annonces...' : 
-           searchProgress < 85 ? '⚙️ Analyse et scoring...' : 
-           searchProgress < 100 ? '✨ Finalisation...' : '✅ Terminé !'}
+          {searchProgress < 30 ? 'Connexion aux sources...' :
+              searchProgress < 60 ? 'Recuperation des annonces...' :
+              searchProgress < 85 ? 'Analyse et scoring...' :
+              searchProgress < 100 ? 'Finalisation...' : 'Termine !'}
         </span>
         <span className="text-sm font-bold text-sky-700">{Math.round(searchProgress)}%</span>
       </div>
