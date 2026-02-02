@@ -150,6 +150,12 @@ export default function SearchPage() {
       archive: 'Lưu trữ',
       trend: 'Xu hướng',
       maxResults: 'Kết quả tối đa/nguồn',
+      progressConnecting: 'Đang kết nối nguồn...',
+progressFetching: 'Đang lấy tin đăng...',
+progressScoring: 'Đang phân tích và chấm điểm...',
+progressFinalizing: 'Đang hoàn tất...',
+progressDone: 'Hoàn tất!',
+progressTime: 'Khoảng 60 giây',
     },
     en: {
       menu: 'Menu', searchParams: 'Search Parameters', backToHome: 'Home',
@@ -185,6 +191,12 @@ export default function SearchPage() {
       archive: 'Archive',
       trend: 'Trend',
       maxResults: 'Max results/source',
+      progressConnecting: 'Connecting to sources...',
+progressFetching: 'Fetching listings...',
+progressScoring: 'Analyzing and scoring...',
+progressFinalizing: 'Finalizing...',
+progressDone: 'Done!',
+progressTime: 'About 60 seconds',
     },
     fr: {
       menu: 'Menu', searchParams: 'Paramètres', backToHome: 'Accueil',
@@ -220,6 +232,12 @@ export default function SearchPage() {
       archive: 'Archive',
       trend: 'Tendance',
       maxResults: 'Résultats max/source',
+      progressConnecting: 'Connexion aux sources...',
+progressFetching: 'Récupération des annonces...',
+progressScoring: 'Analyse et scoring...',
+progressFinalizing: 'Finalisation...',
+progressDone: 'Terminé !',
+progressTime: 'Environ 60 secondes',
     }
   }[language];
 
@@ -984,10 +1002,10 @@ onClick={() => {
     <div className="w-80 mb-6">
       <div className="flex justify-between mb-2">
         <span className="text-sm font-medium text-sky-700">
-          {searchProgress < 30 ? 'Connexion aux sources...' :
-              searchProgress < 60 ? 'Recuperation des annonces...' :
-              searchProgress < 85 ? 'Analyse et scoring...' :
-              searchProgress < 100 ? 'Finalisation...' : 'Termine !'}
+{searchProgress < 30 ? t.progressConnecting :
+    searchProgress < 60 ? t.progressFetching :
+    searchProgress < 85 ? t.progressScoring :
+    searchProgress < 100 ? t.progressFinalizing : t.progressDone}
         </span>
         <span className="text-sm font-bold text-sky-700">{Math.round(searchProgress)}%</span>
       </div>
@@ -998,7 +1016,7 @@ onClick={() => {
         ></div>
       </div>
     </div>
-    <p className="text-gray-500 text-sm">Environ 60 secondes</p>
+    <p className="text-gray-500 text-sm">{t.progressTime}</p>
 </div>
   ) : results.length > 0 ? (
             <>
