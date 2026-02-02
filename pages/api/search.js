@@ -2152,12 +2152,13 @@ if (false && archiveData && archiveData.avgPricePerM2 > 0 && archiveData.count >
 
     console.log(`FINAL: ${results.length} résultats, ${marketStats.length} districts avec trends`);
     
-// Sauvegarder les annonces dans Supabase (en arrière-plan, sans bloquer la réponse)
-saveListingsToSupabase(sortedResults.slice(0, 500))
-  .then(() => console.log('Supabase: sauvegarde OK'))
-  .catch(err => {
-    console.error('Erreur sauvegarde Supabase:', err.message);
-  });
+// Sauvegarder les annonces dans Supabase (AVANT la réponse)
+try {
+  await saveListingsToSupabase(sortedResults.slice(0, 500));
+  console.log('Supabase: sauvegarde OK');
+} catch (err) {
+  console.error('Erreur sauvegarde Supabase:', err.message);
+}
     
     return res.status(200).json({ success: true, results, stats, marketStats });
 
