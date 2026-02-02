@@ -2152,9 +2152,18 @@ if (false && archiveData && archiveData.avgPricePerM2 > 0 && archiveData.count >
 
     console.log(`FINAL: ${results.length} résultats, ${marketStats.length} districts avec trends`);
     
-// Sauvegarder les annonces dans Supabase (AVANT la réponse)
+// Dédupliquer par id avant sauvegarde Supabase
+const uniqueMap = new Map();
+for (const item of sortedResults.slice(0, 500)) {
+  if (item.id && !uniqueMap.has(item.id)) {
+    uniqueMap.set(item.id, item);
+  }
+}
+const uniqueResults = Array.from(uniqueMap.values());
+console.log(`Supabase: ${uniqueResults.length} uniques sur ${sortedResults.length} total`);
+
 try {
-  await saveListingsToSupabase(sortedResults.slice(0, 500));
+  await saveListingsToSupabase(uniqueResults);
   console.log('Supabase: sauvegarde OK');
 } catch (err) {
   console.error('Erreur sauvegarde Supabase:', err.message);
