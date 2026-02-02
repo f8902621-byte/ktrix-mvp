@@ -14,6 +14,7 @@ export default function SearchPage() {
   const [marketStats, setMarketStats] = useState([]);
   const [showMarketStats, setShowMarketStats] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [searchProgress, setSearchProgress] = useState(0);
   const [error, setError] = useState(null);
   
   const [sourceStats, setSourceStats] = useState({});
@@ -304,6 +305,16 @@ export default function SearchPage() {
 
     
     setLoading(true);
+    setSearchProgress(0);
+const progressInterval = setInterval(() => {
+  setSearchProgress(prev => {
+    if (prev < 30) return prev + 3;
+    if (prev < 60) return prev + 2;
+    if (prev < 85) return prev + 1;
+    if (prev < 95) return prev + 0.3;
+    return prev;
+  });
+}, 1000);
     setError(null);
     setShowSearch(false);
     setBdsTaskId(null);
@@ -352,11 +363,13 @@ body: JSON.stringify({
         setBdsTaskId(data.bdsTaskId);
         setBdsStatus('polling');
       }
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
+} catch (err) {
+  setError(err.message);
+} finally {
+  clearInterval(progressInterval);
+  setSearchProgress(100);
+  setLoading(false);
+}
   };
 
   const formatPrice = (price) => {
@@ -966,11 +979,28 @@ onClick={() => {
             </div>
           )}
 
-          {loading ? (
-            <div className="flex flex-col items-center justify-center py-20">
-              <Loader className="w-16 h-16 text-sky-500 animate-spin mb-4" />
-              <p className="text-xl text-gray-600">{t.loading}</p>
-            </div>
+{loading ? (
+  <div className="flex flex-col items-center justify-center py-20">
+    <div className="w-80 mb-6">
+      <div className="flex justify-between mb-2">
+        <span className="text-sm font-medium text-sky-700">
+          {searchProgress < 30 ? '🔍 Connexion aux sources...' : 
+           searchProgress < 60 ? '📥 Récupération des annonces...' : 
+           searchProgress < 85 ? '⚙️ Analyse et scoring...' : 
+           searchProgress < 100 ? '✨ Finalisation...' : '✅ Terminé !'}
+        </span>
+        <span className="text-sm font-bold text-sky-700">{Math.round(searchProgress)}%</span>
+      </div>
+      <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+        <div 
+          className="bg-gradient-to-r from-sky-400 to-sky-600 h-3 rounded-full transition-all duration-500"
+          style={{width: `${searchProgress}%`}}
+        ></div>
+      </div>
+    </div>
+    <p className="text-gray-500 text-sm">⏱️ ~60 secondes en moyenne</p>
+  </div>
+)
           ) : results.length > 0 ? (
             <>
               {stats && (
