@@ -995,7 +995,35 @@ async function fetchAlonhadat(params) {
     }
   }
   
-  console.log(`Alonhadat TOTAL: ${allListings.length} annonces`);
+console.log(`Alonhadat TOTAL: ${allListings.length} annonces`);
+  
+  // === FALLBACK: si trop peu de résultats, relancer en "nha-dat" ===
+  if (allListings.length < 10 && typeSlug !== 'nha-dat') {
+    console.log(`Alonhadat: seulement ${allListings.length} résultats pour "${typeSlug}", fallback → nha-dat`);
+    
+    for (let page = 1; page <= 2; page++) {
+      try {
+        const fallbackUrl = page === 1
+          ? `https://alonhadat.com.vn/can-ban-nha-dat/${citySlug}`
+          : `https://alonhadat.com.vn/can-ban-nha-dat/${citySlug}/trang-${page}`;
+        
+        const scraperUrl = `https://api.scraperapi.com/?api_key=${SCRAPER_API_KEY}&url=${encodeURIComponent(fallbackUrl)}&render=true`;
+        const response = await fetch(scraperUrl);
+        if (!response.ok) break;
+        
+        const html = await response.text();
+        const listings = parseAlonhadatHtml(html, city);
+        if (listings.length === 0) break;
+        
+        allListings.push(...listings);
+        if (page < 2) await new Promise(r => setTimeout(r, 500));
+      } catch (error) {
+        break;
+      }
+    }
+    console.log(`Alonhadat après fallback: ${allListings.length} annonces`);
+  }
+  
   return allListings;
 }
 function parseAlonhadatHtml(html, city) {
