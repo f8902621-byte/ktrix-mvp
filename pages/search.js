@@ -999,9 +999,8 @@ onClick={() => {
       </div>
     </div>
     <p className="text-gray-500 text-sm">Environ 60 secondes</p>
-  </div>
-)
-          ) : results.length > 0 ? (
+</div>
+  ) : results.length > 0 ? (
             <>
               {stats && (
                 <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
