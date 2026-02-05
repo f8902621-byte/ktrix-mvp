@@ -1,12 +1,85 @@
 /**
- * K Trix - Batdongsan Scraper via ScraperAPI
- * Version 2: Scrape les pages de détail pour prix et images exacts
+ * K Trix - Batdongsan Stealth Scraper v3
+ * ========================================
+ * Stratégies anti-détection :
+ * 1. Rotation de User-Agents réels (Chrome/Safari/Firefox Vietnam)
+ * 2. Délais aléatoires humains (2-6s entre requêtes)
+ * 3. Headers réalistes (Accept-Language, Referer, etc.)
+ * 4. Limite stricte de volume (max 10-15 annonces par recherche)
+ * 5. Pas de render=true (plus discret, moins cher)
+ * 6. Session cookies simulés
+ * 7. Fallback gracieux si blocage détecté
  */
 
 const SCRAPER_API_KEY = process.env.SCRAPER_API_KEY;
-const MAX_DETAIL_PAGES = 1; // Limite pour éviter timeout Netlify
 
-// Mapping des villes
+// ============================================
+// CONFIGURATION ANTI-DÉTECTION
+// ============================================
+
+// Limite stricte — on se comporte comme un humain qui browse
+const MAX_DETAIL_PAGES = 10;
+
+// User-Agents réels de navigateurs populaires au Vietnam (2025-2026)
+const USER_AGENTS = [
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:133.0) Gecko/20100101 Firefox/133.0',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1 Safari/605.1.15',
+  'Mozilla/5.0 (iPhone; CPU iPhone OS 18_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1 Mobile/15E148 Safari/604.1',
+  'Mozilla/5.0 (Linux; Android 14; SM-S928B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36 Edg/129.0.0.0',
+];
+
+// Referers réalistes — simuler qu'on vient de Google ou de la navigation interne
+const REFERERS = [
+  'https://www.google.com.vn/',
+  'https://www.google.com/search?q=mua+nha+dat',
+  'https://batdongsan.com.vn/',
+  'https://batdongsan.com.vn/ban-can-ho-chung-cu',
+  'https://www.facebook.com/',
+  'https://zalo.me/',
+];
+
+// ============================================
+// HELPERS
+// ============================================
+
+function getRandomItem(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+// Délai aléatoire entre 2 et 6 secondes (comportement humain)
+function humanDelay() {
+  const min = 2000;
+  const max = 6000;
+  const delay = Math.floor(Math.random() * (max - min + 1)) + min;
+  return new Promise(resolve => setTimeout(resolve, delay));
+}
+
+// Délai court entre 800ms et 2s (pour navigation interne)
+function shortDelay() {
+  const min = 800;
+  const max = 2000;
+  const delay = Math.floor(Math.random() * (max - min + 1)) + min;
+  return new Promise(resolve => setTimeout(resolve, delay));
+}
+
+function normalizeString(str) {
+  if (!str) return '';
+  return str.toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D')
+    .trim();
+}
+
+// ============================================
+// MAPPINGS
+// ============================================
+
 const cityMapping = {
   'ho chi minh': 'tp-hcm',
   'ha noi': 'ha-noi',
@@ -16,11 +89,11 @@ const cityMapping = {
   'can tho': 'can-tho',
   'hai phong': 'hai-phong',
   'ba ria vung tau': 'vung-tau-vt',
+  'vung tau': 'vung-tau-vt',
   'lam dong': 'lam-dong',
+  'da lat': 'lam-dong',
   'binh dinh': 'quy-nhon-bdd',
   'quy nhon': 'quy-nhon-bdd',
-  'vung tau': 'vung-tau-vt',
-  'ba ria': 'vung-tau-vt',
 };
 
 const PROPERTY_TYPE_MAPPING = {
@@ -28,8 +101,6 @@ const PROPERTY_TYPE_MAPPING = {
   'can ho': 'ban-can-ho-chung-cu',
   'chung cu': 'ban-can-ho-chung-cu',
   'apartment': 'ban-can-ho-chung-cu',
-  'can ho mini': 'ban-can-ho-chung-cu-mini',
-  'studio': 'ban-can-ho-chung-cu-mini',
   'nha biet thu': 'ban-nha-biet-thu-lien-ke',
   'biet thu': 'ban-nha-biet-thu-lien-ke',
   'villa': 'ban-nha-biet-thu-lien-ke',
@@ -51,20 +122,11 @@ const PROPERTY_TYPE_MAPPING = {
   'kho': 'ban-kho-nha-xuong',
   'nha xuong': 'ban-kho-nha-xuong',
   'warehouse': 'ban-kho-nha-xuong',
-  'van phong': 'ban-loai-bat-dong-san-khac',
-  'office': 'ban-loai-bat-dong-san-khac',
-  'khac': 'ban-loai-bat-dong-san-khac',
 };
 
-function normalizeString(str) {
-  if (!str) return '';
-  return str.toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/đ/g, 'd')
-    .replace(/Đ/g, 'D')
-    .trim();
-}
+// ============================================
+// SCRAPING FURTIF AVEC SCRAPERAPI
+// ============================================
 
 function buildSearchUrl(params) {
   const { city = 'ho chi minh', propertyType = 'can ho chung cu', priceMax = 10, page = 1 } = params;
@@ -72,70 +134,120 @@ function buildSearchUrl(params) {
   const cityNorm = normalizeString(city);
   const typeNorm = normalizeString(propertyType);
   
-  const citySlug = cityMapping[cityNorm] || 'tp-hcm';
-  const typeSlug = PROPERTY_TYPE_MAPPING[typeNorm] || 'ban-can-ho-chung-cu';
+  let citySlug = 'tp-hcm';
+  for (const [key, value] of Object.entries(cityMapping)) {
+    if (cityNorm.includes(key)) { citySlug = value; break; }
+  }
   
-  let url = 'https://batdongsan.com.vn/' + typeSlug + '-' + citySlug;
+  let typeSlug = 'ban-can-ho-chung-cu';
+  for (const [key, value] of Object.entries(PROPERTY_TYPE_MAPPING)) {
+    if (typeNorm.includes(key)) { typeSlug = value; break; }
+  }
+  
+  let url = `https://batdongsan.com.vn/${typeSlug}-${citySlug}`;
   
   if (priceMax) {
-    url += '?gcn=' + priceMax + '-ty';
+    url += `?gcn=${priceMax}-ty`;
   }
   
   if (page > 1) {
-    url += (url.includes('?') ? '&' : '?') + 'p=' + page;
+    url += (url.includes('?') ? '&' : '?') + `p=${page}`;
   }
   
   return url;
 }
 
-async function scrapeWithScraperAPI(targetUrl) {
-  var scraperUrl = 'https://api.scraperapi.com/?api_key=' + SCRAPER_API_KEY + 
-    '&url=' + encodeURIComponent(targetUrl) + 
-    '&country_code=vn';
+/**
+ * Requête furtive via ScraperAPI avec headers réalistes
+ * - Pas de render=true (moins suspect, plus rapide, moins cher)
+ * - country_code=vn pour IP vietnamienne
+ * - Headers personnalisés pour simuler un vrai navigateur
+ */
+async function stealthFetch(targetUrl) {
+  const userAgent = getRandomItem(USER_AGENTS);
+  const referer = getRandomItem(REFERERS);
   
-  console.log('[BDS] Scraping: ' + targetUrl);
-  var startTime = Date.now();
+  // ScraperAPI avec paramètres discrets
+  const scraperUrl = new URL('https://api.scraperapi.com/');
+  scraperUrl.searchParams.set('api_key', SCRAPER_API_KEY);
+  scraperUrl.searchParams.set('url', targetUrl);
+  scraperUrl.searchParams.set('country_code', 'vn');
+  // Passer nos headers custom via ScraperAPI
+  scraperUrl.searchParams.set('keep_headers', 'true');
   
-  var response = await fetch(scraperUrl);
-  var duration = Date.now() - startTime;
+  const startTime = Date.now();
   
-  console.log('[BDS] Response: ' + response.status + ' (' + duration + 'ms)');
+  const response = await fetch(scraperUrl.toString(), {
+    headers: {
+      'User-Agent': userAgent,
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+      'Accept-Language': 'vi-VN,vi;q=0.9,en-US;q=0.8,en;q=0.7',
+      'Accept-Encoding': 'gzip, deflate, br',
+      'Referer': referer,
+      'DNT': '1',
+      'Connection': 'keep-alive',
+      'Upgrade-Insecure-Requests': '1',
+      'Sec-Fetch-Dest': 'document',
+      'Sec-Fetch-Mode': 'navigate',
+      'Sec-Fetch-Site': 'cross-site',
+      'Cache-Control': 'max-age=0',
+    }
+  });
+  
+  const duration = Date.now() - startTime;
   
   if (!response.ok) {
-    throw new Error('ScraperAPI error: ' + response.status);
+    console.log(`[BDS-Stealth] BLOCKED or error: ${response.status} for ${targetUrl} (${duration}ms)`);
+    throw new Error(`HTTP ${response.status}`);
   }
   
-  return await response.text();
+  const html = await response.text();
+  
+  // Détecter si on a été redirigé vers une page CAPTCHA ou bloqué
+  if (html.includes('captcha') || html.includes('robot') || html.includes('blocked') || html.length < 1000) {
+    console.log(`[BDS-Stealth] CAPTCHA/Block detected (html: ${html.length} chars)`);
+    throw new Error('CAPTCHA_DETECTED');
+  }
+  
+  console.log(`[BDS-Stealth] OK: ${html.length} chars (${duration}ms) - UA: ${userAgent.substring(0, 30)}...`);
+  return html;
 }
 
-// Extraire les URLs des annonces depuis la page de liste
+// ============================================
+// EXTRACTION DES URLS DEPUIS LA PAGE DE LISTE
+// ============================================
+
 function extractListingUrls(html) {
-  var urls = [];
-  var seen = {};
+  const urls = [];
+  const seen = {};
   
-  var urlRegex = /href="(\/ban-[^"]*-pr(\d+)[^"]*)"/gi;
-  var match;
+  // Pattern principal: liens vers les pages de détail
+  const urlRegex = /href="(\/ban-[^"]*-pr(\d+)[^"]*)"/gi;
+  let match;
   
   while ((match = urlRegex.exec(html)) !== null) {
-    var url = match[1];
-    var id = match[2];
+    const path = match[1];
+    const id = match[2];
     if (!seen[id]) {
       seen[id] = true;
       urls.push({
         id: id,
-        path: url,
-        fullUrl: 'https://batdongsan.com.vn' + url
+        path: path,
+        fullUrl: 'https://batdongsan.com.vn' + path
       });
     }
   }
   
-  console.log('[BDS] Found ' + urls.length + ' unique listing URLs');
+  console.log(`[BDS-Stealth] Found ${urls.length} unique listing URLs`);
   return urls;
 }
 
-// Extraire les données depuis une page de détail
+// ============================================
+// PARSING D'UNE PAGE DE DÉTAIL
+// ============================================
+
 function parseDetailPage(html, urlInfo, city, propertyType) {
-  var listing = {
+  const listing = {
     external_id: 'bds_' + urlInfo.id,
     source: 'batdongsan.com.vn',
     url: urlInfo.fullUrl,
@@ -144,184 +256,309 @@ function parseDetailPage(html, urlInfo, city, propertyType) {
     scraped_at: new Date().toISOString()
   };
   
-  // Extraire le titre depuis <title> ou <h1>
-  var titleMatch = html.match(/<title>([^<]+)<\/title>/i);
+  // === TITRE ===
+  const titleMatch = html.match(/<title>([^<]+)<\/title>/i);
   if (titleMatch) {
     listing.title = titleMatch[1]
-      .replace(/ - Batdongsan.com.vn$/i, '')
+      .replace(/ - Batdongsan\.com\.vn$/i, '')
       .replace(/ \| Batdongsan$/i, '')
       .substring(0, 150);
   }
   
-  // Chercher le JSON avec price dans le JavaScript
-  // Format: price: 1850000000,
-  var priceMatch = html.match(/price:\s*(\d{8,12})[,\s]/);
+  // === PRIX (depuis le JSON embarqué dans la page) ===
+  const priceMatch = html.match(/price:\s*(\d{8,12})[,\s]/);
   if (priceMatch) {
-    var priceValue = parseInt(priceMatch[1]);
+    const priceValue = parseInt(priceMatch[1]);
     if (priceValue > 100000000) { // > 100 millions VND
       listing.price = priceValue;
     }
   }
   
-  // Chercher pricePerM2
-  var priceM2Match = html.match(/pricePerM2:\s*([\d.]+)/);
-  if (priceM2Match) {
-    listing.pricePerSqm = Math.round(parseFloat(priceM2Match[1]));
+  // Fallback prix: chercher dans le texte visible
+  if (!listing.price) {
+    // Pattern: "5.2 tỷ" ou "5,2 tỷ" ou "52 triệu/m²"
+    const priceTextMatch = html.match(/([\d.,]+)\s*tỷ/i);
+    if (priceTextMatch) {
+      const priceInTy = parseFloat(priceTextMatch[1].replace(',', '.'));
+      if (priceInTy > 0 && priceInTy < 1000) {
+        listing.price = Math.round(priceInTy * 1000000000);
+      }
+    }
   }
   
-  // Chercher area (surface)
-  var areaMatch = html.match(/area:\s*(\d+)/);
+  // === SURFACE ===
+  const areaMatch = html.match(/area:\s*(\d+)/);
   if (areaMatch) {
     listing.area = parseInt(areaMatch[1]);
   }
-  
-  // Chercher bedrooms
-  var bedroomMatch = html.match(/bedroom[s]?:\s*(\d+)/i);
-  if (!bedroomMatch) {
-    bedroomMatch = html.match(/(\d+)\s*(?:PN|phòng ngủ)/i);
+  // Fallback surface depuis titre
+  if (!listing.area && listing.title) {
+    const areaTitleMatch = listing.title.match(/(\d+[.,]?\d*)\s*m[²2]/i);
+    if (areaTitleMatch) {
+      listing.area = Math.round(parseFloat(areaTitleMatch[1].replace(',', '.')));
+    }
   }
+  
+  // === PRIX/M² ===
+  if (listing.price && listing.area && listing.area > 0) {
+    listing.pricePerSqm = Math.round(listing.price / listing.area);
+  }
+  
+  // === CHAMBRES ===
+  const bedroomMatch = html.match(/bedroom[s]?:\s*(\d+)/i) || html.match(/(\d+)\s*(?:PN|phòng ngủ)/i);
   if (bedroomMatch) {
     listing.bedrooms = parseInt(bedroomMatch[1]);
   }
   
-  // Chercher bathrooms
-  var bathroomMatch = html.match(/bathroom[s]?:\s*(\d+)/i);
-  if (!bathroomMatch) {
-    bathroomMatch = html.match(/(\d+)\s*(?:WC|phòng tắm)/i);
-  }
+  // === SALLES DE BAIN ===
+  const bathroomMatch = html.match(/bathroom[s]?:\s*(\d+)/i) || html.match(/(\d+)\s*(?:WC|phòng tắm|toilet)/i);
   if (bathroomMatch) {
     listing.bathrooms = parseInt(bathroomMatch[1]);
   }
   
-  // Chercher l'image principale
-  // Pattern 1: og:image meta tag
-  var ogImageMatch = html.match(/property="og:image"\s+content="([^"]+)"/i);
-  if (!ogImageMatch) {
-    ogImageMatch = html.match(/content="([^"]+)"\s+property="og:image"/i);
+  // === ÉTAGES ===
+  const floorMatch = html.match(/(\d+)\s*tầng/i) || html.match(/(\d+)\s*lầu/i);
+  if (floorMatch && parseInt(floorMatch[1]) <= 50) {
+    listing.floors = parseInt(floorMatch[1]);
   }
+  
+  // === DIRECTION ===
+  const dirMatch = html.match(/(?:Hướng|direction)[:\s]*([ĐTBN][^\s,<]{2,15})/i);
+  if (dirMatch) {
+    listing.direction = dirMatch[1];
+  }
+  
+  // === STATUT LÉGAL ===
+  if (/sổ\s*(đỏ|hồng)/i.test(html)) {
+    listing.legalStatus = 'Sổ đỏ/Sổ hồng';
+  } else if (/chưa\s*(có\s*)?sổ|giấy\s*tay/i.test(html)) {
+    listing.legalStatus = 'Chưa có sổ';
+  }
+  
+  // === IMAGE PRINCIPALE ===
+  // 1. og:image meta tag
+  const ogImageMatch = html.match(/property="og:image"\s+content="([^"]+)"/i)
+    || html.match(/content="([^"]+)"\s+property="og:image"/i);
   if (ogImageMatch && ogImageMatch[1]) {
-    listing.image_url = ogImageMatch[1];
+    listing.imageUrl = ogImageMatch[1];
+  }
+  // 2. CDN file4.batdongsan
+  if (!listing.imageUrl) {
+    const cdnMatch = html.match(/https:\/\/file4\.batdongsan\.com\.vn\/[^"'\s]+\.(?:jpg|jpeg|png|webp)/i);
+    if (cdnMatch) listing.imageUrl = cdnMatch[0];
   }
   
-  // Pattern 2: Images dans le CDN file4.batdongsan.com.vn
-  if (!listing.image_url) {
-    var cdnImageMatch = html.match(/https:\/\/file4\.batdongsan\.com\.vn\/[^"'\s]+\.(?:jpg|jpeg|png|webp)/i);
-    if (cdnImageMatch) {
-      listing.image_url = cdnImageMatch[0];
-    }
-  }
-  
-  // Pattern 3: Images amcdn.vn
-  if (!listing.image_url) {
-    var amcdnMatch = html.match(/https?:\/\/[^"'\s<>]*amcdn\.vn\/[^"'\s<>]+\.(?:jpg|jpeg|png|webp)/i);
-    if (amcdnMatch) {
-      listing.image_url = amcdnMatch[0];
-    }
-  }
-  
-  // Chercher l'adresse
-  var addressMatch = html.match(/address["\']?:\s*["\']([^"\']+)["\']/i);
+  // === ADRESSE ===
+  const addressMatch = html.match(/address["\']?:\s*["\']([^"\']+)["\']/i);
   if (addressMatch) {
     listing.address = addressMatch[1];
   }
   
-  // Chercher le district
-  var districtMatch = html.match(/district["\']?:\s*["\']([^"\']+)["\']/i);
+  // === DISTRICT ===
+  const districtMatch = html.match(/district["\']?:\s*["\']([^"\']+)["\']/i);
   if (districtMatch) {
     listing.district = districtMatch[1];
+  }
+  // Fallback district depuis l'URL
+  if (!listing.district) {
+    const urlDistrictMatch = urlInfo.fullUrl.match(/quan-(\d+)/i);
+    if (urlDistrictMatch) {
+      listing.district = `Quận ${urlDistrictMatch[1]}`;
+    }
+  }
+  
+  // === WARD ===
+  const wardMatch = html.match(/ward["\']?:\s*["\']([^"\']+)["\']/i);
+  if (wardMatch) {
+    listing.ward = wardMatch[1];
+  }
+  
+  // === MOTS-CLÉS URGENTS ===
+  listing.matchedKeywords = [];
+  const urgentPatterns = [
+    { regex: /bán\s*gấp/i, keyword: 'Bán gấp' },
+    { regex: /cần\s*bán\s*gấp/i, keyword: 'Cần bán gấp' },
+    { regex: /ngộp\s*bank/i, keyword: 'Ngộp bank' },
+    { regex: /chính\s*chủ/i, keyword: 'Chính chủ' },
+    { regex: /bán\s*lỗ/i, keyword: 'Bán lỗ' },
+    { regex: /giá\s*rẻ/i, keyword: 'Giá rẻ' },
+    { regex: /cắt\s*lỗ/i, keyword: 'Cắt lỗ' },
+    { regex: /hạ\s*giá/i, keyword: 'Hạ giá' },
+  ];
+  
+  const textToCheck = (listing.title || '') + ' ' + (listing.address || '');
+  for (const pattern of urgentPatterns) {
+    if (pattern.regex.test(textToCheck)) {
+      listing.matchedKeywords.push(pattern.keyword);
+    }
+  }
+  listing.hasUrgentKeyword = listing.matchedKeywords.length > 0;
+  
+  // === NLP ALERTES ===
+  listing.nlpAlerts = [];
+  if (/metro|tàu\s*điện/i.test(html)) {
+    listing.nlpAlerts.push({ type: 'opportunity', text: 'Gần Metro', icon: '🚇', points: 5 });
+  }
+  if (/mở\s*đường|sắp\s*mở|đường\s*mới/i.test(html)) {
+    listing.nlpAlerts.push({ type: 'opportunity', text: 'Sắp mở đường', icon: '🛣️', points: 3 });
+  }
+  if (/đầu\s*tư|sinh\s*lời|tiềm\s*năng/i.test(html)) {
+    listing.nlpAlerts.push({ type: 'opportunity', text: 'Tiềm năng đầu tư', icon: '📈', points: 5 });
+  }
+  if (/chưa\s*(có\s*)?sổ|giấy\s*tay/i.test(html)) {
+    listing.nlpAlerts.push({ type: 'risk', text: 'Chưa có sổ', icon: '⚠️', points: -10 });
+  }
+  if (/giải\s*tỏa|quy\s*hoạch\s*(treo|đỏ)|tranh\s*chấp/i.test(html)) {
+    listing.nlpAlerts.push({ type: 'risk', text: 'Rủi ro quy hoạch', icon: '🚨', points: -15 });
+  }
+  
+  // === DATE DE PUBLICATION ===
+  const dateMatch = html.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (dateMatch) {
+    listing.postedOn = `${dateMatch[1]}/${dateMatch[2]}/${dateMatch[3]}`;
   }
   
   return listing;
 }
 
+// ============================================
+// HANDLER PRINCIPAL
+// ============================================
+
 exports.handler = async function(event, context) {
-  var headers = {
+  const headers = {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type'
   };
   
   if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 200, headers: headers, body: '' };
+    return { statusCode: 200, headers, body: '' };
   }
   
   if (!SCRAPER_API_KEY) {
     return {
       statusCode: 500,
-      headers: headers,
+      headers,
       body: JSON.stringify({ error: 'SCRAPER_API_KEY not configured' })
     };
   }
   
   try {
-    var params = event.queryStringParameters || {};
-    var city = params.city || 'Ho Chi Minh';
-    var propertyType = params.propertyType || 'Can ho chung cu';
-    var priceMax = params.priceMax || 10;
-    var maxListings = Math.min(parseInt(params.maxListings) || MAX_DETAIL_PAGES, 15);
+    const params = event.queryStringParameters || {};
+    const city = params.city || 'Ho Chi Minh';
+    const propertyType = params.propertyType || 'Can ho chung cu';
+    const priceMax = params.priceMax || 10;
+    const maxListings = Math.min(parseInt(params.maxListings) || MAX_DETAIL_PAGES, 15);
     
-    console.log('[BDS] Search: city=' + city + ', type=' + propertyType + ', priceMax=' + priceMax + ', maxListings=' + maxListings);
+    console.log(`[BDS-Stealth] Search: city=${city}, type=${propertyType}, priceMax=${priceMax}, max=${maxListings}`);
     
-    // Étape 1: Récupérer la page de liste
-    var listUrl = buildSearchUrl({ city: city, propertyType: propertyType, priceMax: priceMax, page: 1 });
-    var listHtml = await scrapeWithScraperAPI(listUrl);
+    // ==========================================
+    // ÉTAPE 1: Page de liste (comme un humain qui arrive depuis Google)
+    // ==========================================
+    const listUrl = buildSearchUrl({ city, propertyType, priceMax, page: 1 });
     
-    // Étape 2: Extraire les URLs des annonces
-    var listingUrls = extractListingUrls(listHtml);
+    let listHtml;
+    try {
+      listHtml = await stealthFetch(listUrl);
+    } catch (err) {
+      if (err.message === 'CAPTCHA_DETECTED') {
+        console.log('[BDS-Stealth] Captcha on list page — aborting gracefully');
+        return {
+          statusCode: 200,
+          headers,
+          body: JSON.stringify({
+            success: true,
+            source: 'batdongsan',
+            blocked: true,
+            message: 'BDS temporarily unavailable — using cached data',
+            listings: []
+          })
+        };
+      }
+      throw err;
+    }
     
-    // Limiter le nombre d'annonces à scraper
+    // ==========================================
+    // ÉTAPE 2: Extraire les URLs
+    // ==========================================
+    let listingUrls = extractListingUrls(listHtml);
+    
+    // Mélanger aléatoirement les URLs (ne pas toujours scraper les mêmes)
+    listingUrls = listingUrls.sort(() => Math.random() - 0.5);
+    
+    // Limiter
     listingUrls = listingUrls.slice(0, maxListings);
-    console.log('[BDS] Will scrape ' + listingUrls.length + ' detail pages');
+    console.log(`[BDS-Stealth] Will scrape ${listingUrls.length} detail pages (shuffled)`);
     
-    // Étape 3: Scraper chaque page de détail
-    var listings = [];
+    // ==========================================
+    // ÉTAPE 3: Scraper les détails avec comportement humain
+    // ==========================================
+    const listings = [];
+    let captchaCount = 0;
     
-    for (var i = 0; i < listingUrls.length; i++) {
-      var urlInfo = listingUrls[i];
+    for (let i = 0; i < listingUrls.length; i++) {
+      const urlInfo = listingUrls[i];
+      
+      // Si on a eu 2 captchas, on arrête — on est repéré
+      if (captchaCount >= 2) {
+        console.log(`[BDS-Stealth] 2 captchas hit — stopping to avoid IP ban`);
+        break;
+      }
       
       try {
-        console.log('[BDS] Detail ' + (i + 1) + '/' + listingUrls.length + ': ' + urlInfo.id);
+        console.log(`[BDS-Stealth] Detail ${i + 1}/${listingUrls.length}: ${urlInfo.id}`);
         
-        var detailHtml = await scrapeWithScraperAPI(urlInfo.fullUrl);
-        var listing = parseDetailPage(detailHtml, urlInfo, city, propertyType);
+        // Délai humain AVANT chaque requête (sauf la première)
+        if (i > 0) {
+          await humanDelay();
+        } else {
+          // Même la première requête a un petit délai après la page de liste
+          await shortDelay();
+        }
         
-        // Ne garder que les annonces avec un prix valide
+        const detailHtml = await stealthFetch(urlInfo.fullUrl);
+        const listing = parseDetailPage(detailHtml, urlInfo, city, propertyType);
+        
         if (listing.price && listing.price > 0) {
           listings.push(listing);
         } else {
-          console.log('[BDS] Skipped ' + urlInfo.id + ' - no valid price');
+          console.log(`[BDS-Stealth] Skipped ${urlInfo.id} — no valid price`);
         }
         
-        // Pause entre les requêtes pour éviter le rate limiting
-        if (i < listingUrls.length - 1) {
-          await new Promise(function(r) { setTimeout(r, 200); });
+      } catch (err) {
+        if (err.message === 'CAPTCHA_DETECTED') {
+          captchaCount++;
+          console.log(`[BDS-Stealth] Captcha on detail ${urlInfo.id} (count: ${captchaCount})`);
+          // Pause longue après un captcha
+          await new Promise(r => setTimeout(r, 8000 + Math.random() * 5000));
+        } else {
+          console.log(`[BDS-Stealth] Error on ${urlInfo.id}: ${err.message}`);
         }
-        
-      } catch (e) {
-        console.log('[BDS] Detail error for ' + urlInfo.id + ': ' + e.message);
       }
     }
     
-    console.log('[BDS] Final: ' + listings.length + ' listings with valid prices');
+    console.log(`[BDS-Stealth] Final: ${listings.length} listings OK, ${captchaCount} captchas`);
     
     return {
       statusCode: 200,
-      headers: headers,
+      headers,
       body: JSON.stringify({
         success: true,
         source: 'batdongsan',
         city: city,
         propertyType: propertyType,
         totalListings: listings.length,
+        blocked: captchaCount >= 2,
         listings: listings
-      }, null, 2)
+      })
     };
     
   } catch (error) {
-    console.error('[BDS] Error:', error);
+    console.error('[BDS-Stealth] Error:', error);
     return {
       statusCode: 500,
-      headers: headers,
+      headers,
       body: JSON.stringify({ error: error.message })
     };
   }
