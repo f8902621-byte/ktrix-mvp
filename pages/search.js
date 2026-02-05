@@ -1555,6 +1555,50 @@ onClick={() => {
           {selectedProperty.postedOn && <span>📅 {selectedProperty.postedOn}</span>}
         </div>
 
+              {/* Disclaimer Transparence */}
+              <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+                <div className="flex items-start gap-3">
+                  <span className="text-lg mt-0.5">⚖️</span>
+                  <div>
+                    <p className="text-sm font-semibold text-amber-800 mb-1">
+                      {language === 'vn'
+                        ? 'Minh bạch dữ liệu'
+                        : language === 'fr'
+                        ? 'Transparence des données'
+                        : 'Data Transparency'}
+                    </p>
+                    <p className="text-xs text-amber-700 leading-relaxed">
+                      {language === 'vn'
+                        ? 'Phân tích giá dựa trên các tin đăng trực tuyến trong cùng quận/huyện tại thời điểm tìm kiếm. Điểm đàm phán được tính từ thuật toán K Trix (giá, từ khóa, pháp lý, thời gian đăng). Dữ liệu này không thay thế thẩm định chuyên nghiệp.'
+                        : language === 'fr'
+                        ? 'L\'analyse des prix est basée sur les annonces en ligne du même district au moment de la recherche. Le score de négociation est calculé par l\'algorithme K Trix (prix, mots-clés, statut légal, ancienneté). Ces données ne remplacent pas une évaluation immobilière professionnelle.'
+                        : 'Price analysis is based on online listings in the same district at the time of search. The negotiation score is calculated by the K Trix algorithm (price, keywords, legal status, listing age). This data does not replace a professional property valuation.'}
+                    </p>
+                    <div className="flex items-center gap-4 mt-2 pt-2 border-t border-amber-200">
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                        <span className="text-xs text-amber-700">
+                          {language === 'vn' ? 'Dữ liệu thực' : language === 'fr' ? 'Données réelles' : 'Real data'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-2 h-2 rounded-full bg-sky-500"></div>
+                        <span className="text-xs text-amber-700">
+                          {language === 'vn' ? 'Thuật toán K Trix' : language === 'fr' ? 'Algorithme K Trix' : 'K Trix algorithm'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                        <span className="text-xs text-amber-700">
+                          {language === 'vn' ? 'Tham khảo' : language === 'fr' ? 'Indicatif' : 'Indicative'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+
         {/* Boutons */}
         <div className="flex gap-3 pt-2">
           <a 
