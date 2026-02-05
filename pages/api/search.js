@@ -2095,31 +2095,40 @@ const surfaceDebug = sortedResults.slice(0, 5).map(r => ({
   title: r.title?.substring(0, 30)
 }));
 console.log('SURFACE DEBUG:', JSON.stringify(surfaceDebug));
-const results = sortedResults.slice(0, maxResults || 200).map((item, i) => ({
-  id: item.id || i,
-  title: item.title || 'Sans titre',
-  price: item.price || 0,
-  area: item.area || item.floorAreaSqm || 0,
-  source: item.source || 'unknown',
-  url: item.url || '#',
-  imageUrl: item.thumbnail || '',
-  district: item.district || null,
-  ward: item.ward || null,
-  postedOn: item.postedOn || null,
-  // CHAMPS MANQUANTS
-  bedrooms: item.bedrooms || null,
-  bathrooms: item.bathrooms || null,
-  floors: item.floors || null,
-  pricePerSqm: item.pricePerSqm || item.pricePerM2 || null,
-  legalStatus: item.legalStatus || null,
-  direction: item.direction || null,
-  streetWidth: item.streetWidth || null,
-  propertyType: item.propertyType || null,
-// SCORE
-      score: item.negotiationScore || item.score || 0,
-      // MATCHED KEYWORDS
-      matchedKeywords: item.matchedKeywords || [],
-    }));
+const results = sortedResults.slice(0, maxResults || 200).map((item, i) => {
+  const districtKey = (item.district || '').toLowerCase().trim();
+  const pricePosition = analyzePricePosition(item, districtStats);
+
+  return {
+    id: item.id || i,
+    title: item.title || 'Sans titre',
+    price: item.price || 0,
+    area: item.area || item.floorAreaSqm || 0,
+    source: item.source || 'unknown',
+    url: item.url || '#',
+    imageUrl: item.thumbnail || '',
+    district: item.district || null,
+    ward: item.ward || null,
+    city: item.city || null,
+    postedOn: item.postedOn || null,
+    bedrooms: item.bedrooms || null,
+    bathrooms: item.bathrooms || null,
+    floors: item.floors || null,
+    pricePerSqm: item.pricePerSqm || item.pricePerM2 || null,
+    legalStatus: item.legalStatus || null,
+    direction: item.direction || null,
+    streetWidth: item.streetWidth || null,
+    facadeWidth: item.facadeWidth || null,
+    propertyType: item.propertyType || null,
+    address: item.address || null,
+    score: item.negotiationScore || item.score || 0,
+    matchedKeywords: item.matchedKeywords || [],
+    // RAPPORT IA
+    scoreDetails: item.scoreDetails || null,
+    pricePosition: pricePosition,
+    negotiationLevel: item.negotiationLevel || null,
+  };
+});
 
 // const kos = computeKOS(item, districtStats[districtKey]);
       
