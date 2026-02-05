@@ -1,6 +1,6 @@
 // ============================================
-// KTRIX - API SEARCH V4 (Vercel Compatible)
-// Version avec Market Stats + Archive Trends
+// KTRIX - API SEARCH V5 (Vercel Compatible)
+// Version V5 — Chotot + Alonhadat + Market Stats
 // ============================================
 
 // import { computeKOS } from '../../lib/Scoring.js';
@@ -27,11 +27,8 @@ async function getArchiveStatsByDistrict(city, propertyType) {
   }
 
   try {
-    // Construire la requête pour récupérer les annonces archivées
-    // On prend les annonces des 90 derniers jours pour avoir assez de données
-let url = `${SUPABASE_URL}/rest/v1/archive?select=district,price,area,price_per_m2,city,created_at`;
+    let url = `${SUPABASE_URL}/rest/v1/archive?select=district,price,area,price_per_m2,city,created_at`;
     
-    // Filtrer par ville si spécifiée
     if (city) {
       const cityNormalized = removeVietnameseAccents(city).toLowerCase();
       url += `&city=ilike.*${encodeURIComponent(cityNormalized)}*`;
@@ -52,7 +49,6 @@ let url = `${SUPABASE_URL}/rest/v1/archive?select=district,price,area,price_per_
     const archiveData = await response.json();
     console.log(`Archive: ${archiveData.length} annonces récupérées (90 derniers jours)`);
 
-    // Calculer les stats par district
     const districtArchive = {};
     
     for (const item of archiveData) {
@@ -78,10 +74,9 @@ let url = `${SUPABASE_URL}/rest/v1/archive?select=district,price,area,price_per_
       }
     }
 
-    // Calculer les moyennes
     const archiveStats = {};
     for (const [district, data] of Object.entries(districtArchive)) {
-      if (data.count >= 3) { // Minimum 3 annonces pour être fiable
+      if (data.count >= 3) {
         const avgPricePerM2 = data.pricesPerM2.reduce((a, b) => a + b, 0) / data.count;
         archiveStats[district] = {
           count: data.count,
@@ -126,7 +121,6 @@ async function getTotalArchiveByDistrict(city) {
 
     const data = await response.json();
     
-    // Compter par district
     const counts = {};
     for (const item of data) {
       const district = (item.district || '').toLowerCase().trim();
@@ -156,7 +150,6 @@ async function saveListingsToSupabase(listings) {
       id: item.id,
       source: item.source === 'chotot' ? 'chotot.com' 
       : item.source === 'alonhadat' ? 'alonhadat.com.vn'
-      : item.source === 'batdongsan' ? 'batdongsan.com.vn'
       : item.source || 'unknown',
       title: item.title || '',
       price: item.price || 0,
@@ -285,10 +278,8 @@ function getChototDistrictCode(regionCode, district) {
   
   const districtMap = CHOTOT_DISTRICTS[regionCode];
   
-  // Chercher correspondance exacte
   if (districtMap[d]) return districtMap[d];
   
-  // Chercher correspondance partielle
   for (const [key, code] of Object.entries(districtMap)) {
     if (d.includes(key) || key.includes(d)) {
       return code;
@@ -322,25 +313,6 @@ const ALONHADAT_CITY_MAPPING = {
 };
 
 // ============================================
-// MAPPING DES VILLES BATDONGSAN
-// ============================================
-const BATDONGSAN_CITY_MAPPING = {
-  'ho chi minh': 'tp-hcm',
-  'ha noi': 'ha-noi',
-  'da nang': 'da-nang',
-  'binh duong': 'binh-duong',
-  'khanh hoa': 'khanh-hoa',
-  'can tho': 'can-tho',
-  'hai phong': 'hai-phong',
-  'ba ria vung tau': 'vung-tau-vt',
-  'lam dong': 'lam-dong',
-  'binh dinh': 'quy-nhon-bdd',
-  'quy nhon': 'quy-nhon-bdd',
-  'vung tau': 'vung-tau-vt',
-  'ba ria': 'vung-tau-vt',
-};
-
-// ============================================
 // MAPPING TYPE ALONHADAT
 // ============================================
 const ALONHADAT_PROPERTY_TYPE = {
@@ -353,21 +325,6 @@ const ALONHADAT_PROPERTY_TYPE = {
   'kho nha xuong': 'kho-nha-xuong-dat-cong-nghiep',
   'warehouse': 'kho-nha-xuong-dat-cong-nghiep',
   'shophouse': 'shophouse-nha-pho-thuong-mai',
-};
-
-// ============================================
-// MAPPING TYPE BATDONGSAN
-// ============================================
-const BATDONGSAN_PROPERTY_TYPE = {
-  'can ho chung cu': 'ban-can-ho-chung-cu',
-  'nha biet thu': 'ban-nha-biet-thu-lien-ke',
-  'biet thu': 'ban-nha-biet-thu-lien-ke',
-  'villa': 'ban-nha-biet-thu-lien-ke',
-  'nha o': 'ban-nha-rieng',
-  'dat': 'ban-dat',
-  'shophouse': 'ban-shophouse-nha-pho-thuong-mai',
-  'kho nha xuong': 'ban-kho-nha-xuong',
-  'warehouse': 'ban-kho-nha-xuong',
 };
 
 // ============================================
@@ -484,7 +441,7 @@ function analyzeListingText(title, body) {
           const width = parseFloat(match[1].replace(',', '.'));
           if (width >= 1 && width <= 15) {
             analysis.extractedStreetWidth = width;
-                break;
+            break;
           }
         }
       }
@@ -500,7 +457,7 @@ function analyzeListingText(title, body) {
     const match = text.match(pattern);
     if (match && parseInt(match[1]) <= 20) {
       analysis.extractedFloors = parseInt(match[1]);
-        break;
+      break;
     }
   }
 
@@ -516,7 +473,7 @@ function analyzeListingText(title, body) {
       const facade = parseFloat(match[1].replace(',', '.'));
       if (facade >= 2 && facade <= 30) {
         analysis.extractedFacade = facade;
-           break;
+        break;
       }
     }
   }
@@ -529,7 +486,7 @@ function analyzeListingText(title, body) {
     const match = text.match(pattern);
     if (match) {
       analysis.extractedDirection = match[1].charAt(0).toUpperCase() + match[1].slice(1);
-         break;
+      break;
     }
   }
 
@@ -542,7 +499,7 @@ function analyzeListingText(title, body) {
     const match = text.match(pattern);
     if (match) {
       analysis.extractedRentalIncome = parseInt(match[1]) * 1000000;
-          break;
+      break;
     }
   }
 
@@ -554,26 +511,26 @@ function analyzeListingText(title, body) {
     const match = text.match(pattern);
     if (match) {
       analysis.extractedPricePerM2 = parseInt(match[1]) * 1000000;
-         break;
+      break;
     }
   }
 
   if (/metro|tàu\s*điện/i.test(text)) {
     analysis.hasMetroNearby = true;
-    }
+  }
   if (/mở\s*đường|sắp\s*mở|đường\s*mới|quy\s*hoạch\s*đường/i.test(text)) {
     analysis.hasNewRoad = true;
-     }
+  }
   if (/đầu\s*tư|sinh\s*lời|tăng\s*giá|tiềm\s*năng/i.test(text)) {
     analysis.hasInvestmentPotential = true;
-    }
+  }
 
   if (/chưa\s*(có\s*)?sổ|giấy\s*tay|không\s*sổ/i.test(text)) {
     analysis.hasLegalIssue = true;
-    }
+  }
   if (/giải\s*tỏa|quy\s*hoạch\s*(treo|đỏ)|tranh\s*chấp/i.test(text)) {
     analysis.hasPlanningRisk = true;
-    }
+  }
 
   return analysis;
 }
@@ -585,105 +542,90 @@ const PROPERTY_TYPE_MAPPING = {
   'tat_ca': {
     label: { vn: 'Tất cả nhà đất', en: 'All Properties', fr: 'Tous biens' },
     chotot: 1000,
-    batdongsan: null,
     include: [],
     exclude: []
   },
   'can_ho_chung_cu': {
     label: { vn: 'Căn hộ chung cư', en: 'Apartment', fr: 'Appartement' },
     chotot: 1010,
-    batdongsan: 'ban-can-ho-chung-cu',
     include: ['căn hộ', 'chung cư', 'apartment', 'cc'],
     exclude: ['nghỉ dưỡng', 'condotel', 'resort', 'studio']
   },
   'can_ho_nghi_duong': {
     label: { vn: 'Căn hộ nghỉ dưỡng', en: 'Resort Condo', fr: 'Appart. Vacances' },
     chotot: 1010,
-    batdongsan: 'ban-can-ho-chung-cu',
     include: ['nghỉ dưỡng', 'condotel', 'resort'],
     exclude: []
   },
   'studio': {
     label: { vn: 'Studio', en: 'Studio', fr: 'Studio' },
     chotot: 1010,
-    batdongsan: 'ban-can-ho-chung-cu',
     include: ['studio'],
     exclude: []
   },
   'nha_o': {
     label: { vn: 'Nhà ở', en: 'House', fr: 'Maison' },
     chotot: 1020,
-    batdongsan: 'ban-nha-rieng',
     include: ['nhà riêng', 'nhà ở', 'nhà phố'],
     exclude: ['biệt thự', 'villa', 'nghỉ dưỡng', 'resort']
   },
   'nha_biet_thu': {
     label: { vn: 'Nhà biệt thự', en: 'Villa', fr: 'Villa' },
     chotot: 1020,
-    batdongsan: 'ban-nha-biet-thu-lien-ke',
     include: ['biệt thự', 'villa', 'liền kề'],
     exclude: ['nghỉ dưỡng', 'resort']
   },
   'nha_nghi_duong': {
     label: { vn: 'Nhà nghỉ dưỡng', en: 'Resort House', fr: 'Maison Vacances' },
     chotot: 1020,
-    batdongsan: 'ban-nha-rieng',
     include: ['nghỉ dưỡng', 'resort'],
     exclude: []
   },
   'shophouse': {
     label: { vn: 'Shophouse', en: 'Shophouse', fr: 'Shophouse' },
     chotot: 1030,
-    batdongsan: 'ban-shophouse-nha-pho-thuong-mai',
     include: ['shophouse', 'nhà phố thương mại'],
     exclude: []
   },
   'van_phong': {
     label: { vn: 'Văn phòng', en: 'Office', fr: 'Bureau' },
     chotot: 1030,
-    batdongsan: null,
     include: ['văn phòng', 'office', 'officetel'],
     exclude: []
   },
   'cua_hang': {
     label: { vn: 'Cửa hàng', en: 'Shop', fr: 'Boutique' },
     chotot: 1030,
-    batdongsan: 'ban-shophouse-nha-pho-thuong-mai',
     include: ['cửa hàng', 'shop', 'ki ốt', 'kiot'],
     exclude: []
   },
   'mat_bang': {
     label: { vn: 'Mặt bằng', en: 'Premises', fr: 'Local commercial' },
     chotot: 1030,
-    batdongsan: 'ban-shophouse-nha-pho-thuong-mai',
     include: ['mặt bằng', 'mặt tiền'],
     exclude: ['shophouse', 'văn phòng', 'kho']
   },
   'kho_nha_xuong': {
     label: { vn: 'Kho, nhà xưởng', en: 'Warehouse', fr: 'Entrepôt' },
     chotot: 1030,
-    batdongsan: 'ban-kho-nha-xuong',
     include: ['kho', 'nhà xưởng', 'xưởng', 'warehouse'],
     exclude: []
   },
   'dat': {
     label: { vn: 'Đất', en: 'Land', fr: 'Terrain' },
     chotot: 1040,
-    batdongsan: 'ban-dat-dat-nen',
     include: ['đất', 'đất nền', 'lô đất'],
     exclude: ['nghỉ dưỡng', 'resort']
   },
   'dat_nghi_duong': {
     label: { vn: 'Đất nghỉ dưỡng', en: 'Resort Land', fr: 'Terrain Vacances' },
     chotot: 1040,
-    batdongsan: 'ban-dat-dat-nen',
     include: ['nghỉ dưỡng', 'resort'],
     exclude: []
   },
   'bat_dong_san_khac': {
     label: { vn: 'Bất động sản khác', en: 'Other', fr: 'Autre bien' },
     chotot: 1000,
-    batdongsan: null,
     include: [],
     exclude: []
   }
@@ -824,15 +766,15 @@ async function fetchChotot(params) {
   baseParams.append('st', 's,k');
   baseParams.append('limit', '50');
   console.log(`Chotot PARAMS DEBUG: ${baseParams.toString()}`);
-// Filtre par district DÉSACTIVÉ - codes Chotot obsolètes depuis fusion Thủ Đức 2021
+
+  // Filtre par district DÉSACTIVÉ - codes Chotot obsolètes depuis fusion Thủ Đức 2021
   const districtCode = getChototDistrictCode(regionCode, district);
   if (districtCode) {
-    // baseParams.append('area_v2', districtCode);  // DÉSACTIVÉ
     console.log(`Chotot: district="${district}" → area_v2=${districtCode} (SKIP - filtrage post-requête)`);
   }
   
-// Chotot API: filtre prix désactivé (format incompatible)
-if (false && (priceMin || priceMax)) {}
+  // Chotot API: filtre prix désactivé (format incompatible)
+  if (false && (priceMin || priceMax)) {}
   
   if (sortBy === 'price_asc') {
     baseParams.append('sort_by', 'price');
@@ -843,9 +785,10 @@ if (false && (priceMin || priceMax)) {}
   }
   
   const allAds = [];
- const maxPages = Math.ceil((params.maxResults || 200) / 50);
+  const maxPages = Math.ceil((params.maxResults || 200) / 50);
   const offsets = [0, 50, 100, 150, 200, 250].slice(0, maxPages);
   console.log(`Chotot URL DEBUG: https://gateway.chotot.com/v1/public/ad-listing?${baseParams.toString()}&o=0`);
+  
   for (const offset of offsets) {
     try {
       const url = `https://gateway.chotot.com/v1/public/ad-listing?${baseParams}&o=${offset}`;
@@ -906,14 +849,8 @@ if (false && (priceMin || priceMax)) {}
         hasInvestmentPotential: nlpAnalysis.hasInvestmentPotential,
         hasLegalIssue: nlpAnalysis.hasLegalIssue,
         hasPlanningRisk: nlpAnalysis.hasPlanningRisk,
-             };
+      };
     });
-  
-  // if (typeMapping.include.length > 0 || typeMapping.exclude.length > 0) {
-   //  const beforeFilter = results.length;
-   // results = filterByKeywords(results, typeMapping.include, typeMapping.exclude);
-   // console.log(`Chotot filtre mots-clés: ${beforeFilter} → ${results.length}`);
-  // }
 
   return results;
 }
@@ -932,7 +869,6 @@ async function fetchAlonhadat(params) {
   const cityNormalized = removeVietnameseAccents(city || 'ho chi minh');
   const typeNormalized = removeVietnameseAccents(propertyType || 'nha o');
   
-  // Mapping ville
   let citySlug = 'ho-chi-minh';
   for (const [key, value] of Object.entries(ALONHADAT_CITY_MAPPING)) {
     if (cityNormalized.includes(key) || key.includes(cityNormalized)) {
@@ -941,7 +877,6 @@ async function fetchAlonhadat(params) {
     }
   }
   
-  // Mapping type
   let typeSlug = 'nha-dat';
   if (typeNormalized && !typeNormalized.includes('tat ca') && typeNormalized !== 'nha dat') {
     for (const [key, value] of Object.entries(ALONHADAT_PROPERTY_TYPE)) {
@@ -952,8 +887,7 @@ async function fetchAlonhadat(params) {
     }
   }
 
-  // Calculer le nombre de pages selon maxResults
- const maxPages = maxResults >= 200 ? 3 : maxResults >= 100 ? 2 : 1;
+  const maxPages = maxResults >= 200 ? 3 : maxResults >= 100 ? 2 : 1;
   
   console.log(`Alonhadat: scraping ${maxPages} pages`);
   
@@ -984,7 +918,6 @@ async function fetchAlonhadat(params) {
       
       allListings.push(...listings);
       
-      // Pause entre les requêtes pour éviter le rate limiting
       if (page < maxPages) {
         await new Promise(r => setTimeout(r, 500));
       }
@@ -995,9 +928,9 @@ async function fetchAlonhadat(params) {
     }
   }
   
-console.log(`Alonhadat TOTAL: ${allListings.length} annonces`);
+  console.log(`Alonhadat TOTAL: ${allListings.length} annonces`);
   
-  // === FALLBACK: si trop peu de résultats, relancer en "nha-dat" ===
+  // FALLBACK: si trop peu de résultats, relancer en "nha-dat"
   if (allListings.length < 10 && typeSlug !== 'nha-dat') {
     console.log(`Alonhadat: seulement ${allListings.length} résultats pour "${typeSlug}", fallback → nha-dat`);
     
@@ -1026,6 +959,7 @@ console.log(`Alonhadat TOTAL: ${allListings.length} annonces`);
   
   return allListings;
 }
+
 function parseAlonhadatHtml(html, city) {
   const listings = [];
   
@@ -1038,7 +972,6 @@ function parseAlonhadatHtml(html, city) {
     try {
       const listing = {};
       
-      // URL et ID
       const urlMatch = articleHtml.match(/href=["']([^"']*\.html)["']/i);
       if (urlMatch) {
         const href = urlMatch[1];
@@ -1047,12 +980,10 @@ function parseAlonhadatHtml(html, city) {
         listing.id = memberIdMatch ? `alonhadat_${memberIdMatch[1]}` : `alonhadat_${href.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 50)}`;
       }
       
-      // Titre
       const titleMatch = articleHtml.match(/itemprop=["']name["'][^>]*>([^<]+)</i) ||
                          articleHtml.match(/<h3[^>]*>([^<]+)</i);
       listing.title = titleMatch ? titleMatch[1].trim() : 'Sans titre';
       
-      // Prix
       const priceMatch = articleHtml.match(/itemprop=["']price["']\s+content=["'](\d+)["']/i);
       if (priceMatch) {
         listing.price = parseInt(priceMatch[1]);
@@ -1063,8 +994,7 @@ function parseAlonhadatHtml(html, city) {
         }
       }
       
-      // Surface
-   const areaPatterns = [/(\d+(?:[,\.]\d+)?)\s*m²/i, /(\d+(?:[,\.]\d+)?)\s*m2/i, /(\d+(?:[,\.]\d+)?)m²/i];
+      const areaPatterns = [/(\d+(?:[,\.]\d+)?)\s*m²/i, /(\d+(?:[,\.]\d+)?)\s*m2/i, /(\d+(?:[,\.]\d+)?)m²/i];
       for (const pattern of areaPatterns) {
         const areaMatch = articleHtml.match(pattern);
         if (areaMatch) {
@@ -1076,102 +1006,91 @@ function parseAlonhadatHtml(html, city) {
         }
       }
       
-      // District
       const localityMatch = articleHtml.match(/itemprop=["']addressLocality["'][^>]*>([^<]+)</i);
       listing.district = localityMatch ? localityMatch[1].trim() : '';
       listing.city = city;
       
-      // ========== CORRECTION #5 - CHAMBRES ==========
       const bedroomMatch = articleHtml.match(/itemprop=["']numberOfBedrooms["'][^>]*>(\d+)/i) ||
                           articleHtml.match(/class=["']bedroom["'][^>]*>(\d+)/i) ||
                           articleHtml.match(/>(\d+)\s*(?:PN|pn|phòng ngủ)</i) ||
                           articleHtml.match(/(\d+)\s*(?:PN|pn|phòng ngủ)/i);
-if (bedroomMatch) {
-  listing.bedrooms = parseInt(bedroomMatch[1]);
-}
+      if (bedroomMatch) {
+        listing.bedrooms = parseInt(bedroomMatch[1]);
+      }
 
-// Fallback: extraire depuis le titre (ex: "Nhà gồm 05 phòng", "nhà 4PN", "5 phòng ngủ")
-if (!listing.bedrooms && listing.title) {
-const titleBedroomMatch = listing.title.match(/(\d+)\s*(?:PN|pn|phòng ngủ)/i) ||
-                          listing.title.match(/nhà\s*(?:gồm\s*)?(\d+)\s*phòng/i) ||
-                          listing.title.match(/(\d+)\s*ngủ(?!\s*m)/i);
-  if (titleBedroomMatch) {
-    listing.bedrooms = parseInt(titleBedroomMatch[1]);
-  }
-}
+      if (!listing.bedrooms && listing.title) {
+        const titleBedroomMatch = listing.title.match(/(\d+)\s*(?:PN|pn|phòng ngủ)/i) ||
+                                  listing.title.match(/nhà\s*(?:gồm\s*)?(\d+)\s*phòng/i) ||
+                                  listing.title.match(/(\d+)\s*ngủ(?!\s*m)/i);
+        if (titleBedroomMatch) {
+          listing.bedrooms = parseInt(titleBedroomMatch[1]);
+        }
+      }
 
-// Extraire surface depuis le titre (ex: "68,8m2", "100m²", "150 m2")
-if (!listing.area && listing.title) {
-  const titleAreaMatch = listing.title.match(/(\d+(?:[,\.]\d+)?)\s*m²/i) || 
-                       listing.title.match(/(\d+(?:[,\.]\d+)?)\s*m2/i);
-  if (titleAreaMatch) {
-    listing.area = parseFloat(titleAreaMatch[1].replace(',', '.'));
-  }
-}
+      if (!listing.area && listing.title) {
+        const titleAreaMatch = listing.title.match(/(\d+(?:[,\.]\d+)?)\s*m²/i) || 
+                             listing.title.match(/(\d+(?:[,\.]\d+)?)\s*m2/i);
+        if (titleAreaMatch) {
+          listing.area = parseFloat(titleAreaMatch[1].replace(',', '.'));
+        }
+      }
 
-// Extraire statut légal depuis le titre/description
-if (!listing.legalStatus && listing.title) {
-  const titleLower = listing.title.toLowerCase();
-  if (titleLower.match(/sổ\s*(hồng|đỏ|riêng)/i) || 
-      titleLower.match(/shr|shcc|sh\s*riêng/i) || 
-      titleLower.match(/chính\s*chủ/i) ||
-      titleLower.match(/hoàn\s*công/i) ||
-      titleLower.match(/pháp\s*lý\s*rõ/i) ||
-      titleLower.match(/đầy\s*đủ\s*giấy\s*tờ/i)) {
-    listing.legalStatus = 'Sổ hồng/Sổ đỏ';
-  } else if (titleLower.match(/gpxd/i) || titleLower.match(/giấy\s*phép\s*xây/i)) {
-    listing.legalStatus = 'GPXD';
-  } else if (titleLower.match(/sổ\s*chung/i) || titleLower.match(/sh\s*chung/i)) {
-    listing.legalStatus = 'Sổ chung';
-  }
-}
+      if (!listing.legalStatus && listing.title) {
+        const titleLower = listing.title.toLowerCase();
+        if (titleLower.match(/sổ\s*(hồng|đỏ|riêng)/i) || 
+            titleLower.match(/shr|shcc|sh\s*riêng/i) || 
+            titleLower.match(/chính\s*chủ/i) ||
+            titleLower.match(/hoàn\s*công/i) ||
+            titleLower.match(/pháp\s*lý\s*rõ/i) ||
+            titleLower.match(/đầy\s*đủ\s*giấy\s*tờ/i)) {
+          listing.legalStatus = 'Sổ hồng/Sổ đỏ';
+        } else if (titleLower.match(/gpxd/i) || titleLower.match(/giấy\s*phép\s*xây/i)) {
+          listing.legalStatus = 'GPXD';
+        } else if (titleLower.match(/sổ\s*chung/i) || titleLower.match(/sh\s*chung/i)) {
+          listing.legalStatus = 'Sổ chung';
+        }
+      }
 
-// Extraire étages depuis le titre (ex: "2Lầu", "3 tầng", "nhà 4 tầng")
-if (!listing.floors && listing.title) {
-  const titleFloorMatch = listing.title.match(/(\d+)\s*(?:lầu|tầng|tang|lau)/i);
-  if (titleFloorMatch) {
-    listing.floors = parseInt(titleFloorMatch[1]);
-  }
-}
+      if (!listing.floors && listing.title) {
+        const titleFloorMatch = listing.title.match(/(\d+)\s*(?:lầu|tầng|tang|lau)/i);
+        if (titleFloorMatch) {
+          listing.floors = parseInt(titleFloorMatch[1]);
+        }
+      }
+
       if (listing.bedrooms) {
-  console.log(`[ALONHADAT BEDROOM DEBUG] ${listing.bedrooms} ch - ${listing.title?.substring(0, 30)}`);
-}
-      // Étages
+        console.log(`[ALONHADAT BEDROOM DEBUG] ${listing.bedrooms} ch - ${listing.title?.substring(0, 30)}`);
+      }
+
       const floorMatch = articleHtml.match(/class=["']floors["'][^>]*>(\d+)/i) ||
                         articleHtml.match(/>(\d+)\s*tầng</i);
       if (floorMatch) {
         listing.floors = parseInt(floorMatch[1]);
       }
       
-      // ========== CORRECTION #4 - IMAGES HD ==========
-      // Priorité 1: data-src (lazy loading = image HD)
       let imageMatch = articleHtml.match(/data-src=["']([^"']+)["']/i);
       
-      // Priorité 2: data-original
       if (!imageMatch) {
         imageMatch = articleHtml.match(/data-original=["']([^"']+)["']/i);
       }
       
-      // Priorité 3: src mais PAS thumbnail (chercher /files/ au lieu de /thumbnail/)
       if (!imageMatch) {
         imageMatch = articleHtml.match(/src=["']([^"']*\/files\/[^"']*)["']/i);
       }
       
-      // Fallback: src standard mais remplacer thumbnail par files si possible
       if (!imageMatch) {
         imageMatch = articleHtml.match(/src=["']([^"']*(?:alonhadat|files)[^"']*)["']/i);
       }
       
-if (imageMatch) {
-  let imgUrl = imageMatch[1];
-  // Convertir thumbnail en HD : plusieurs patterns possibles
-imgUrl = imgUrl
-.replace('/thumbnails/', '/images/')
-.replace('/thumbnail/', '/images/')
-.replace('/thumb/', '/images/')
-listing.thumbnail = imgUrl.startsWith('http') ? imgUrl : `https://alonhadat.com.vn${imgUrl}`;
-console.log(`[ALONHADAT IMG DEBUG] ${listing.thumbnail?.substring(0, 80)}`);
-}
+      if (imageMatch) {
+        let imgUrl = imageMatch[1];
+        imgUrl = imgUrl
+          .replace('/thumbnails/', '/images/')
+          .replace('/thumbnail/', '/images/')
+          .replace('/thumb/', '/images/');
+        listing.thumbnail = imgUrl.startsWith('http') ? imgUrl : `https://alonhadat.com.vn${imgUrl}`;
+        console.log(`[ALONHADAT IMG DEBUG] ${listing.thumbnail?.substring(0, 80)}`);
+      }
       
       listing.source = 'alonhadat.com.vn';
       listing.images = listing.thumbnail ? [listing.thumbnail] : [];
@@ -1186,6 +1105,7 @@ console.log(`[ALONHADAT IMG DEBUG] ${listing.thumbnail?.substring(0, 80)}`);
   
   return listings;
 }
+
 // ========================================
 // ALONHADAT DETAIL SCRAPER (pour statut légal)
 // ========================================
@@ -1200,8 +1120,6 @@ async function fetchAlonhadatDetails(listing) {
     
     const html = await response.text();
     
-    // Extraire statut légal depuis le tableau "Các thông tin khác"
-    // Pattern: "Pháp lý" suivi de "Sổ hồng" ou "Sổ đỏ" etc.
     const legalMatch = html.match(/Pháp\s*lý[^<]*<[^>]*>([^<]+)</i) ||
                        html.match(/pháp\s*lý[^:]*:\s*([^<,]+)/i);
     if (legalMatch) {
@@ -1217,7 +1135,6 @@ async function fetchAlonhadatDetails(listing) {
       }
     }
     
-    // Extraire chambres si manquant
     if (!listing.bedrooms) {
       const bedroomMatch = html.match(/Số\s*phòng\s*ngủ[^<]*<[^>]*>(\d+)/i) ||
                            html.match(/phòng\s*ngủ[^:]*:\s*(\d+)/i);
@@ -1226,7 +1143,6 @@ async function fetchAlonhadatDetails(listing) {
       }
     }
     
-    // Extraire surface si manquant
     if (!listing.area) {
       const areaMatch = html.match(/Diện\s*tích[^<]*<[^>]*>(\d+(?:[,\.]\d+)?)\s*m/i) ||
                         html.match(/diện\s*tích[^:]*:\s*(\d+(?:[,\.]\d+)?)\s*m/i);
@@ -1245,135 +1161,22 @@ async function fetchAlonhadatDetails(listing) {
 }
 
 async function enrichTopAlonhadatListings(listings, maxEnrich = 10) {
-  // Filtrer les annonces Alonhadat sans statut légal
   const alonhadatWithoutLegal = listings.filter(l => 
     l.source === 'alonhadat' && !l.legalStatus
   );
   
-  // Prendre les TOP maxEnrich (déjà triées par score)
   const toEnrich = alonhadatWithoutLegal.slice(0, maxEnrich);
   
   if (toEnrich.length === 0) return listings;
   
   console.log(`[ENRICH] Scraping détails pour ${toEnrich.length} annonces Alonhadat...`);
   
-  // Scraper en parallèle (max 3 à la fois pour éviter rate limiting)
   for (let i = 0; i < toEnrich.length; i += 3) {
     const batch = toEnrich.slice(i, i + 3);
     await Promise.all(batch.map(listing => fetchAlonhadatDetails(listing)));
   }
   
   return listings;
-}
-// ============================================
-// BATDONGSAN SCRAPER
-// ============================================
-async function fetchBatdongsan(params) {
-  // Temporairement désactivé - HTTP 403 persistant
-  console.log('Batdongsan: temporairement désactivé');
-  return [];
-}
-
-function extractBdsListingUrls(html) {
-  const urls = [];
-  const seen = {};
-  
-  const urlRegex = /href="(\/ban-[^"]*-pr(\d+)[^"]*)"/gi;
-  let match;
-  
-  while ((match = urlRegex.exec(html)) !== null) {
-    const url = match[1];
-    const id = match[2];
-    if (!seen[id]) {
-      seen[id] = true;
-      urls.push({
-        id: id,
-        path: url,
-        fullUrl: 'https://batdongsan.com.vn' + url
-      });
-    }
-  }
-  
-  return urls;
-}
-
-function parseBdsDetailPage(html, urlInfo, city, propertyType) {
-  const listing = {
-    id: `bds_${urlInfo.id}`,
-    source: 'batdongsan.com.vn',
-    url: urlInfo.fullUrl,
-    city: city,
-    propertyType: propertyType,
-  };
-  
-  // Titre
-  const titleMatch = html.match(/<title>([^<]+)<\/title>/i);
-  if (titleMatch) {
-    listing.title = titleMatch[1]
-      .replace(/ - Batdongsan.com.vn$/i, '')
-      .replace(/ \| Batdongsan$/i, '')
-      .substring(0, 150);
-  }
-  
-  // Prix depuis JS: price: 1850000000,
-  const priceMatch = html.match(/price:\s*(\d{8,12})[,\s]/);
-  if (priceMatch) {
-    listing.price = parseInt(priceMatch[1]);
-  }
-  
-  // Prix/m2
-  const priceM2Match = html.match(/pricePerM2:\s*([\d.]+)/);
-  if (priceM2Match) {
-    listing.pricePerSqm = Math.round(parseFloat(priceM2Match[1]));
-  }
-  
-  // Surface
-  const areaMatch = html.match(/area:\s*(\d+)/);
-  if (areaMatch) {
-    listing.area = parseInt(areaMatch[1]);
-  }
-  
-  // Chambres
-  const bedroomMatch = html.match(/bedroom[s]?:\s*(\d+)/i) ||
-                       html.match(/(\d+)\s*(?:PN|phòng ngủ)/i);
-  if (bedroomMatch) {
-    listing.bedrooms = parseInt(bedroomMatch[1]);
-  }
-  
-  // SDB
-  const bathroomMatch = html.match(/bathroom[s]?:\s*(\d+)/i) ||
-                        html.match(/(\d+)\s*(?:WC|phòng tắm)/i);
-  if (bathroomMatch) {
-    listing.bathrooms = parseInt(bathroomMatch[1]);
-  }
-  
-  // Image
-  const ogImageMatch = html.match(/property="og:image"\s+content="([^"]+)"/i) ||
-                       html.match(/content="([^"]+)"\s+property="og:image"/i);
-  if (ogImageMatch) {
-    listing.thumbnail = ogImageMatch[1];
-  } else {
-    const cdnMatch = html.match(/https:\/\/file4\.batdongsan\.com\.vn\/[^"'\s]+\.(?:jpg|jpeg|png|webp)/i);
-    if (cdnMatch) {
-      listing.thumbnail = cdnMatch[0];
-    }
-  }
-  
-  listing.images = listing.thumbnail ? [listing.thumbnail] : [];
-  
-  // Adresse
-  const addressMatch = html.match(/address["\']?:\s*["\']([^"\']+)["\']/i);
-  if (addressMatch) {
-    listing.address = addressMatch[1];
-  }
-  
-  // District
-  const districtMatch = html.match(/district["\']?:\s*["\']([^"\']+)["\']/i);
-  if (districtMatch) {
-    listing.district = districtMatch[1];
-  }
-  
-  return listing;
 }
 
 // ============================================
@@ -1416,41 +1219,29 @@ function applyFilters(results, filters) {
   if (priceMin) {
     const min = parseFloat(priceMin) * 1000000000;
     filtered = filtered.filter(item => {
-      if (item.source === 'batdongsan.com.vn' && (!item.price || item.price === 0)) {
-        return true;
-      }
       return item.price >= min;
     });
   }
   
- if (priceMax) {
-  const maxTy = parseFloat(priceMax);
+  if (priceMax) {
+    const maxTy = parseFloat(priceMax);
 
-  filtered = filtered.filter(item => {
-    // Debug toutes les sources
-if (item.source === 'alonhadat') {
-  console.log(`[ALONHADAT PRICE DEBUG] price=${item.price}, title=${item.title?.substring(0, 30)}`);
-}
-  //  console.log(
- // "[PRICE DEBUG]",
- // item.source,
- // item.price,
- // typeof item.price
-// );
+    filtered = filtered.filter(item => {
+      if (item.source === 'alonhadat') {
+        console.log(`[ALONHADAT PRICE DEBUG] price=${item.price}, title=${item.title?.substring(0, 30)}`);
+      }
 
-    if (!item.price || item.price <= 0) return false;
+      if (!item.price || item.price <= 0) return false;
 
-    // Normalisation : si prix > 1000 → c’est du VND
-    const priceTy = item.price > 1000
-      ? item.price / 1_000_000_000
-      : item.price;
+      const priceTy = item.price > 1000
+        ? item.price / 1_000_000_000
+        : item.price;
 
-    return priceTy <= maxTy;
-  });
-}
+      return priceTy <= maxTy;
+    });
+  }
 
-  
-if (district) {
+  if (district) {
     const d = removeVietnameseAccents(district.toLowerCase());
     const beforeCount = filtered.length;
     filtered = filtered.filter(item => {
@@ -1459,7 +1250,6 @@ if (district) {
       const itemAddress = removeVietnameseAccents((item.address || '').toLowerCase());
       const combined = itemDistrict + ' ' + itemTitle + ' ' + itemAddress;
       const matches = combined.includes(d);
-      // DEBUG LOG
       if (!matches && itemDistrict) {
         console.log(`District filter: "${d}" not in "${itemDistrict}" | title: ${itemTitle.substring(0, 30)}`);
       }
@@ -1467,6 +1257,7 @@ if (district) {
     });
     console.log(`District filter: "${d}" → ${beforeCount} → ${filtered.length}`);
   }
+
   if (ward) {
     const w = removeVietnameseAccents(ward.toLowerCase());
     filtered = filtered.filter(item => {
@@ -1501,26 +1292,27 @@ if (district) {
       return true;
     });
   }
-  // Filtre par type de bien
-if (propertyType) {
-  const typeMapping = getPropertyTypeMapping(propertyType);
-  const excludeKw = typeMapping.exclude || [];
-  
-  const beforeType = filtered.length;
-  filtered = filtered.filter(item => {
-    const title = removeVietnameseAccents((item.title || '').toLowerCase());
-    const itemType = removeVietnameseAccents((item.propertyType || '').toLowerCase());
-    const combined = title + ' ' + itemType;
+
+  if (propertyType) {
+    const typeMapping = getPropertyTypeMapping(propertyType);
+    const excludeKw = typeMapping.exclude || [];
     
-    for (const kw of excludeKw) {
-      if (combined.includes(removeVietnameseAccents(kw))) {
-        return false;
+    const beforeType = filtered.length;
+    filtered = filtered.filter(item => {
+      const title = removeVietnameseAccents((item.title || '').toLowerCase());
+      const itemType = removeVietnameseAccents((item.propertyType || '').toLowerCase());
+      const combined = title + ' ' + itemType;
+      
+      for (const kw of excludeKw) {
+        if (combined.includes(removeVietnameseAccents(kw))) {
+          return false;
+        }
       }
-    }
-    return true;
-  });
-  console.log(`Filtre propertyType: ${beforeType} → ${filtered.length}`);
-}
+      return true;
+    });
+    console.log(`Filtre propertyType: ${beforeType} → ${filtered.length}`);
+  }
+
   if (streetWidthMin) {
     filtered = filtered.filter(item => {
       if (!item.streetWidth) return false;
@@ -1689,47 +1481,27 @@ function calculateNegotiationScore(item, avgPricePerM2) {
   
   if (item.hasMetroNearby) {
     score += 10;
-    details.nlpFactors.push({ 
-      type: 'bonus', 
-      label: '🚇 Gần Metro', 
-      points: 10
-    });
+    details.nlpFactors.push({ type: 'bonus', label: '🚇 Gần Metro', points: 10 });
   }
   
   if (item.hasNewRoad) {
     score += 8;
-    details.nlpFactors.push({ 
-      type: 'bonus', 
-      label: '🛣️ Sắp mở đường', 
-      points: 8
-    });
+    details.nlpFactors.push({ type: 'bonus', label: '🛣️ Sắp mở đường', points: 8 });
   }
   
   if (item.hasInvestmentPotential) {
     score += 5;
-    details.nlpFactors.push({ 
-      type: 'bonus', 
-      label: '📈 Tiềm năng đầu tư', 
-      points: 5
-    });
+    details.nlpFactors.push({ type: 'bonus', label: '📈 Tiềm năng đầu tư', points: 5 });
   }
   
   if (item.hasLegalIssue) {
     score -= 15;
-    details.nlpFactors.push({ 
-      type: 'malus', 
-      label: '⚠️ Chưa có sổ', 
-      points: -15
-    });
+    details.nlpFactors.push({ type: 'malus', label: '⚠️ Chưa có sổ', points: -15 });
   }
   
   if (item.hasPlanningRisk) {
     score -= 15;
-    details.nlpFactors.push({ 
-      type: 'malus', 
-      label: '🚨 Rủi ro quy hoạch', 
-      points: -15
-    });
+    details.nlpFactors.push({ type: 'malus', label: '🚨 Rủi ro quy hoạch', points: -15 });
   }
   
   const finalScore = Math.min(100, Math.max(0, score));
@@ -1866,21 +1638,21 @@ export default async function handler(req, res) {
 
   const { city, district, ward, propertyType, priceMin, priceMax, livingAreaMin, livingAreaMax, bedrooms, sources, sortBy, keywords, keywordsOnly, legalStatus, maxResults } = req.body || {};
 
-  console.log('=== NOUVELLE RECHERCHE V4 ===');
+  console.log('=== NOUVELLE RECHERCHE V5 ===');
   console.log('[DEBUG] maxResults =', maxResults);
   console.log('Params:', JSON.stringify({ city, propertyType, priceMin, priceMax, sortBy, sources, keywords, keywordsOnly }));
 
   try {
     console.log('--- DEBUG SOURCES ---');
-console.log('SOURCES PARAM =', sources);
+    console.log('SOURCES PARAM =', sources);
 
     // Récupérer les stats archive en parallèle des recherches
     const [archiveStats, totalArchive, ...sourceResults] = await Promise.all([
       getArchiveStatsByDistrict(city, propertyType),
       getTotalArchiveByDistrict(city),
-      // Sources
+      // Sources actives : Chotot + Alonhadat
       ...(sources?.includes('chotot') ? [
-       fetchChotot({ city, district, ward, priceMin, priceMax, sortBy, propertyType, maxResults })
+        fetchChotot({ city, district, ward, priceMin, priceMax, sortBy, propertyType, maxResults })
           .then(results => ({ source: 'chotot', results }))
           .catch(e => { console.log(`Chotot erreur: ${e.message}`); return { source: 'chotot', results: [] }; })
       ] : []),
@@ -1888,53 +1660,47 @@ console.log('SOURCES PARAM =', sources);
         fetchAlonhadat({ city, district, ward, propertyType, priceMax, maxResults })
           .then(results => ({ source: 'alonhadat', results }))
           .catch(e => { console.log(`Alonhadat erreur: ${e.message}`); return { source: 'alonhadat', results: [] }; })
-      ] : []),
-      ...(sources?.includes('batdongsan') ? [
-        fetchBatdongsan({ city, district, ward, propertyType, priceMax })
-          .then(results => ({ source: 'batdongsan', results }))
-          .catch(e => { console.log(`Batdongsan erreur: ${e.message}`); return { source: 'batdongsan', results: [] }; })
       ] : [])
     ]);
 
     let allResults = [];
     
     console.log(
-  'SOURCES AVANT TOUT FILTRAGE',
-  sourceResults.map(s => ({
-    source: s.source,
-    count: s.results?.length || 0
-  }))
-);
+      'SOURCES AVANT TOUT FILTRAGE',
+      sourceResults.map(s => ({
+        source: s.source,
+        count: s.results?.length || 0
+      }))
+    );
 
-const perSourceLimit = maxResults || 200;
+    const perSourceLimit = maxResults || 200;
 
-for (const { source, results: srcResults } of sourceResults) {
-  if (Array.isArray(srcResults) && srcResults.length > 0) {
-    const limited = srcResults.slice(0, perSourceLimit);
-    allResults.push(...limited);
-    console.log(`${source}: ${srcResults.length} brut → ${limited.length} gardés (limit ${perSourceLimit})`);
-  }
-}
-
+    for (const { source, results: srcResults } of sourceResults) {
+      if (Array.isArray(srcResults) && srcResults.length > 0) {
+        const limited = srcResults.slice(0, perSourceLimit);
+        allResults.push(...limited);
+        console.log(`${source}: ${srcResults.length} brut → ${limited.length} gardés (limit ${perSourceLimit})`);
+      }
+    }
 
     console.log(`TOTAL BRUT: ${allResults.length}`);
     
     let unique = deduplicateResults(allResults);
-    // APPLIQUER LES FILTRES (prix, district, surface, etc.)
 
     unique = applyFilters(unique, { 
-  city, district, ward, priceMin, priceMax, 
-  livingAreaMin, livingAreaMax, bedrooms, legalStatus,
-  propertyType
-});
-console.log(`Après applyFilters: ${unique.length} résultats`);
-    // DEBUG: compter les sources après filtrage
-const sourceCountAfterFilter = {};
-unique.forEach(r => {
-  const src = r.source || 'unknown';
-  sourceCountAfterFilter[src] = (sourceCountAfterFilter[src] || 0) + 1;
-});
-console.log('SOURCES APRÈS FILTRAGE:', sourceCountAfterFilter);
+      city, district, ward, priceMin, priceMax, 
+      livingAreaMin, livingAreaMax, bedrooms, legalStatus,
+      propertyType
+    });
+    console.log(`Après applyFilters: ${unique.length} résultats`);
+
+    const sourceCountAfterFilter = {};
+    unique.forEach(r => {
+      const src = r.source || 'unknown';
+      sourceCountAfterFilter[src] = (sourceCountAfterFilter[src] || 0) + 1;
+    });
+    console.log('SOURCES APRÈS FILTRAGE:', sourceCountAfterFilter);
+
     const districtStats = calculateDistrictStats(unique);
     console.log(`Stats districts calculées: ${Object.keys(districtStats).length} districts`);
     
@@ -1965,12 +1731,11 @@ console.log('SOURCES APRÈS FILTRAGE:', sourceCountAfterFilter);
       
       console.log(`Filtre keywordsOnly: ${before} → ${unique.length}`);
     }
-    // Filtre par keywords sélectionnés dans l'UI
+
     if (keywords && Array.isArray(keywords) && keywords.length > 0) {
-        const before = unique.length;
+      const before = unique.length;
       
-const KEYWORD_PATTERNS = {
-        // Anglais (ce que le frontend envoie en mode EN)
+      const KEYWORD_PATTERNS = {
         'urgent sale': ['ban gap'],
         'quick sale': ['ban nhanh'],
         'need quick sale': ['can ban nhanh', 'can ban gap'],
@@ -1982,7 +1747,6 @@ const KEYWORD_PATTERNS = {
         'no agent': ['mien trung gian', 'khong qua moi gioi'],
         'negotiable price': ['gia thuong luong'],
         'selling at loss': ['ban lo', 'cat lo', 'lo von', 'ha gia'],
-        // Vietnamien (ce que le frontend envoie en mode VN)
         'bán gấp': ['ban gap'],
         'bán nhanh': ['ban nhanh'],
         'cần bán nhanh': ['can ban nhanh', 'can ban gap'],
@@ -2001,63 +1765,59 @@ const KEYWORD_PATTERNS = {
         const patterns = KEYWORD_PATTERNS[kw.toLowerCase()];
         if (patterns) {
           patternsToMatch.push(...patterns);
-     
-          }
         }
- if (patternsToMatch.length > 0) {
-  // Convertir les patterns vietnamiens en labels lisibles
-  const PATTERN_TO_LABEL = {
-    'ban gap': 'Bán gấp',
-    'ban nhanh': 'Bán nhanh',
-    'can ban nhanh': 'Cần bán nhanh',
-    'can ban gap': 'Cần bán gấp',
-    'ket tien': 'Kẹt tiền',
-    'can tien': 'Cần tiền',
-    'gia re': 'Giá rẻ',
-    'gia tot': 'Giá tốt',
-    'ngop bank': 'Ngộp bank',
-    'ngop ngan hang': 'Ngộp ngân hàng',
-    'chinh chu': 'Chính chủ',
-    'mien trung gian': 'Miễn trung gian',
-    'khong qua moi gioi': 'Không qua môi giới',
-    'gia thuong luong': 'Giá thương lượng',
-    'ban lo': 'Bán lỗ',
-    'cat lo': 'Cắt lỗ',
-    'lo von': 'Lỗ vốn',
-    'ha gia': 'Hạ giá'
-  };
+      }
 
-unique = unique.map(item => {
-  const title = removeVietnameseAccents((item.title || '').toLowerCase());
-  const body = removeVietnameseAccents((item.body || '').toLowerCase());
-  const combined = ' ' + title + ' ' + body + ' ';
+      if (patternsToMatch.length > 0) {
+        const PATTERN_TO_LABEL = {
+          'ban gap': 'Bán gấp',
+          'ban nhanh': 'Bán nhanh',
+          'can ban nhanh': 'Cần bán nhanh',
+          'can ban gap': 'Cần bán gấp',
+          'ket tien': 'Kẹt tiền',
+          'can tien': 'Cần tiền',
+          'gia re': 'Giá rẻ',
+          'gia tot': 'Giá tốt',
+          'ngop bank': 'Ngộp bank',
+          'ngop ngan hang': 'Ngộp ngân hàng',
+          'chinh chu': 'Chính chủ',
+          'mien trung gian': 'Miễn trung gian',
+          'khong qua moi gioi': 'Không qua môi giới',
+          'gia thuong luong': 'Giá thương lượng',
+          'ban lo': 'Bán lỗ',
+          'cat lo': 'Cắt lỗ',
+          'lo von': 'Lỗ vốn',
+          'ha gia': 'Hạ giá'
+        };
 
-  // Trouver les mots-clés qui matchent
-  const matched = patternsToMatch.filter(p => combined.includes(p));
+        unique = unique.map(item => {
+          const title = removeVietnameseAccents((item.title || '').toLowerCase());
+          const body = removeVietnameseAccents((item.body || '').toLowerCase());
+          const combined = ' ' + title + ' ' + body + ' ';
 
-  if (matched.length > 0) {
-    item.matchedKeywords = matched.map(p => PATTERN_TO_LABEL[p] || p);
-  }
-  return item;
-});
+          const matched = patternsToMatch.filter(p => combined.includes(p));
 
-// Filtrer SEULEMENT si keywordsOnly est activé
-if (keywordsOnly) {
-  const before = unique.length;
-  unique = unique.filter(item => item.matchedKeywords && item.matchedKeywords.length > 0);
-  console.log(`Filtre keywordsOnly: ${before} → ${unique.length}`);
+          if (matched.length > 0) {
+            item.matchedKeywords = matched.map(p => PATTERN_TO_LABEL[p] || p);
+          }
+          return item;
+        });
+
+        if (keywordsOnly) {
+          const before = unique.length;
+          unique = unique.filter(item => item.matchedKeywords && item.matchedKeywords.length > 0);
+          console.log(`Filtre keywordsOnly: ${before} → ${unique.length}`);
+        }
+      }
     }
-  }
-}
- let sortedResults = [...unique];
 
-// Le tri sera fait APRÈS le calcul du score
-// Log pour debug
-const sourceCounts = {};
-sortedResults.slice(0, 300).forEach(r => {
-  sourceCounts[r.source] = (sourceCounts[r.source] || 0) + 1;
-});
-console.log('SOURCES DANS FINAL 200:', sourceCounts);
+    let sortedResults = [...unique];
+
+    const sourceCounts = {};
+    sortedResults.slice(0, 300).forEach(r => {
+      sourceCounts[r.source] = (sourceCounts[r.source] || 0) + 1;
+    });
+    console.log('SOURCES DANS FINAL:', sourceCounts);
     
     const validPricePerM2 = sortedResults
       .filter(item => item.area > 0 && item.price > 0)
@@ -2065,77 +1825,72 @@ console.log('SOURCES DANS FINAL 200:', sourceCounts);
     const avgPricePerM2 = validPricePerM2.length > 0 
       ? validPricePerM2.reduce((a, b) => a + b, 0) / validPricePerM2.length 
       : 50000000;
-// Calculer le score de négociation pour chaque annonce
-const avgPricePerM2ForScore = avgPricePerM2 || 50000000;
-sortedResults = sortedResults.map(item => {
-  const scoreData = calculateNegotiationScore(item, avgPricePerM2ForScore);
-  return {
-    ...item,
-    negotiationScore: scoreData.score,
-    negotiationLevel: scoreData.level,
-    scoreDetails: scoreData.details
-  };
-});
-    // Tri des résultats APRÈS calcul du score
-if (sortBy === 'price_asc') {
-  sortedResults.sort((a, b) => (a.price || 0) - (b.price || 0));
-} else if (sortBy === 'price_desc') {
-  sortedResults.sort((a, b) => (b.price || 0) - (a.price || 0));
-} else if (sortBy === 'score_desc' || !sortBy) {
-  // Tri par score par défaut
-  sortedResults.sort((a, b) => (b.negotiationScore || 0) - (a.negotiationScore || 0));
-}
-    // Enrichir les TOP 10 annonces Alonhadat sans statut légal
-  // sortedResults = await enrichTopAlonhadatListings(sortedResults, 10);
-    // DEBUG surfaces
-const surfaceDebug = sortedResults.slice(0, 5).map(r => ({
-  source: r.source,
-  area: r.area,
-  floorAreaSqm: r.floorAreaSqm,
-  title: r.title?.substring(0, 30)
-}));
-console.log('SURFACE DEBUG:', JSON.stringify(surfaceDebug));
-const results = sortedResults.slice(0, maxResults || 200).map((item, i) => {
-  const districtKey = (item.district || '').toLowerCase().trim();
-  const pricePosition = analyzePricePosition(item, districtStats);
 
-  return {
-    id: item.id || i,
-    title: item.title || 'Sans titre',
-    price: item.price || 0,
-    area: item.area || item.floorAreaSqm || 0,
-    source: item.source || 'unknown',
-    url: item.url || '#',
-    imageUrl: item.thumbnail || '',
-    district: item.district || null,
-    ward: item.ward || null,
-    city: item.city || null,
-    postedOn: item.postedOn || null,
-    bedrooms: item.bedrooms || null,
-    bathrooms: item.bathrooms || null,
-    floors: item.floors || null,
-    pricePerSqm: item.pricePerSqm || item.pricePerM2 || null,
-    legalStatus: item.legalStatus || null,
-    direction: item.direction || null,
-    streetWidth: item.streetWidth || null,
-    facadeWidth: item.facadeWidth || null,
-    propertyType: item.propertyType || null,
-    address: item.address || null,
-    score: item.negotiationScore || item.score || 0,
-    matchedKeywords: item.matchedKeywords || [],
-    // RAPPORT IA
-    scoreDetails: item.scoreDetails || null,
-    pricePosition: pricePosition,
-    negotiationLevel: item.negotiationLevel || null,
-  };
-});
+    const avgPricePerM2ForScore = avgPricePerM2 || 50000000;
+    sortedResults = sortedResults.map(item => {
+      const scoreData = calculateNegotiationScore(item, avgPricePerM2ForScore);
+      return {
+        ...item,
+        negotiationScore: scoreData.score,
+        negotiationLevel: scoreData.level,
+        scoreDetails: scoreData.details
+      };
+    });
 
-// const kos = computeKOS(item, districtStats[districtKey]);
-      
+    if (sortBy === 'price_asc') {
+      sortedResults.sort((a, b) => (a.price || 0) - (b.price || 0));
+    } else if (sortBy === 'price_desc') {
+      sortedResults.sort((a, b) => (b.price || 0) - (a.price || 0));
+    } else if (sortBy === 'score_desc' || !sortBy) {
+      sortedResults.sort((a, b) => (b.negotiationScore || 0) - (a.negotiationScore || 0));
+    }
+
+    const surfaceDebug = sortedResults.slice(0, 5).map(r => ({
+      source: r.source,
+      area: r.area,
+      floorAreaSqm: r.floorAreaSqm,
+      title: r.title?.substring(0, 30)
+    }));
+    console.log('SURFACE DEBUG:', JSON.stringify(surfaceDebug));
+
+    const results = sortedResults.slice(0, maxResults || 200).map((item, i) => {
+      const districtKey = (item.district || '').toLowerCase().trim();
+      const pricePosition = analyzePricePosition(item, districtStats);
+
+      return {
+        id: item.id || i,
+        title: item.title || 'Sans titre',
+        price: item.price || 0,
+        area: item.area || item.floorAreaSqm || 0,
+        source: item.source || 'unknown',
+        url: item.url || '#',
+        imageUrl: item.thumbnail || '',
+        district: item.district || null,
+        ward: item.ward || null,
+        city: item.city || null,
+        postedOn: item.postedOn || null,
+        bedrooms: item.bedrooms || null,
+        bathrooms: item.bathrooms || null,
+        floors: item.floors || null,
+        pricePerSqm: item.pricePerSqm || item.pricePerM2 || null,
+        legalStatus: item.legalStatus || null,
+        direction: item.direction || null,
+        streetWidth: item.streetWidth || null,
+        facadeWidth: item.facadeWidth || null,
+        propertyType: item.propertyType || null,
+        address: item.address || null,
+        score: item.negotiationScore || item.score || 0,
+        matchedKeywords: item.matchedKeywords || [],
+        scoreDetails: item.scoreDetails || null,
+        pricePosition: pricePosition,
+        negotiationLevel: item.negotiationLevel || null,
+      };
+    });
+
     const maxAllowed = priceMax ? priceMax * 1_000_000_000 : Infinity;
-const prices = results
-  .map(r => r.price)
-  .filter(p => p > 0 && p <= maxAllowed);
+    const prices = results
+      .map(r => r.price)
+      .filter(p => p > 0 && p <= maxAllowed);
 
     const stats = {
       lowestPrice: prices.length ? Math.min(...prices) : 0,
@@ -2153,13 +1908,11 @@ const prices = results
       const archiveData = archiveStats[districtLower] || null;
       const archiveCount = totalArchive[districtLower] || 0;
       
-// Calculer le trend si on a assez de données archive
-// DÉSACTIVÉ - Besoin de 6+ mois de données (minimum 500 annonces archivées)
-let trend = null;
-let trendPercent = null;
+      // Trend DÉSACTIVÉ - Besoin de 6+ mois de données
+      let trend = null;
+      let trendPercent = null;
 
-if (false && archiveData && archiveData.avgPricePerM2 > 0 && archiveData.count >= 500) {
-        // Comparer prix actuel vs prix archive
+      if (false && archiveData && archiveData.avgPricePerM2 > 0 && archiveData.count >= 500) {
         const currentAvg = data.avgPricePerM2;
         const archiveAvg = archiveData.avgPricePerM2;
         trendPercent = Math.round(((currentAvg - archiveAvg) / archiveAvg) * 100);
@@ -2180,31 +1933,30 @@ if (false && archiveData && archiveData.avgPricePerM2 > 0 && archiveData.count >
         medianPricePerM2: data.medianPricePerM2,
         minPricePerM2: data.minPricePerM2,
         maxPricePerM2: data.maxPricePerM2,
-        // Nouvelles colonnes
         archiveCount: archiveCount,
         trend: trend,
         trendPercent: trendPercent,
       };
     }).sort((a, b) => b.count - a.count);
 
-    console.log(`FINAL: ${results.length} résultats, ${marketStats.length} districts avec trends`);
+    console.log(`FINAL: ${results.length} résultats, ${marketStats.length} districts`);
     
-// Dédupliquer par id avant sauvegarde Supabase
-const uniqueMap = new Map();
-for (const item of sortedResults.slice(0, 500)) {
-  if (item.id && !uniqueMap.has(item.id)) {
-    uniqueMap.set(item.id, item);
-  }
-}
-const uniqueResults = Array.from(uniqueMap.values());
-console.log(`Supabase: ${uniqueResults.length} uniques sur ${sortedResults.length} total`);
+    // Dédupliquer par id avant sauvegarde Supabase
+    const uniqueMap = new Map();
+    for (const item of sortedResults.slice(0, 500)) {
+      if (item.id && !uniqueMap.has(item.id)) {
+        uniqueMap.set(item.id, item);
+      }
+    }
+    const uniqueResults = Array.from(uniqueMap.values());
+    console.log(`Supabase: ${uniqueResults.length} uniques sur ${sortedResults.length} total`);
 
-try {
-  await saveListingsToSupabase(uniqueResults);
-  console.log('Supabase: sauvegarde OK');
-} catch (err) {
-  console.error('Erreur sauvegarde Supabase:', err.message);
-}
+    try {
+      await saveListingsToSupabase(uniqueResults);
+      console.log('Supabase: sauvegarde OK');
+    } catch (err) {
+      console.error('Erreur sauvegarde Supabase:', err.message);
+    }
     
     return res.status(200).json({ success: true, results, stats, marketStats });
 
