@@ -1131,122 +1131,453 @@ onClick={() => {
         </div>
       )}
 
-{/* Property Modal */}
-      {selectedProperty && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b p-4 flex justify-between items-center z-10">
-              <h2 className="text-xl font-bold">📊 {t.propertyDetails}</h2>
-              <button onClick={() => setSelectedProperty(null)} className="p-2 hover:bg-slate-100 rounded-full text-xl">✕</button>
+{/* ============================================
+   K TRIX — AI REPORT MODAL
+   Remplace le bloc {selectedProperty && (...)} 
+   dans pages/search.js
+   ============================================ */}
+
+{selectedProperty && (
+  <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setSelectedProperty(null)}>
+    <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[92vh] overflow-y-auto shadow-2xl" onClick={(e) => e.stopPropagation()}>
+      
+      {/* Header sticky */}
+      <div className="sticky top-0 bg-white/95 backdrop-blur border-b p-4 flex justify-between items-center z-10 rounded-t-2xl">
+        <h2 className="text-lg font-bold flex items-center gap-2">
+          🤖 {language === 'vn' ? 'Báo cáo AI' : language === 'fr' ? 'Rapport IA' : 'AI Report'}
+          {selectedProperty.negotiationLevel && (
+            <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+              selectedProperty.negotiationLevel === 'excellent' ? 'bg-emerald-100 text-emerald-700' :
+              selectedProperty.negotiationLevel === 'good' ? 'bg-sky-100 text-sky-700' :
+              selectedProperty.negotiationLevel === 'moderate' ? 'bg-amber-100 text-amber-700' :
+              'bg-slate-100 text-slate-600'
+            }`}>
+              {selectedProperty.negotiationLevel === 'excellent' ? '🔥 ' : 
+               selectedProperty.negotiationLevel === 'good' ? '👍 ' : 
+               selectedProperty.negotiationLevel === 'moderate' ? '➡️ ' : '⬇️ '}
+              {language === 'vn' 
+                ? (selectedProperty.negotiationLevel === 'excellent' ? 'Cơ hội tốt' : selectedProperty.negotiationLevel === 'good' ? 'Khá tốt' : selectedProperty.negotiationLevel === 'moderate' ? 'Trung bình' : 'Thấp')
+                : language === 'fr'
+                ? (selectedProperty.negotiationLevel === 'excellent' ? 'Excellente opportunité' : selectedProperty.negotiationLevel === 'good' ? 'Bonne opportunité' : selectedProperty.negotiationLevel === 'moderate' ? 'Opportunité moyenne' : 'Faible')
+                : (selectedProperty.negotiationLevel === 'excellent' ? 'Excellent opportunity' : selectedProperty.negotiationLevel === 'good' ? 'Good opportunity' : selectedProperty.negotiationLevel === 'moderate' ? 'Average' : 'Low')}
+            </span>
+          )}
+        </h2>
+        <button onClick={() => setSelectedProperty(null)} className="p-2 hover:bg-slate-100 rounded-full text-xl">✕</button>
+      </div>
+
+      <div className="p-6 space-y-6">
+
+        {/* === IMAGE + INFOS DE BASE === */}
+        {selectedProperty.imageUrl && (
+          <div className="rounded-xl overflow-hidden">
+            <img src={selectedProperty.imageUrl} alt={selectedProperty.title} className="w-full h-56 object-cover" />
+          </div>
+        )}
+        
+        <div>
+          <h3 className="text-xl font-bold text-gray-900 mb-1">{selectedProperty.title}</h3>
+          {selectedProperty.matchedKeywords && selectedProperty.matchedKeywords.length > 0 && (
+            <div className="flex flex-wrap gap-1 mb-2">
+              {selectedProperty.matchedKeywords.map((kw, idx) => (
+                <span key={idx} className="px-2 py-0.5 text-xs font-bold bg-orange-100 text-orange-600 rounded-full border border-orange-200">
+                  🔥 {kw}
+                </span>
+              ))}
             </div>
-            <div className="p-6">
-              {/* Image */}
-              {selectedProperty.imageUrl && (
-                <div className="mb-6 rounded-xl overflow-hidden">
-                  <img src={selectedProperty.imageUrl} alt={selectedProperty.title} className="w-full h-64 object-cover" />
-                </div>
-              )}
-              
-              {/* Titre et Prix */}
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">{selectedProperty.title}</h3>
-                {/* Mots-clés détectés */}
-{selectedProperty.matchedKeywords && selectedProperty.matchedKeywords.length > 0 && (
-  <div className="flex flex-wrap gap-2 mb-4">
-    {selectedProperty.matchedKeywords.map((kw, idx) => (
-      <span
-        key={idx}
-        className="px-3 py-1 text-sm font-bold bg-orange-100 text-orange-600 rounded-full border border-orange-200"
-      >
-        🔥 {kw}
-      </span>
-    ))}
-  </div>
-)}
-              <div className="flex items-baseline gap-3 mb-4">
-                <span className="text-3xl font-bold text-sky-600">{formatPrice(selectedProperty.price)}</span>
-                {selectedProperty.area > 0 && (
-                  <span className="text-lg text-gray-500">({Math.round(selectedProperty.price / selectedProperty.area / 1000000)} tr/m²)</span>
-                )}
+          )}
+          <div className="flex items-baseline gap-3">
+            <span className="text-3xl font-bold text-sky-600">{formatPrice(selectedProperty.price)}</span>
+            {selectedProperty.area > 0 && (
+              <span className="text-base text-gray-500">({Math.round(selectedProperty.price / selectedProperty.area / 1000000)} tr/m²)</span>
+            )}
+          </div>
+        </div>
+
+        {/* === SCORE GLOBAL === */}
+        <div className="p-4 rounded-xl bg-gradient-to-r from-slate-50 to-sky-50 border border-slate-200">
+          <div className="flex justify-between items-center mb-2">
+            <span className="font-bold text-gray-700">
+              {language === 'vn' ? 'Điểm đàm phán' : language === 'fr' ? 'Score de négociation' : 'Negotiation Score'}
+            </span>
+            <span className={`text-3xl font-black ${
+              selectedProperty.score >= 70 ? 'text-emerald-600' :
+              selectedProperty.score >= 50 ? 'text-sky-600' :
+              selectedProperty.score >= 30 ? 'text-amber-600' :
+              'text-slate-500'
+            }`}>{selectedProperty.score}%</span>
+          </div>
+          <div className="w-full bg-slate-200 rounded-full h-3">
+            <div className={`h-3 rounded-full transition-all ${
+              selectedProperty.score >= 70 ? 'bg-gradient-to-r from-emerald-400 to-emerald-600' :
+              selectedProperty.score >= 50 ? 'bg-gradient-to-r from-sky-400 to-blue-500' :
+              selectedProperty.score >= 30 ? 'bg-gradient-to-r from-amber-400 to-amber-500' :
+              'bg-gradient-to-r from-slate-300 to-slate-400'
+            }`} style={{ width: `${selectedProperty.score}%` }} />
+          </div>
+        </div>
+
+        {/* === SECTION 1: ANALYSE PRIX VS MARCHÉ === */}
+        {selectedProperty.pricePosition && (
+          <div className="rounded-xl border border-indigo-200 overflow-hidden">
+            <div className="bg-gradient-to-r from-indigo-500 to-purple-500 px-5 py-3">
+              <h4 className="text-white font-bold flex items-center gap-2">
+                📊 {language === 'vn' ? 'Phân tích giá' : language === 'fr' ? 'Analyse Prix vs Marché' : 'Price vs Market Analysis'}
+              </h4>
+            </div>
+            <div className="p-5 bg-white space-y-4">
+              {/* Verdict principal */}
+              <div className={`p-4 rounded-lg text-center ${
+                selectedProperty.pricePosition.position === 'below' ? 'bg-emerald-50 border border-emerald-200' :
+                selectedProperty.pricePosition.position === 'above' ? 'bg-red-50 border border-red-200' :
+                'bg-blue-50 border border-blue-200'
+              }`}>
+                <p className={`text-2xl font-black ${
+                  selectedProperty.pricePosition.position === 'below' ? 'text-emerald-600' :
+                  selectedProperty.pricePosition.position === 'above' ? 'text-red-600' :
+                  'text-blue-600'
+                }`}>
+                  {selectedProperty.pricePosition.percentFromMedian > 0 ? '+' : ''}{selectedProperty.pricePosition.percentFromMedian}%
+                  {selectedProperty.pricePosition.position === 'below' ? ' ↓' : selectedProperty.pricePosition.position === 'above' ? ' ↑' : ' ≈'}
+                </p>
+                <p className="text-sm text-gray-600 mt-1">
+                  {language === 'vn' 
+                    ? `${selectedProperty.pricePosition.verdict} (${selectedProperty.pricePosition.districtCount} annonces dans ce district)`
+                    : language === 'fr'
+                    ? `${selectedProperty.pricePosition.position === 'below' ? 'En dessous du marché' : selectedProperty.pricePosition.position === 'above' ? 'Au dessus du marché' : 'Prix dans la moyenne'} (${selectedProperty.pricePosition.districtCount} annonces dans ce district)`
+                    : `${selectedProperty.pricePosition.position === 'below' ? 'Below market' : selectedProperty.pricePosition.position === 'above' ? 'Above market' : 'Fair price'} (${selectedProperty.pricePosition.districtCount} listings in this district)`}
+                </p>
               </div>
 
-              {/* Score */}
-              <div className="mb-6 p-4 bg-sky-50 rounded-xl">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="font-medium text-gray-700">{t.score}</span>
-                  <span className="text-2xl font-bold text-sky-600">{selectedProperty.score}%</span>
+              {/* Barre visuelle position prix */}
+              <div>
+                <div className="flex justify-between text-xs text-gray-500 mb-1">
+                  <span>Min: {Math.round(selectedProperty.pricePosition.districtMin / 1000000)} tr/m²</span>
+                  <span>{language === 'vn' ? 'Trung bình' : language === 'fr' ? 'Médiane' : 'Median'}: {Math.round(selectedProperty.pricePosition.districtMedian / 1000000)} tr/m²</span>
+                  <span>Max: {Math.round(selectedProperty.pricePosition.districtMax / 1000000)} tr/m²</span>
                 </div>
-                <div className="w-full bg-slate-200 rounded-full h-3">
-                  <div className="h-3 rounded-full bg-gradient-to-r from-sky-400 to-blue-500" style={{ width: `${selectedProperty.score}%` }} />
+                <div className="relative w-full h-6 bg-gradient-to-r from-emerald-200 via-sky-200 to-red-200 rounded-full overflow-visible">
+                  {/* Zone normale (Q25-Q75) */}
+                  <div className="absolute h-full bg-sky-300/50 rounded"
+                    style={{
+                      left: `${Math.max(0, Math.min(100, ((selectedProperty.pricePosition.districtLowRange - selectedProperty.pricePosition.districtMin) / (selectedProperty.pricePosition.districtMax - selectedProperty.pricePosition.districtMin)) * 100))}%`,
+                      width: `${Math.max(5, ((selectedProperty.pricePosition.districtHighRange - selectedProperty.pricePosition.districtLowRange) / (selectedProperty.pricePosition.districtMax - selectedProperty.pricePosition.districtMin)) * 100)}%`
+                    }}
+                  />
+                  {/* Marqueur de cette annonce */}
+                  <div className="absolute top-1/2 -translate-y-1/2 w-5 h-5 bg-white border-3 border-indigo-600 rounded-full shadow-lg z-10"
+                    style={{
+                      left: `${Math.max(2, Math.min(96, ((selectedProperty.pricePosition.itemPricePerM2 - selectedProperty.pricePosition.districtMin) / (selectedProperty.pricePosition.districtMax - selectedProperty.pricePosition.districtMin)) * 100))}%`,
+                      transform: 'translate(-50%, -50%)',
+                      borderWidth: '3px'
+                    }}
+                  />
+                </div>
+                <div className="text-center mt-2">
+                  <span className="text-sm font-semibold text-indigo-700">
+                    {language === 'vn' ? 'Giá này' : language === 'fr' ? 'Ce bien' : 'This property'}: {Math.round(selectedProperty.pricePosition.itemPricePerM2 / 1000000)} tr/m²
+                  </span>
                 </div>
               </div>
 
-              {/* Détails */}
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-                <div className="p-3 bg-slate-50 rounded-lg">
-                  <p className="text-sm text-gray-500">📐 Surface</p>
-                  <p className="text-lg font-semibold">{selectedProperty.area || '?'} m²</p>
+              {/* Grille de comparaison */}
+              <div className="grid grid-cols-3 gap-3 text-center">
+                <div className="p-2 bg-slate-50 rounded-lg">
+                  <p className="text-xs text-gray-500">{language === 'vn' ? 'Giá này' : language === 'fr' ? 'Ce bien' : 'This'}</p>
+                  <p className="font-bold text-indigo-600">{Math.round(selectedProperty.pricePosition.itemPricePerM2 / 1000000)} tr</p>
                 </div>
-                <div className="p-3 bg-slate-50 rounded-lg">
-                  <p className="text-sm text-gray-500">🛏️ {t.rooms}</p>
-                  <p className="text-lg font-semibold">{selectedProperty.bedrooms || '?'}</p>
+                <div className="p-2 bg-slate-50 rounded-lg">
+                  <p className="text-xs text-gray-500">{language === 'vn' ? 'TB quận' : language === 'fr' ? 'Moy. district' : 'Avg district'}</p>
+                  <p className="font-bold text-gray-700">{Math.round(selectedProperty.pricePosition.districtAvg / 1000000)} tr</p>
                 </div>
-                <div className="p-3 bg-slate-50 rounded-lg">
-                  <p className="text-sm text-gray-500">🚿 {t.bathrooms}</p>
-                  <p className="text-lg font-semibold">{selectedProperty.bathrooms || '?'}</p>
+                <div className="p-2 bg-slate-50 rounded-lg">
+                  <p className="text-xs text-gray-500">{language === 'vn' ? 'Trung vị' : language === 'fr' ? 'Médiane' : 'Median'}</p>
+                  <p className="font-bold text-gray-700">{Math.round(selectedProperty.pricePosition.districtMedian / 1000000)} tr</p>
                 </div>
-                {selectedProperty.floors && (
-                  <div className="p-3 bg-slate-50 rounded-lg">
-                    <p className="text-sm text-gray-500">🏢 Étages</p>
-                    <p className="text-lg font-semibold">{selectedProperty.floors}</p>
-                  </div>
-                )}
-                {selectedProperty.direction && (
-                  <div className="p-3 bg-slate-50 rounded-lg">
-                    <p className="text-sm text-gray-500">🧭 Hướng</p>
-                    <p className="text-lg font-semibold">{selectedProperty.direction}</p>
-                  </div>
-                )}
-                {selectedProperty.legalStatus && (
-                  <div className="p-3 bg-slate-50 rounded-lg">
-                    <p className="text-sm text-gray-500">📋 Pháp lý</p>
-                    <p className="text-lg font-semibold">{selectedProperty.legalStatus}</p>
-                  </div>
-                )}
-              </div>
-
-              {/* Adresse */}
-              <div className="mb-6 p-4 bg-slate-50 rounded-xl">
-                <p className="text-sm text-gray-500 mb-1">📍 Địa chỉ</p>
-                <p className="font-medium">{selectedProperty.address || `${selectedProperty.district || ''}, ${selectedProperty.ward || ''}`}</p>
-              </div>
-
-              {/* Source et Date */}
-              <div className="flex items-center justify-between text-sm text-gray-500 mb-6">
-                <span>🌐 {selectedProperty.source}</span>
-                {selectedProperty.postedOn && <span>📅 {selectedProperty.postedOn}</span>}
-              </div>
-
-              {/* Boutons */}
-              <div className="flex gap-3">
-                <a 
-                  href={selectedProperty.url} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-sky-400 text-white rounded-lg font-medium text-center hover:from-blue-600 hover:to-sky-500 transition"
-                >
-                  🔗 {t.viewOriginal}
-                </a>
-                <button 
-                  onClick={() => setSelectedProperty(null)} 
-                  className="px-6 py-3 border border-slate-300 rounded-lg font-medium hover:bg-slate-50 transition"
-                >
-                  {t.close}
-                </button>
               </div>
             </div>
           </div>
+        )}
+
+        {/* === SECTION 2: SIGNAUX DE NÉGOCIATION === */}
+        {selectedProperty.scoreDetails && (
+          <div className="rounded-xl border border-amber-200 overflow-hidden">
+            <div className="bg-gradient-to-r from-amber-500 to-orange-500 px-5 py-3">
+              <h4 className="text-white font-bold flex items-center gap-2">
+                🎯 {language === 'vn' ? 'Tín hiệu đàm phán' : language === 'fr' ? 'Signaux de Négociation' : 'Negotiation Signals'}
+              </h4>
+            </div>
+            <div className="p-5 bg-white space-y-3">
+              
+              {/* Mots-clés urgents */}
+              {selectedProperty.scoreDetails.urgentKeywords && selectedProperty.scoreDetails.urgentKeywords.length > 0 && (
+                <div className="flex items-start gap-3 p-3 bg-orange-50 rounded-lg">
+                  <span className="text-xl">🔥</span>
+                  <div>
+                    <p className="font-semibold text-orange-800 text-sm">
+                      {language === 'vn' ? 'Từ khóa gấp' : language === 'fr' ? 'Mots-clés urgents détectés' : 'Urgent keywords detected'}
+                    </p>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {selectedProperty.scoreDetails.urgentKeywords.map((kw, i) => (
+                        <span key={i} className="px-2 py-0.5 bg-orange-200 text-orange-800 rounded text-xs font-bold">{kw}</span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Analyse prix */}
+              {selectedProperty.scoreDetails.priceAnalysis && (
+                <div className="flex items-start gap-3 p-3 bg-sky-50 rounded-lg">
+                  <span className="text-xl">💰</span>
+                  <div>
+                    <p className="font-semibold text-sky-800 text-sm">
+                      {language === 'vn' ? 'Phân tích giá' : language === 'fr' ? 'Position prix' : 'Price analysis'}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      {selectedProperty.scoreDetails.priceAnalysis.verdict === 'excellent' 
+                        ? (language === 'fr' ? `Prix excellent : ${selectedProperty.scoreDetails.priceAnalysis.diffPercent}% en dessous de la moyenne` : `${selectedProperty.scoreDetails.priceAnalysis.diffPercent}% below average`)
+                        : selectedProperty.scoreDetails.priceAnalysis.verdict === 'good'
+                        ? (language === 'fr' ? `Bon prix : ${selectedProperty.scoreDetails.priceAnalysis.diffPercent}% en dessous` : `${selectedProperty.scoreDetails.priceAnalysis.diffPercent}% below average`)
+                        : selectedProperty.scoreDetails.priceAnalysis.verdict === 'fair'
+                        ? (language === 'fr' ? `Prix correct : ${selectedProperty.scoreDetails.priceAnalysis.diffPercent}% en dessous` : `${selectedProperty.scoreDetails.priceAnalysis.diffPercent}% below average`)
+                        : selectedProperty.scoreDetails.priceAnalysis.verdict === 'average'
+                        ? (language === 'fr' ? 'Prix dans la moyenne du quartier' : 'Average price for this area')
+                        : (language === 'fr' ? `Au dessus de la moyenne : +${Math.abs(selectedProperty.scoreDetails.priceAnalysis.diffPercent)}%` : `${Math.abs(selectedProperty.scoreDetails.priceAnalysis.diffPercent)}% above average`)}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Âge de l'annonce */}
+              {selectedProperty.scoreDetails.listingAge && selectedProperty.scoreDetails.listingAge.days > 0 && (
+                <div className="flex items-start gap-3 p-3 bg-purple-50 rounded-lg">
+                  <span className="text-xl">📅</span>
+                  <div>
+                    <p className="font-semibold text-purple-800 text-sm">
+                      {language === 'vn' ? 'Tuổi tin đăng' : language === 'fr' ? 'Ancienneté de l\'annonce' : 'Listing age'}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      {selectedProperty.scoreDetails.listingAge.days} {language === 'vn' ? 'ngày' : language === 'fr' ? 'jours' : 'days'}
+                      {selectedProperty.scoreDetails.listingAge.verdict === 'very_old' 
+                        ? (language === 'fr' ? ' — Très ancienne → vendeur potentiellement flexible' : ' — Very old → seller may be flexible')
+                        : selectedProperty.scoreDetails.listingAge.verdict === 'old'
+                        ? (language === 'fr' ? ' — Ancienne → possibilité de négocier' : ' — Old → room to negotiate')
+                        : ''}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Type de prix */}
+              {selectedProperty.scoreDetails.priceType === 'round' && (
+                <div className="flex items-start gap-3 p-3 bg-teal-50 rounded-lg">
+                  <span className="text-xl">🎲</span>
+                  <div>
+                    <p className="font-semibold text-teal-800 text-sm">
+                      {language === 'vn' ? 'Giá tròn' : language === 'fr' ? 'Prix rond' : 'Round price'}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      {language === 'fr' ? 'Prix arrondi → le vendeur n\'a probablement pas fait d\'estimation précise, marge de négociation possible' 
+                        : 'Round price → seller may not have precise valuation, negotiation margin possible'}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Statut légal */}
+              {selectedProperty.scoreDetails.legalStatus && selectedProperty.scoreDetails.legalStatus.status && (
+                <div className={`flex items-start gap-3 p-3 rounded-lg ${
+                  selectedProperty.scoreDetails.legalStatus.verdict === 'excellent' ? 'bg-emerald-50' :
+                  selectedProperty.scoreDetails.legalStatus.verdict === 'good' ? 'bg-blue-50' :
+                  'bg-amber-50'
+                }`}>
+                  <span className="text-xl">📋</span>
+                  <div>
+                    <p className="font-semibold text-gray-800 text-sm">
+                      {language === 'vn' ? 'Pháp lý' : language === 'fr' ? 'Statut légal' : 'Legal status'}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      {selectedProperty.scoreDetails.legalStatus.status}
+                      {selectedProperty.scoreDetails.legalStatus.verdict === 'excellent' 
+                        ? (language === 'fr' ? ' ✓ Sécurisé' : ' ✓ Secure') 
+                        : ''}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* === SECTION 3: ALERTES RISQUES / OPPORTUNITÉS === */}
+        {selectedProperty.scoreDetails && selectedProperty.scoreDetails.nlpFactors && selectedProperty.scoreDetails.nlpFactors.length > 0 && (
+          <div className="rounded-xl border border-slate-200 overflow-hidden">
+            <div className="bg-gradient-to-r from-slate-600 to-slate-700 px-5 py-3">
+              <h4 className="text-white font-bold flex items-center gap-2">
+                ⚡ {language === 'vn' ? 'Cảnh báo & Cơ hội' : language === 'fr' ? 'Alertes & Opportunités' : 'Alerts & Opportunities'}
+              </h4>
+            </div>
+            <div className="p-5 bg-white space-y-2">
+              {selectedProperty.scoreDetails.nlpFactors.map((factor, i) => (
+                <div key={i} className={`flex items-center justify-between p-3 rounded-lg ${
+                  factor.type === 'bonus' ? 'bg-emerald-50 border border-emerald-200' : 'bg-red-50 border border-red-200'
+                }`}>
+                  <span className="font-medium text-sm">{factor.label}</span>
+                  <span className={`font-bold text-sm ${factor.type === 'bonus' ? 'text-emerald-600' : 'text-red-600'}`}>
+                    {factor.points > 0 ? '+' : ''}{factor.points} pts
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* === SECTION 4: VERDICT IA === */}
+        <div className="rounded-xl border-2 border-indigo-300 overflow-hidden">
+          <div className="bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-3">
+            <h4 className="text-white font-bold flex items-center gap-2">
+              🤖 {language === 'vn' ? 'Nhận xét AI' : language === 'fr' ? 'Verdict IA' : 'AI Verdict'}
+            </h4>
+          </div>
+          <div className="p-5 bg-gradient-to-br from-indigo-50 to-violet-50">
+            <p className="text-gray-800 leading-relaxed">
+              {(() => {
+                const p = selectedProperty;
+                const sd = p.scoreDetails || {};
+                const pp = p.pricePosition;
+                const parts = [];
+
+                // Ligne 1: Évaluation générale
+                if (p.score >= 70) {
+                  parts.push(language === 'fr' ? '🔥 Opportunité très intéressante.' : language === 'vn' ? '🔥 Cơ hội rất tốt.' : '🔥 Very interesting opportunity.');
+                } else if (p.score >= 50) {
+                  parts.push(language === 'fr' ? '👍 Annonce intéressante à considérer.' : language === 'vn' ? '👍 Tin đáng chú ý.' : '👍 Interesting listing to consider.');
+                } else if (p.score >= 30) {
+                  parts.push(language === 'fr' ? '➡️ Annonce dans la moyenne.' : language === 'vn' ? '➡️ Tin trung bình.' : '➡️ Average listing.');
+                } else {
+                  parts.push(language === 'fr' ? '⬇️ Peu de signaux de négociation.' : language === 'vn' ? '⬇️ Ít tín hiệu đàm phán.' : '⬇️ Few negotiation signals.');
+                }
+
+                // Ligne 2: Prix
+                if (pp && pp.position === 'below') {
+                  parts.push(language === 'fr' ? `Prix ${Math.abs(pp.percentFromMedian)}% en dessous de la médiane du quartier.` : language === 'vn' ? `Giá thấp hơn ${Math.abs(pp.percentFromMedian)}% so với trung vị quận.` : `Price ${Math.abs(pp.percentFromMedian)}% below district median.`);
+                } else if (pp && pp.position === 'above') {
+                  parts.push(language === 'fr' ? `Attention : prix ${Math.abs(pp.percentFromMedian)}% au dessus de la médiane.` : language === 'vn' ? `Chú ý: giá cao hơn ${Math.abs(pp.percentFromMedian)}% so với trung vị.` : `Note: price ${Math.abs(pp.percentFromMedian)}% above median.`);
+                }
+
+                // Ligne 3: Mots-clés urgents
+                if (sd.urgentKeywords && sd.urgentKeywords.length > 0) {
+                  parts.push(language === 'fr' ? `Signaux d'urgence détectés (${sd.urgentKeywords.join(', ')}) → marge de négociation probable.` : language === 'vn' ? `Phát hiện từ khóa gấp (${sd.urgentKeywords.join(', ')}) → có thể đàm phán.` : `Urgent signals detected (${sd.urgentKeywords.join(', ')}) → likely negotiation margin.`);
+                }
+
+                // Ligne 4: Alerte légale
+                if (sd.nlpFactors && sd.nlpFactors.some(f => f.type === 'malus')) {
+                  const risks = sd.nlpFactors.filter(f => f.type === 'malus').map(f => f.label).join(', ');
+                  parts.push(language === 'fr' ? `⚠️ Risque(s) détecté(s) : ${risks}.` : language === 'vn' ? `⚠️ Rủi ro: ${risks}.` : `⚠️ Risk(s) detected: ${risks}.`);
+                }
+
+                // Ligne 5: Estimation négociation
+                if (p.score >= 60 && pp && pp.position !== 'above') {
+                  const estimMin = pp.position === 'below' ? 5 : 10;
+                  const estimMax = pp.position === 'below' ? 15 : 20;
+                  parts.push(language === 'fr' ? `💡 Potentiel de négociation estimé : ${estimMin}-${estimMax}%.` : language === 'vn' ? `💡 Tiềm năng đàm phán: ${estimMin}-${estimMax}%.` : `💡 Estimated negotiation potential: ${estimMin}-${estimMax}%.`);
+                }
+
+                // Ligne 6: Statut légal manquant
+                if (!p.legalStatus) {
+                  parts.push(language === 'fr' ? '📋 Statut légal non confirmé — à vérifier avant visite.' : language === 'vn' ? '📋 Chưa xác nhận pháp lý — cần kiểm tra.' : '📋 Legal status unconfirmed — verify before visiting.');
+                }
+
+                return parts.join(' ');
+              })()}
+            </p>
+          </div>
         </div>
-      )}
+
+        {/* === DÉTAILS DU BIEN === */}
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          <div className="p-3 bg-slate-50 rounded-lg">
+            <p className="text-xs text-gray-500">📐 Surface</p>
+            <p className="text-lg font-semibold">{selectedProperty.area || '?'} m²</p>
+          </div>
+          <div className="p-3 bg-slate-50 rounded-lg">
+            <p className="text-xs text-gray-500">🛏️ {t.rooms}</p>
+            <p className="text-lg font-semibold">{selectedProperty.bedrooms || '?'}</p>
+          </div>
+          <div className="p-3 bg-slate-50 rounded-lg">
+            <p className="text-xs text-gray-500">🚿 {t.bathrooms}</p>
+            <p className="text-lg font-semibold">{selectedProperty.bathrooms || '?'}</p>
+          </div>
+          {selectedProperty.floors && (
+            <div className="p-3 bg-slate-50 rounded-lg">
+              <p className="text-xs text-gray-500">🏢 {language === 'fr' ? 'Étages' : 'Floors'}</p>
+              <p className="text-lg font-semibold">{selectedProperty.floors}</p>
+            </div>
+          )}
+          {selectedProperty.direction && (
+            <div className="p-3 bg-slate-50 rounded-lg">
+              <p className="text-xs text-gray-500">🧭 {language === 'fr' ? 'Orientation' : 'Direction'}</p>
+              <p className="text-lg font-semibold">{selectedProperty.direction}</p>
+            </div>
+          )}
+          {selectedProperty.streetWidth && (
+            <div className="p-3 bg-slate-50 rounded-lg">
+              <p className="text-xs text-gray-500">🛣️ {language === 'fr' ? 'Largeur rue' : 'Street width'}</p>
+              <p className="text-lg font-semibold">{selectedProperty.streetWidth}m</p>
+            </div>
+          )}
+          {selectedProperty.facadeWidth && (
+            <div className="p-3 bg-slate-50 rounded-lg">
+              <p className="text-xs text-gray-500">📏 {language === 'fr' ? 'Façade' : 'Facade'}</p>
+              <p className="text-lg font-semibold">{selectedProperty.facadeWidth}m</p>
+            </div>
+          )}
+          {selectedProperty.legalStatus && (
+            <div className="p-3 bg-slate-50 rounded-lg">
+              <p className="text-xs text-gray-500">📋 {language === 'fr' ? 'Statut légal' : 'Legal'}</p>
+              <p className="text-lg font-semibold">{selectedProperty.legalStatus}</p>
+            </div>
+          )}
+        </div>
+
+        {/* Adresse */}
+        <div className="p-4 bg-slate-50 rounded-xl cursor-pointer hover:bg-slate-100 transition"
+          onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedProperty.address || selectedProperty.district + ' ' + selectedProperty.city)}`, '_blank')}
+        >
+          <p className="text-xs text-gray-500 mb-1">📍 {language === 'fr' ? 'Adresse (cliquer pour Google Maps)' : 'Address (click for Google Maps)'}</p>
+          <p className="font-medium">{selectedProperty.address || `${selectedProperty.district || ''}, ${selectedProperty.ward || ''}, ${selectedProperty.city || ''}`}</p>
+        </div>
+
+        {/* Source et Date */}
+        <div className="flex items-center justify-between text-sm text-gray-500">
+          <span>🌐 {selectedProperty.source}</span>
+          {selectedProperty.postedOn && <span>📅 {selectedProperty.postedOn}</span>}
+        </div>
+
+        {/* Boutons */}
+        <div className="flex gap-3 pt-2">
+          <a 
+            href={selectedProperty.url} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-sky-400 text-white rounded-xl font-medium text-center hover:from-blue-600 hover:to-sky-500 transition shadow-lg"
+          >
+            🔗 {t.viewOriginal}
+          </a>
+          <button 
+            onClick={() => setSelectedProperty(null)} 
+            className="px-6 py-3 border border-slate-300 rounded-xl font-medium hover:bg-slate-50 transition"
+          >
+            {t.close}
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+)}
+
     </div>
   );
 }
