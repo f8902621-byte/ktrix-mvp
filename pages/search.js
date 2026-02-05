@@ -47,7 +47,7 @@ export default function SearchPage() {
     daysListed: '',
     legalStatus: '',
     customKeyword: '',
-    sources: ['chotot', 'alonhadat', 'batdongsan'],
+    sources: ['chotot', 'alonhadat'],
     keywords: [],
     keywordsOnly: false,
     maxResults: 200
@@ -276,8 +276,7 @@ progressTime: 'Environ 60 secondes',
   const availableSources = [
     { id: 'chotot', name: 'Chotot.com', active: true },
     { id: 'alonhadat', name: 'Alonhadat.com.vn', active: true },
-    { id: 'batdongsan', name: 'Batdongsan.com.vn', active: true },
-  ];
+   ];
 
   const vietnamCities = [
     { vn: 'Hồ Chí Minh', en: 'Ho Chi Minh City', fr: 'Hô-Chi-Minh-Ville' },
