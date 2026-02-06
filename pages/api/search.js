@@ -961,7 +961,15 @@ async function fetchAlonhadat(params) {
         break;
       }
     }
-    console.log(`Alonhadat après fallback: ${allListings.length} annonces`);
+console.log(`Alonhadat après fallback: ${allListings.length} annonces`);
+  }
+  
+  // Filtrer par type de bien (villa, maison, etc.)
+  const typeMapping = getPropertyTypeMapping(propertyType);
+  if (typeMapping.include.length > 0 || typeMapping.exclude.length > 0) {
+    const beforeFilter = allListings.length;
+    allListings = filterByKeywords(allListings, typeMapping.include, typeMapping.exclude);
+    console.log(`Alonhadat filtre type: ${beforeFilter} → ${allListings.length}`);
   }
   
   return allListings;
