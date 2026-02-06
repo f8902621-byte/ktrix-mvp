@@ -847,10 +847,17 @@ async function fetchChotot(params) {
         hasMetroNearby: nlpAnalysis.hasMetroNearby,
         hasNewRoad: nlpAnalysis.hasNewRoad,
         hasInvestmentPotential: nlpAnalysis.hasInvestmentPotential,
-        hasLegalIssue: nlpAnalysis.hasLegalIssue,
+ hasLegalIssue: nlpAnalysis.hasLegalIssue,
         hasPlanningRisk: nlpAnalysis.hasPlanningRisk,
       };
     });
+
+  // Filtrer par type de bien (villa, maison, etc.)
+  if (typeMapping.include.length > 0 || typeMapping.exclude.length > 0) {
+    const beforeFilter = results.length;
+    results = filterByKeywords(results, typeMapping.include, typeMapping.exclude);
+    console.log(`Chotot filtre type: ${beforeFilter} → ${results.length}`);
+  }
 
   return results;
 }
