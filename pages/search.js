@@ -150,6 +150,10 @@ export default function SearchPage() {
       archive: 'Lưu trữ',
       trend: 'Xu hướng',
       maxResults: 'Kết quả tối đa/nguồn',
+      price: 'Giá',
+      keywordsLabel: 'Từ khóa',
+      sourcesLabel: 'Nguồn',
+      listingsInDistrict: 'tin trong quận này',
       progressConnecting: 'Đang kết nối nguồn...',
 progressFetching: 'Đang lấy tin đăng...',
 progressScoring: 'Đang phân tích và chấm điểm...',
@@ -190,7 +194,11 @@ progressTime: 'Khoảng 60 giây',
       listings: 'Listings',
       archive: 'Archive',
       trend: 'Trend',
-      maxResults: 'Max results/source',
+     maxResults: 'Max results/source',
+      price: 'Price',
+      keywordsLabel: 'Keywords',
+      sourcesLabel: 'Sources',
+      listingsInDistrict: 'listings in this district',
       progressConnecting: 'Connecting to sources...',
 progressFetching: 'Fetching listings...',
 progressScoring: 'Analyzing and scoring...',
@@ -231,7 +239,11 @@ progressTime: 'About 60 seconds',
       listings: 'Annonces',
       archive: 'Archive',
       trend: 'Tendance',
-      maxResults: 'Résultats max/source',
+     maxResults: 'Résultats max/source',
+      price: 'Prix',
+      keywordsLabel: 'Mots-clés',
+      sourcesLabel: 'Sources',
+      listingsInDistrict: 'annonces dans ce district',
       progressConnecting: 'Connexion aux sources...',
 progressFetching: 'Récupération des annonces...',
 progressScoring: 'Analyse et scoring...',
@@ -455,18 +467,18 @@ const sortResults = (res) => {
     return categories;
   };
 
-  const getSearchCriteriaSummary = () => {
+const getSearchCriteriaSummary = () => {
     const criteria = [];
     if (searchParams.city) criteria.push(`${t.city}: ${searchParams.city}`);
     if (searchParams.district) criteria.push(`${t.district}: ${searchParams.district}`);
     if (searchParams.propertyType) criteria.push(`${t.propertyType}: ${searchParams.propertyType}`);
     if (searchParams.priceMin || searchParams.priceMax) {
       const priceRange = `${searchParams.priceMin || '0'} - ${searchParams.priceMax || '∞'} Tỷ`;
-      criteria.push(`Prix: ${priceRange}`);
+      criteria.push(`${t.price}: ${priceRange}`);
     }
     if (searchParams.bedrooms) criteria.push(`${t.bedrooms}: ${searchParams.bedrooms}`);
-    if (searchParams.keywords.length > 0) criteria.push(`Mots-clés: ${searchParams.keywords.slice(0, 3).join(', ')}${searchParams.keywords.length > 3 ? '...' : ''}`);
-    if (searchParams.sources.length < 3) criteria.push(`Sources: ${searchParams.sources.join(', ')}`);
+    if (searchParams.keywords.length > 0) criteria.push(`${t.keywordsLabel}: ${searchParams.keywords.slice(0, 3).join(', ')}${searchParams.keywords.length > 3 ? '...' : ''}`);
+    if (searchParams.sources.length < 3) criteria.push(`${t.sourcesLabel}: ${searchParams.sources.join(', ')}`);
     return criteria;
   };
 
@@ -1239,12 +1251,12 @@ onClick={() => {
                   {selectedProperty.pricePosition.percentFromMedian > 0 ? '+' : ''}{selectedProperty.pricePosition.percentFromMedian}%
                   {selectedProperty.pricePosition.position === 'below' ? ' ↓' : selectedProperty.pricePosition.position === 'above' ? ' ↑' : ' ≈'}
                 </p>
-                <p className="text-sm text-gray-600 mt-1">
+<p className="text-sm text-gray-600 mt-1">
                   {language === 'vn' 
-                    ? `${selectedProperty.pricePosition.verdict} (${selectedProperty.pricePosition.districtCount} annonces dans ce district)`
+                    ? `${selectedProperty.pricePosition.position === 'below' ? 'Dưới giá thị trường' : selectedProperty.pricePosition.position === 'above' ? 'Trên giá thị trường' : 'Giá hợp lý'} (${selectedProperty.pricePosition.districtCount} ${t.listingsInDistrict})`
                     : language === 'fr'
-                    ? `${selectedProperty.pricePosition.position === 'below' ? 'En dessous du marché' : selectedProperty.pricePosition.position === 'above' ? 'Au dessus du marché' : 'Prix dans la moyenne'} (${selectedProperty.pricePosition.districtCount} annonces dans ce district)`
-                    : `${selectedProperty.pricePosition.position === 'below' ? 'Below market' : selectedProperty.pricePosition.position === 'above' ? 'Above market' : 'Fair price'} (${selectedProperty.pricePosition.districtCount} listings in this district)`}
+                    ? `${selectedProperty.pricePosition.position === 'below' ? 'En dessous du marché' : selectedProperty.pricePosition.position === 'above' ? 'Au dessus du marché' : 'Prix dans la moyenne'} (${selectedProperty.pricePosition.districtCount} ${t.listingsInDistrict})`
+                    : `${selectedProperty.pricePosition.position === 'below' ? 'Below market' : selectedProperty.pricePosition.position === 'above' ? 'Above market' : 'Fair price'} (${selectedProperty.pricePosition.districtCount} ${t.listingsInDistrict})`}
                 </p>
               </div>
 
@@ -1496,8 +1508,8 @@ onClick={() => {
 
         {/* === DÉTAILS DU BIEN === */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          <div className="p-3 bg-slate-50 rounded-lg">
-            <p className="text-xs text-gray-500">📐 Surface</p>
+<div className="p-3 bg-slate-50 rounded-lg">
+            <p className="text-xs text-gray-500">📐 {language === 'vn' ? 'Diện tích' : language === 'fr' ? 'Surface' : 'Area'}</p>
             <p className="text-lg font-semibold">{selectedProperty.area || '?'} m²</p>
           </div>
           <div className="p-3 bg-slate-50 rounded-lg">
@@ -1508,21 +1520,21 @@ onClick={() => {
             <p className="text-xs text-gray-500">🚿 {t.bathrooms}</p>
             <p className="text-lg font-semibold">{selectedProperty.bathrooms || '?'}</p>
           </div>
-          {selectedProperty.floors && (
+{selectedProperty.floors && (
             <div className="p-3 bg-slate-50 rounded-lg">
-              <p className="text-xs text-gray-500">🏢 {language === 'fr' ? 'Étages' : 'Floors'}</p>
+              <p className="text-xs text-gray-500">🏢 {language === 'vn' ? 'Số tầng' : language === 'fr' ? 'Étages' : 'Floors'}</p>
               <p className="text-lg font-semibold">{selectedProperty.floors}</p>
             </div>
           )}
-          {selectedProperty.direction && (
+{selectedProperty.direction && (
             <div className="p-3 bg-slate-50 rounded-lg">
-              <p className="text-xs text-gray-500">🧭 {language === 'fr' ? 'Orientation' : 'Direction'}</p>
+              <p className="text-xs text-gray-500">🧭 {language === 'vn' ? 'Hướng' : language === 'fr' ? 'Orientation' : 'Direction'}</p>
               <p className="text-lg font-semibold">{selectedProperty.direction}</p>
             </div>
           )}
-          {selectedProperty.streetWidth && (
+          {selectedProperty.facadeWidth && (
             <div className="p-3 bg-slate-50 rounded-lg">
-              <p className="text-xs text-gray-500">🛣️ {language === 'fr' ? 'Largeur rue' : 'Street width'}</p>
+              <p className="text-xs text-gray-500">📏 {language === 'fr' ? 'Façade' : 'Facade'}</p>
               <p className="text-lg font-semibold">{selectedProperty.streetWidth}m</p>
             </div>
           )}
@@ -1534,7 +1546,7 @@ onClick={() => {
           )}
           {selectedProperty.legalStatus && (
             <div className="p-3 bg-slate-50 rounded-lg">
-              <p className="text-xs text-gray-500">📋 {language === 'fr' ? 'Statut légal' : 'Legal'}</p>
+              <p className="text-xs text-gray-500">📋 {language === 'vn' ? 'Pháp lý' : language === 'fr' ? 'Statut légal' : 'Legal'}</p>
               <p className="text-lg font-semibold">{selectedProperty.legalStatus}</p>
             </div>
           )}
