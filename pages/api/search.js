@@ -581,10 +581,10 @@ const PROPERTY_TYPE_MAPPING = {
     include: ['nghỉ dưỡng', 'resort'],
     exclude: []
   },
-  'shophouse': {
+'Shophouse': {
     label: { vn: 'Shophouse', en: 'Shophouse', fr: 'Shophouse' },
     chotot: 1030,
-    include: ['shophouse', 'nhà phố thương mại'],
+    include: ['shophouse', 'nhà phố thương mại', 'mặt tiền kinh doanh'],
     exclude: []
   },
   'van_phong': {
