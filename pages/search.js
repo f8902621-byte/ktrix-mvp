@@ -624,7 +624,7 @@ const getSearchCriteriaSummary = () => {
 </button>
           </div>
 <div className="hidden md:flex items-center gap-4">
-  <select value={language} onChange={(e) => setLanguage(e.target.value)} className="px-3 py-2 border rounded-lg bg-white"><div className="hidden md:flex items-center gap-4">
+            <select value={language} onChange={(e) => setLanguage(e.target.value)} className="px-3 py-2 border rounded-lg bg-white">
               <option value="vn">🇻🇳 VN</option>
               <option value="en">🇬🇧 EN</option>
               <option value="fr">🇫🇷 FR</option>
