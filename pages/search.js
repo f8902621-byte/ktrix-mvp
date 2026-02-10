@@ -719,9 +719,9 @@ const getSearchCriteriaSummary = () => {
               <button onClick={() => setMode('buy')} className={`px-6 py-3 rounded-lg font-medium ${mode === 'buy' ? 'bg-sky-500 text-white' : 'bg-slate-100'}`}>
                 🏠 {t.buy}
               </button>
-              <button onClick={() => setMode('sell')} className={`px-6 py-3 rounded-lg font-medium ${mode === 'sell' ? 'bg-orange-400 text-white' : 'bg-slate-100'}`}>
-                💰 {t.sell}
-              </button>
+<button onClick={() => router.push('/sell')} className="px-6 py-3 rounded-lg font-medium bg-slate-100 hover:bg-orange-400 hover:text-white transition">
+  💰 {t.sell}
+</button>
             </div>
 
             {/* Location */}
