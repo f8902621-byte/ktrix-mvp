@@ -602,9 +602,9 @@ const getSearchCriteriaSummary = () => {
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+<header className="bg-white shadow-sm border-b sticky top-0 z-50">
+  <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
+    <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
             <button onClick={() => router.push('/')} className="p-2 hover:bg-sky-50 rounded-lg text-sky-600">
               <Home className="w-5 h-5" />
             </button>
@@ -615,16 +615,16 @@ const getSearchCriteriaSummary = () => {
             <button onClick={() => router.push('/monitoring')} className="px-3 py-1 bg-slate-100 text-slate-600 rounded-lg text-sm hover:bg-slate-200" title="Monitoring">
               🔍
             </button>
-            <button onClick={() => setShowSearch(!showSearch)} className="px-4 py-2 bg-gradient-to-r from-blue-500 to-sky-400 text-white rounded-lg font-medium flex items-center gap-2 shadow-md">
-              <Search className="w-4 h-4" />
-              {t.searchParams}
-            </button>
-            <button onClick={() => setShowSavedSearches(!showSavedSearches)} className="px-4 py-2 bg-orange-100 text-orange-600 rounded-lg font-medium">
-              ⭐ {t.savedSearches} ({savedSearches.length})
-            </button>
+<button onClick={() => setShowSearch(!showSearch)} className="px-3 md:px-4 py-2 bg-gradient-to-r from-blue-500 to-sky-400 text-white rounded-lg font-medium flex items-center gap-2 shadow-md">
+  <Search className="w-4 h-4" />
+  <span className="hidden md:inline">{t.searchParams}</span>
+</button>
+<button onClick={() => setShowSavedSearches(!showSavedSearches)} className="px-3 md:px-4 py-2 bg-orange-100 text-orange-600 rounded-lg font-medium">
+  ⭐ <span className="hidden md:inline">{t.savedSearches}</span> ({savedSearches.length})
+</button>
           </div>
-          <div className="flex items-center gap-4">
-            <select value={language} onChange={(e) => setLanguage(e.target.value)} className="px-3 py-2 border rounded-lg bg-white">
+<div className="hidden md:flex items-center gap-4">
+  <select value={language} onChange={(e) => setLanguage(e.target.value)} className="px-3 py-2 border rounded-lg bg-white"><div className="hidden md:flex items-center gap-4">
               <option value="vn">🇻🇳 VN</option>
               <option value="en">🇬🇧 EN</option>
               <option value="fr">🇫🇷 FR</option>
