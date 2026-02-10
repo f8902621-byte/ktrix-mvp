@@ -222,18 +222,18 @@ export default function SellPage() {
     }
   }[language];
 
-  const vietnamCities = [
-    { vn: 'Hồ Chí Minh', en: 'Ho Chi Minh City', fr: 'Hô-Chi-Minh-Ville' },
-    { vn: 'Hà Nội', en: 'Hanoi', fr: 'Hanoï' },
-    { vn: 'Đà Nẵng', en: 'Da Nang', fr: 'Da Nang' },
-    { vn: 'Bình Dương', en: 'Binh Duong', fr: 'Binh Duong' },
-    { vn: 'Khánh Hòa', en: 'Khanh Hoa (Nha Trang)', fr: 'Khanh Hoa (Nha Trang)' },
-    { vn: 'Cần Thơ', en: 'Can Tho', fr: 'Can Tho' },
-    { vn: 'Hải Phòng', en: 'Hai Phong', fr: 'Hai Phong' },
-    { vn: 'Bà Rịa - Vũng Tàu', en: 'Ba Ria - Vung Tau', fr: 'Ba Ria - Vung Tau' },
-    { vn: 'Bình Định', en: 'Binh Dinh (Quy Nhon)', fr: 'Binh Dinh (Quy Nhon)' },
-    { vn: 'Lâm Đồng', en: 'Lam Dong (Da Lat)', fr: 'Lam Dong (Da Lat)' },
-  ];
+const districtsByCity = {
+  'Hồ Chí Minh': ['Quận 1', 'Quận 3', 'Quận 7', 'Bình Thạnh', 'Gò Vấp', 'Phú Nhuận', 'Tân Bình', 'Thủ Đức'],
+  'Hà Nội': ['Ba Đình', 'Hoàn Kiếm', 'Hai Bà Trưng', 'Đống Đa', 'Tây Hồ', 'Cầu Giấy'],
+  'Đà Nẵng': ['Hải Châu', 'Thanh Khê', 'Sơn Trà', 'Ngũ Hành Sơn', 'Liên Chiểu'],
+  'Bình Dương': ['Thủ Dầu Một', 'Dĩ An', 'Thuận An'],
+  'Khánh Hòa': ['Nha Trang', 'Cam Ranh', 'Diên Khánh'],
+  'Cần Thơ': ['Ninh Kiều', 'Bình Thủy', 'Cái Răng'],
+  'Hải Phòng': ['Hồng Bàng', 'Lê Chân', 'Ngô Quyền', 'Đồ Sơn'],
+  'Bà Rịa - Vũng Tàu': ['Vũng Tàu', 'Bà Rịa', 'Long Điền', 'Phú Mỹ'],
+  'Bình Định': ['Quy Nhơn', 'An Nhơn', 'Hoài Nhơn', 'Tuy Phước', 'Phù Cát'],
+  'Lâm Đồng': ['Đà Lạt', 'Bảo Lộc', 'Đức Trọng', 'Lâm Hà'],
+};
 
   const propertyTypes = [
     { vn: 'Căn hộ chung cư', en: 'Apartment', fr: 'Appartement' },
@@ -434,8 +434,8 @@ export default function SellPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const CheckboxGroup = ({ label, options, field }) => (
-    <div className="mb-4">
+const CheckboxGroup = ({ label, options, field }) => (
+  <div className="mb-3">
       <label className="block text-sm font-bold text-gray-700 mb-2">{label}</label>
       <div className="flex flex-wrap gap-2">
         {options.map(opt => (
@@ -487,7 +487,7 @@ export default function SellPage() {
       </header>
 
       <div className="max-w-4xl mx-auto px-4 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+       <div className="space-y-6">
           
           {/* Formulaire */}
           <div className="space-y-6">
@@ -512,15 +512,20 @@ export default function SellPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">{t.district}</label>
-                  <input 
-                    type="text" 
-                    value={formData.district} 
-                    onChange={(e) => setFormData({...formData, district: e.target.value})}
-                    className="w-full px-3 py-2 border rounded-lg"
-                    placeholder={t.selectDistrict}
-                  />
-                </div>
+<div>
+  <label className="block text-sm font-bold text-gray-700 mb-1">{t.district} <span className="text-orange-500">*</span></label>
+  <select 
+    value={formData.district} 
+    onChange={(e) => setFormData({...formData, district: e.target.value, ward: ''})}
+    className="w-full px-3 py-2 border rounded-lg"
+    disabled={!formData.city}
+  >
+    <option value="">{t.selectDistrict}</option>
+    {(districtsByCity[formData.city] || []).map((d, i) => (
+      <option key={i} value={d}>{d}</option>
+    ))}
+  </select>
+</div>
               </div>
               
               <div className="grid grid-cols-2 gap-4 mb-4">
@@ -676,26 +681,24 @@ export default function SellPage() {
               </div>
             </div>
 
-            {/* Section: Points forts */}
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h2 className="text-lg font-bold text-gray-800 mb-4">✨ {t.highlights}</h2>
-              <CheckboxGroup label="" options={highlightOptions} field="highlights" />
-            </div>
-
-            {/* Section: Proximités */}
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h2 className="text-lg font-bold text-gray-800 mb-4">📍 Proximités</h2>
-              <CheckboxGroup label={`🎓 ${t.nearbyEducation}`} options={nearbyEducationOptions} field="nearbyEducation" />
-              <CheckboxGroup label={`🏥 ${t.nearbyHealth}`} options={nearbyHealthOptions} field="nearbyHealth" />
-              <CheckboxGroup label={`🛒 ${t.nearbyAmenities}`} options={nearbyAmenitiesOptions} field="nearbyAmenities" />
-              <CheckboxGroup label={`💼 ${t.nearbyWork}`} options={nearbyWorkOptions} field="nearbyWork" />
-            </div>
-
-            {/* Section: Conditions de vente */}
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h2 className="text-lg font-bold text-gray-800 mb-4">💼 {t.saleConditions}</h2>
-              <CheckboxGroup label="" options={saleConditionOptions} field="saleConditions" />
-            </div>
+{/* Section: Points forts + Proximités côte à côte */}
+<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+  <div className="bg-white rounded-xl shadow-lg p-5">
+    <h2 className="text-lg font-bold text-gray-800 mb-3">✨ {t.highlights}</h2>
+    <CheckboxGroup label="" options={highlightOptions} field="highlights" />
+    
+    <h2 className="text-lg font-bold text-gray-800 mb-3 mt-4">💼 {t.saleConditions}</h2>
+    <CheckboxGroup label="" options={saleConditionOptions} field="saleConditions" />
+  </div>
+  
+  <div className="bg-white rounded-xl shadow-lg p-5">
+    <h2 className="text-lg font-bold text-gray-800 mb-3">📍 Proximités</h2>
+    <CheckboxGroup label={`🎓 ${t.nearbyEducation}`} options={nearbyEducationOptions} field="nearbyEducation" />
+    <CheckboxGroup label={`🏥 ${t.nearbyHealth}`} options={nearbyHealthOptions} field="nearbyHealth" />
+    <CheckboxGroup label={`🛒 ${t.nearbyAmenities}`} options={nearbyAmenitiesOptions} field="nearbyAmenities" />
+    <CheckboxGroup label={`💼 ${t.nearbyWork}`} options={nearbyWorkOptions} field="nearbyWork" />
+  </div>
+</div>
 
             {/* Notes additionnelles */}
             <div className="bg-white rounded-xl shadow-lg p-6">
@@ -711,7 +714,7 @@ export default function SellPage() {
           </div>
 
           {/* Résultat généré */}
-          <div className="lg:sticky lg:top-24 lg:self-start space-y-4">
+          <div className="space-y-4">
             
             {/* Bouton générer */}
             <button
