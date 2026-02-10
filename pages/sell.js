@@ -487,11 +487,9 @@ const CheckboxGroup = ({ label, options, field }) => (
       </header>
 
       <div className="max-w-4xl mx-auto px-4 py-6">
-       <div className="space-y-6">
-          
-          {/* Formulaire */}
-          <div className="space-y-6">
-            
+      <div className="space-y-6">
+        
+             
             {/* Section: Localisation */}
             <div className="bg-white rounded-xl shadow-lg p-6">
               <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
