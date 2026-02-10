@@ -246,19 +246,6 @@ const vietnamCities = [
     }
   }[language];
 
-const districtsByCity = {
-  'Hồ Chí Minh': ['Quận 1', 'Quận 3', 'Quận 7', 'Bình Thạnh', 'Gò Vấp', 'Phú Nhuận', 'Tân Bình', 'Thủ Đức'],
-  'Hà Nội': ['Ba Đình', 'Hoàn Kiếm', 'Hai Bà Trưng', 'Đống Đa', 'Tây Hồ', 'Cầu Giấy'],
-  'Đà Nẵng': ['Hải Châu', 'Thanh Khê', 'Sơn Trà', 'Ngũ Hành Sơn', 'Liên Chiểu'],
-  'Bình Dương': ['Thủ Dầu Một', 'Dĩ An', 'Thuận An'],
-  'Khánh Hòa': ['Nha Trang', 'Cam Ranh', 'Diên Khánh'],
-  'Cần Thơ': ['Ninh Kiều', 'Bình Thủy', 'Cái Răng'],
-  'Hải Phòng': ['Hồng Bàng', 'Lê Chân', 'Ngô Quyền', 'Đồ Sơn'],
-  'Bà Rịa - Vũng Tàu': ['Vũng Tàu', 'Bà Rịa', 'Long Điền', 'Phú Mỹ'],
-  'Bình Định': ['Quy Nhơn', 'An Nhơn', 'Hoài Nhơn', 'Tuy Phước', 'Phù Cát'],
-  'Lâm Đồng': ['Đà Lạt', 'Bảo Lộc', 'Đức Trọng', 'Lâm Hà'],
-};
-
   const propertyTypes = [
     { vn: 'Căn hộ chung cư', en: 'Apartment', fr: 'Appartement' },
     { vn: 'Nhà ở', en: 'House', fr: 'Maison' },
