@@ -666,7 +666,12 @@ function getPropertyTypeMapping(userInput) {
     }
     return PROPERTY_TYPE_MAPPING['nha_nghi_duong'];
   }
-  
+    if (input.includes('dat') || input.includes('land') || input.includes('terrain')) {
+    if (input.includes('nghi duong') || input.includes('resort')) {
+      return PROPERTY_TYPE_MAPPING['dat_nghi_duong'];
+    }
+    return PROPERTY_TYPE_MAPPING['dat'];
+  }
   for (const [key, mapping] of Object.entries(PROPERTY_TYPE_MAPPING)) {
     const labelVn = removeVietnameseAccents(mapping.label.vn.toLowerCase());
     const labelEn = mapping.label.en.toLowerCase();
