@@ -808,11 +808,11 @@ async function fetchChotot(params) {
   const baseMaxResults = params.maxResults || 200;
   let effectiveMaxResults = baseMaxResults;
   if (district && ward) {
-    effectiveMaxResults = Math.max(baseMaxResults, 2000);
+    effectiveMaxResults = Math.max(baseMaxResults, 5000);
   } else if (district) {
-    effectiveMaxResults = Math.max(baseMaxResults, 1500);
+    effectiveMaxResults = Math.max(baseMaxResults, 2000);
   }
-  const maxPages = Math.min(Math.ceil(effectiveMaxResults / 50), 40);
+  const maxPages = Math.min(Math.ceil(effectiveMaxResults / 50), 100);
   console.log(`Chotot: fetching ${maxPages} pages (${maxPages * 50} résultats max)`);
   console.log(`Chotot URL DEBUG: https://gateway.chotot.com/v1/public/ad-listing?${baseParams.toString()}&o=0`);
   
@@ -1960,7 +1960,7 @@ export default async function handler(req, res) {
       }))
     );
 
-    const perSourceLimit = maxResults || 200;
+    const perSourceLimit = (ward && district) ? 1000 : (maxResults || 200);
 
     for (const { source, results: srcResults } of sourceResults) {
       if (Array.isArray(srcResults) && srcResults.length > 0) {
