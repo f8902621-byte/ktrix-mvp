@@ -775,46 +775,21 @@ async function fetchChotot(params) {
   baseParams.append('limit', '50');
   console.log(`Chotot PARAMS DEBUG: ${baseParams.toString()}`);
 
-  // Filtre par district: pour Thu Duc, essayer les anciens codes Q2/Q9/QTD
+  // Filtre par district dans l'API Chotot
   const districtCode = getChototDistrictCode(regionCode, district);
   let useAreaFilter = false;
   
-  // Détection Thu Duc pour utiliser les anciens codes
+  // Pour Thu Duc: area_v2 ne fonctionne pas (codes obsolètes post-fusion 2021)
+  // On récupère plus de données et on filtre côté serveur
   const dNorm = district ? removeVietnameseAccents(district.toLowerCase()).replace(/^(quan|huyen|thanh pho|tp\.?|tx\.?|q\.?)\s*/i, '').trim() : '';
   const isThuDuc = ['thu duc', 'thanh pho thu duc', 'tp thu duc'].includes(dNorm);
   
-  if (isThuDuc && ward) {
-    // Pour Thu Duc + ward spécifique, utiliser le code de l'ancien district
-    const wNorm = removeVietnameseAccents(ward.toLowerCase());
-    const FORMER_Q2_WARDS = ['an phu', 'an khanh', 'an loi dong', 'binh an', 'binh khanh', 
-      'binh trung dong', 'binh trung tay', 'cat lai', 'thao dien', 'thanh my loi', 'thu thiem'];
-    const FORMER_Q9_WARDS = ['hiep phu', 'long binh', 'long phuoc', 'long thanh my', 
-      'long truong', 'phu huu', 'phuoc binh', 'phuoc long a', 'phuoc long b', 'tan phu', 
-      'tang nhon phu a', 'tang nhon phu b', 'truong thanh'];
-    
-    if (FORMER_Q2_WARDS.includes(wNorm)) {
-      baseParams.append('area_v2', '13002'); // ancien Q2
-      useAreaFilter = true;
-      console.log(`Chotot: Thu Duc + ward "${ward}" → ancien Q2 → area_v2=13002`);
-    } else if (FORMER_Q9_WARDS.includes(wNorm)) {
-      baseParams.append('area_v2', '13009'); // ancien Q9
-      useAreaFilter = true;
-      console.log(`Chotot: Thu Duc + ward "${ward}" → ancien Q9 → area_v2=13009`);
-    } else {
-      // ancien QTD - essayer 13019
-      baseParams.append('area_v2', '13019');
-      useAreaFilter = true;
-      console.log(`Chotot: Thu Duc + ward "${ward}" → ancien QTD → area_v2=13019`);
-    }
-  } else if (districtCode && !isThuDuc) {
+  if (districtCode && !isThuDuc) {
     baseParams.append('area_v2', districtCode);
     useAreaFilter = true;
-    console.log(`Chotot: district="${district}" → area_v2=${districtCode} (ACTIVÉ dans requête API)`);
+    console.log(`Chotot: district="${district}" → area_v2=${districtCode} (ACTIVÉ)`);
   } else if (isThuDuc) {
-    // Thu Duc sans ward: essayer 13019 d'abord
-    baseParams.append('area_v2', '13019');
-    useAreaFilter = true;
-    console.log(`Chotot: district="Thu Duc" sans ward → area_v2=13019 (test)`);
+    console.log(`Chotot: district="Thu Duc" → area_v2 DÉSACTIVÉ (codes obsolètes), volume augmenté`);
   }
   
   // Chotot API: filtre prix désactivé (format incompatible)
@@ -829,52 +804,91 @@ async function fetchChotot(params) {
   }
   
   const allAds = [];
-  // Si un district est spécifié, récupérer plus de pages car le filtrage post-requête va en éliminer beaucoup
+  // Volume adapté: district+ward → 2000 résultats, district seul → 1500, sinon → 200
   const baseMaxResults = params.maxResults || 200;
-  const effectiveMaxResults = district ? Math.max(baseMaxResults, 500) : baseMaxResults;
-  const maxPages = Math.min(Math.ceil(effectiveMaxResults / 50), 10);
-  const offsets = Array.from({length: maxPages}, (_, i) => i * 50);
+  let effectiveMaxResults = baseMaxResults;
+  if (district && ward) {
+    effectiveMaxResults = Math.max(baseMaxResults, 2000);
+  } else if (district) {
+    effectiveMaxResults = Math.max(baseMaxResults, 1500);
+  }
+  const maxPages = Math.min(Math.ceil(effectiveMaxResults / 50), 40);
+  console.log(`Chotot: fetching ${maxPages} pages (${maxPages * 50} résultats max)`);
   console.log(`Chotot URL DEBUG: https://gateway.chotot.com/v1/public/ad-listing?${baseParams.toString()}&o=0`);
   
-  for (const offset of offsets) {
-    try {
-      const url = `https://gateway.chotot.com/v1/public/ad-listing?${baseParams}&o=${offset}`;
-      const response = await fetch(url);
-      const data = await response.json();
-      
-      if (data.ads && data.ads.length > 0) {
-        allAds.push(...data.ads);
-        console.log(`Chotot offset=${offset}: +${data.ads.length} (total API: ${data.total})`);
-      } else {
+  // Fetch en parallèle par batch de 5 pour performance
+  const batchSize = 5;
+  for (let batch = 0; batch < maxPages; batch += batchSize) {
+    const batchOffsets = Array.from(
+      {length: Math.min(batchSize, maxPages - batch)}, 
+      (_, i) => (batch + i) * 50
+    );
+    
+    const batchResults = await Promise.all(
+      batchOffsets.map(async (offset) => {
+        try {
+          const url = `https://gateway.chotot.com/v1/public/ad-listing?${baseParams}&o=${offset}`;
+          const response = await fetch(url);
+          const data = await response.json();
+          if (data.ads && data.ads.length > 0) {
+            console.log(`Chotot offset=${offset}: +${data.ads.length} (total API: ${data.total})`);
+            return data.ads;
+          }
+          return null; // no more results
+        } catch (error) {
+          console.error(`Chotot error offset=${offset}:`, error.message);
+          return [];
+        }
+      })
+    );
+    
+    let hasEmpty = false;
+    for (const result of batchResults) {
+      if (result === null) {
+        hasEmpty = true;
         break;
       }
-    } catch (error) {
-      console.error(`Chotot error offset=${offset}:`, error.message);
+      allAds.push(...result);
     }
+    if (hasEmpty) break;
   }
   
   console.log(`Chotot TOTAL brut: ${allAds.length} annonces`);
   
-  // FALLBACK: si area_v2 retourne 0 résultats, relancer sans le filtre district
+  // FALLBACK: si area_v2 retourne 0 résultats (pour districts non-Thu Duc), relancer sans filtre
   if (allAds.length === 0 && useAreaFilter) {
     console.log(`Chotot: area_v2=${districtCode} retourne 0 → FALLBACK sans filtre district`);
     baseParams.delete('area_v2');
     
-    for (const offset of offsets) {
-      try {
-        const url = `https://gateway.chotot.com/v1/public/ad-listing?${baseParams}&o=${offset}`;
-        const response = await fetch(url);
-        const data = await response.json();
-        
-        if (data.ads && data.ads.length > 0) {
-          allAds.push(...data.ads);
-          console.log(`Chotot FALLBACK offset=${offset}: +${data.ads.length} (total API: ${data.total})`);
-        } else {
-          break;
-        }
-      } catch (error) {
-        console.error(`Chotot FALLBACK error offset=${offset}:`, error.message);
+    const fallbackPages = Math.min(Math.ceil(1500 / 50), 30);
+    for (let batch = 0; batch < fallbackPages; batch += batchSize) {
+      const batchOffsets = Array.from(
+        {length: Math.min(batchSize, fallbackPages - batch)}, 
+        (_, i) => (batch + i) * 50
+      );
+      const batchResults = await Promise.all(
+        batchOffsets.map(async (offset) => {
+          try {
+            const url = `https://gateway.chotot.com/v1/public/ad-listing?${baseParams}&o=${offset}`;
+            const response = await fetch(url);
+            const data = await response.json();
+            if (data.ads && data.ads.length > 0) {
+              console.log(`Chotot FALLBACK offset=${offset}: +${data.ads.length}`);
+              return data.ads;
+            }
+            return null;
+          } catch (error) {
+            console.error(`Chotot FALLBACK error offset=${offset}:`, error.message);
+            return [];
+          }
+        })
+      );
+      let hasEmpty = false;
+      for (const result of batchResults) {
+        if (result === null) { hasEmpty = true; break; }
+        allAds.push(...result);
       }
+      if (hasEmpty) break;
     }
     console.log(`Chotot FALLBACK TOTAL brut: ${allAds.length} annonces`);
   }
