@@ -1794,7 +1794,52 @@ export default async function handler(req, res) {
 
     for (const { source, results: srcResults } of sourceResults) {
       if (Array.isArray(srcResults) && srcResults.length > 0) {
-        const limited = srcResults.slice(0, perSourceLimit);
+        let toKeep = srcResults;
+        
+        // *** FIX: Si un district est spécifié, pré-filtrer par district AVANT la limite ***
+        // Sinon on perd des annonces du district recherché dans la masse
+        if (district) {
+          const d = removeVietnameseAccents(district.toLowerCase());
+          const DISTRICT_ALIASES_PREFILT = {
+            'thu duc': ['thu duc', 'thanh pho thu duc', 'tp thu duc', 'tp. thu duc', 'quan 2', 'quan 9', 'quan thu duc'],
+            'quan 2': ['quan 2', 'thu duc', 'thanh pho thu duc', 'tp thu duc'],
+            'quan 9': ['quan 9', 'thu duc', 'thanh pho thu duc', 'tp thu duc'],
+          };
+          const aliases = DISTRICT_ALIASES_PREFILT[d] || [d];
+          
+          const districtFiltered = srcResults.filter(item => {
+            const itemDistrict = removeVietnameseAccents((item.district || '').toLowerCase());
+            const itemWard = removeVietnameseAccents((item.ward || '').toLowerCase());
+            const itemTitle = removeVietnameseAccents((item.title || '').toLowerCase());
+            const itemAddress = removeVietnameseAccents((item.address || '').toLowerCase());
+            const combined = itemDistrict + ' ' + itemWard + ' ' + itemTitle + ' ' + itemAddress;
+            
+            // Check 1: alias match in combined text
+            if (aliases.some(alias => combined.includes(alias))) return true;
+            
+            // Check 2: for Thu Duc, also check known wards
+            const isSearchingThuDuc = d === 'thu duc' || d === 'quan 2' || d === 'quan 9';
+            if (isSearchingThuDuc && itemWard) {
+              const THU_DUC_WARDS_PRE = [
+                'an khanh', 'an loi dong', 'an phu', 'binh chieu', 'binh tho', 'binh trung dong', 'binh trung tay',
+                'cat lai', 'hiep binh chanh', 'hiep binh phuoc', 'hiep phu', 'linh chieu', 'linh dong',
+                'linh tay', 'linh trung', 'linh xuan', 'long binh', 'long phuoc', 'long thanh my',
+                'long truong', 'phu huu', 'phuoc binh', 'phuoc long a', 'phuoc long b',
+                'tam binh', 'tam phu', 'tan phu', 'tang nhon phu a', 'tang nhon phu b',
+                'thao dien', 'thanh my loi', 'thu thiem', 'truong tho', 'truong thanh', 'thu duc'
+              ];
+              const wardName = itemWard.replace(/^(phuong|xa|thi tran)\s+/i, '');
+              if (THU_DUC_WARDS_PRE.some(w => wardName.includes(w) || w.includes(wardName))) return true;
+            }
+            
+            return false;
+          });
+          
+          console.log(`${source}: pré-filtre district "${d}": ${srcResults.length} → ${districtFiltered.length}`);
+          toKeep = districtFiltered;
+        }
+        
+        const limited = toKeep.slice(0, perSourceLimit);
         allResults.push(...limited);
         console.log(`${source}: ${srcResults.length} brut → ${limited.length} gardés (limit ${perSourceLimit})`);
       }
