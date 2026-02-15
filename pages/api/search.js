@@ -776,10 +776,11 @@ async function fetchChotot(params) {
   console.log(`Chotot PARAMS DEBUG: ${baseParams.toString()}`);
 
   // Filtre par district DÉSACTIVÉ - codes Chotot obsolètes depuis fusion Thủ Đức 2021
-  const districtCode = getChototDistrictCode(regionCode, district);
-  if (districtCode) {
-    console.log(`Chotot: district="${district}" → area_v2=${districtCode} (SKIP - filtrage post-requête)`);
-  }
+const districtCode = getChototDistrictCode(regionCode, district);
+if (districtCode) {
+    baseParams.append('area_v2', districtCode);
+    console.log(`Chotot: district="${district}" → area_v2=${districtCode}`);
+}
   
   // Chotot API: filtre prix désactivé (format incompatible)
   if (false && (priceMin || priceMax)) {}
