@@ -870,6 +870,15 @@ async function fetchChotot(params) {
     console.log(`Chotot filtre type: ${beforeFilter} → ${results.length}`);
   }
 
+  // *** DIAGNOSTIC: Afficher les districts uniques de Chotot ***
+  const districtCounts = {};
+  results.forEach(r => {
+    const d = r.district || '(vide)';
+    districtCounts[d] = (districtCounts[d] || 0) + 1;
+  });
+  const sortedDistricts = Object.entries(districtCounts).sort((a, b) => b[1] - a[1]);
+  console.log(`Chotot DISTRICTS UNIQUES (${sortedDistricts.length}):`, JSON.stringify(sortedDistricts.slice(0, 30)));
+
   return results;
 }
 
@@ -954,6 +963,14 @@ async function fetchAlonhadat(params) {
   }
   
   console.log(`Alonhadat TOTAL: ${allListings.length} annonces`);
+  
+  // *** DIAGNOSTIC: Afficher les districts/wards uniques de Alonhadat ***
+  const alonDistrictCounts = {};
+  allListings.forEach(r => {
+    const key = `${r.district || '(vide)'} | ${r.ward || '(vide)'}`;
+    alonDistrictCounts[key] = (alonDistrictCounts[key] || 0) + 1;
+  });
+  console.log(`Alonhadat DISTRICTS/WARDS UNIQUES:`, JSON.stringify(Object.entries(alonDistrictCounts).sort((a, b) => b[1] - a[1]).slice(0, 20)));
   
   // FALLBACK: si trop peu de résultats, relancer en "nha-dat"
   if (allListings.length < 10 && typeSlug !== 'nha-dat') {
