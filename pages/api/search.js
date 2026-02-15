@@ -775,13 +775,46 @@ async function fetchChotot(params) {
   baseParams.append('limit', '50');
   console.log(`Chotot PARAMS DEBUG: ${baseParams.toString()}`);
 
-  // Filtre par district: RÉACTIVÉ avec fallback
+  // Filtre par district: pour Thu Duc, essayer les anciens codes Q2/Q9/QTD
   const districtCode = getChototDistrictCode(regionCode, district);
   let useAreaFilter = false;
-  if (districtCode) {
+  
+  // Détection Thu Duc pour utiliser les anciens codes
+  const dNorm = district ? removeVietnameseAccents(district.toLowerCase()).replace(/^(quan|huyen|thanh pho|tp\.?|tx\.?|q\.?)\s*/i, '').trim() : '';
+  const isThuDuc = ['thu duc', 'thanh pho thu duc', 'tp thu duc'].includes(dNorm);
+  
+  if (isThuDuc && ward) {
+    // Pour Thu Duc + ward spécifique, utiliser le code de l'ancien district
+    const wNorm = removeVietnameseAccents(ward.toLowerCase());
+    const FORMER_Q2_WARDS = ['an phu', 'an khanh', 'an loi dong', 'binh an', 'binh khanh', 
+      'binh trung dong', 'binh trung tay', 'cat lai', 'thao dien', 'thanh my loi', 'thu thiem'];
+    const FORMER_Q9_WARDS = ['hiep phu', 'long binh', 'long phuoc', 'long thanh my', 
+      'long truong', 'phu huu', 'phuoc binh', 'phuoc long a', 'phuoc long b', 'tan phu', 
+      'tang nhon phu a', 'tang nhon phu b', 'truong thanh'];
+    
+    if (FORMER_Q2_WARDS.includes(wNorm)) {
+      baseParams.append('area_v2', '13002'); // ancien Q2
+      useAreaFilter = true;
+      console.log(`Chotot: Thu Duc + ward "${ward}" → ancien Q2 → area_v2=13002`);
+    } else if (FORMER_Q9_WARDS.includes(wNorm)) {
+      baseParams.append('area_v2', '13009'); // ancien Q9
+      useAreaFilter = true;
+      console.log(`Chotot: Thu Duc + ward "${ward}" → ancien Q9 → area_v2=13009`);
+    } else {
+      // ancien QTD - essayer 13019
+      baseParams.append('area_v2', '13019');
+      useAreaFilter = true;
+      console.log(`Chotot: Thu Duc + ward "${ward}" → ancien QTD → area_v2=13019`);
+    }
+  } else if (districtCode && !isThuDuc) {
     baseParams.append('area_v2', districtCode);
     useAreaFilter = true;
     console.log(`Chotot: district="${district}" → area_v2=${districtCode} (ACTIVÉ dans requête API)`);
+  } else if (isThuDuc) {
+    // Thu Duc sans ward: essayer 13019 d'abord
+    baseParams.append('area_v2', '13019');
+    useAreaFilter = true;
+    console.log(`Chotot: district="Thu Duc" sans ward → area_v2=13019 (test)`);
   }
   
   // Chotot API: filtre prix désactivé (format incompatible)
