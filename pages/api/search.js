@@ -1382,14 +1382,23 @@ function applyFilters(results, filters) {
   if (ward) {
     const w = removeVietnameseAccents(ward.toLowerCase());
     const beforeWard = filtered.length;
-    filtered = filtered.filter(item => {
+    const wardFiltered = filtered.filter(item => {
       const itemWard = removeVietnameseAccents((item.ward || '').toLowerCase());
       const itemTitle = removeVietnameseAccents((item.title || '').toLowerCase());
       const itemAddress = removeVietnameseAccents((item.address || '').toLowerCase());
       const combined = itemWard + ' ' + itemTitle + ' ' + itemAddress;
       return combined.includes(w);
     });
-    console.log(`Filtre ward "${w}": ${beforeWard} → ${filtered.length}`);
+    
+    if (wardFiltered.length > 0) {
+      filtered = wardFiltered;
+      console.log(`Filtre ward "${w}": ${beforeWard} → ${filtered.length}`);
+    } else {
+      // *** FALLBACK: ward filter gives 0 results, keep district results ***
+      console.log(`Filtre ward "${w}": ${beforeWard} → 0 (FALLBACK: on garde les ${beforeWard} résultats du district)`);
+      // Marquer les résultats comme "district-level" pour info
+      filtered.forEach(item => { item.wardFilterFallback = true; });
+    }
   }
   
   if (livingAreaMin) {
