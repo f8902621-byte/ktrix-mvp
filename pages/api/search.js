@@ -1,6 +1,7 @@
 // ============================================
 // KTRIX - API SEARCH V5 (Vercel Compatible)
 // Version V5 — Chotot + Alonhadat + Market Stats
+// *** CORRIGÉ — Fix filtre Alonhadat 59→2 ***
 // ============================================
 
 // import { computeKOS } from '../../lib/Scoring.js';
@@ -537,6 +538,8 @@ function analyzeListingText(title, body) {
 
 // ============================================
 // MAPPING UNIVERSEL DES TYPES DE BIENS
+// *** CORRECTION 1 : ajout 'nhà' dans include de nha_o
+// ***               + exclude renforcés pour éviter faux positifs
 // ============================================
 const PROPERTY_TYPE_MAPPING = {
   'tat_ca': {
@@ -566,8 +569,8 @@ const PROPERTY_TYPE_MAPPING = {
   'nha_o': {
     label: { vn: 'Nhà ở', en: 'House', fr: 'Maison' },
     chotot: 1020,
-    include: ['nhà riêng', 'nhà ở', 'nhà phố'],
-    exclude: ['biệt thự', 'villa', 'nghỉ dưỡng', 'resort']
+    include: ['nhà riêng', 'nhà ở', 'nhà phố', 'nhà'],
+    exclude: ['biệt thự', 'villa', 'nghỉ dưỡng', 'resort', 'nhà xưởng', 'nhà nghỉ', 'nhà hàng', 'kho', 'xưởng']
   },
   'nha_biet_thu': {
     label: { vn: 'Nhà biệt thự', en: 'Villa', fr: 'Villa' },
@@ -869,6 +872,8 @@ async function fetchChotot(params) {
 
 // ============================================
 // ALONHADAT SCRAPER AVEC PAGINATION
+// *** CORRECTION 2+3 : résoudre typeMapping en début de fonction,
+// ***                   transmettre typeLabelVn à parseAlonhadatHtml
 // ============================================
 async function fetchAlonhadat(params) {
   const { city, district, ward, propertyType, priceMax, maxResults } = params;
@@ -877,6 +882,10 @@ async function fetchAlonhadat(params) {
     console.log('Alonhadat: SCRAPER_API_KEY non configuré, skip');
     return [];
   }
+  
+  // *** FIX: Résoudre le type mapping une seule fois ***
+  const typeMapping = getPropertyTypeMapping(propertyType);
+  const typeLabelVn = typeMapping.label?.vn || 'Nhà ở';
   
   const cityNormalized = removeVietnameseAccents(city || 'ho chi minh');
   const typeNormalized = removeVietnameseAccents(propertyType || 'nha o');
@@ -922,7 +931,8 @@ async function fetchAlonhadat(params) {
       }
       
       const html = await response.text();
-      const listings = parseAlonhadatHtml(html, city);
+      // *** FIX: passer typeLabelVn au parser ***
+      const listings = parseAlonhadatHtml(html, city, typeLabelVn);
       
       console.log(`Alonhadat page ${page}: ${listings.length} annonces`);
       
@@ -957,7 +967,8 @@ async function fetchAlonhadat(params) {
         if (!response.ok) break;
         
         const html = await response.text();
-        const listings = parseAlonhadatHtml(html, city);
+        // *** FIX: passer typeLabelVn au parser (fallback) ***
+        const listings = parseAlonhadatHtml(html, city, typeLabelVn);
         if (listings.length === 0) break;
         
         allListings.push(...listings);
@@ -970,7 +981,7 @@ console.log(`Alonhadat après fallback: ${allListings.length} annonces`);
   }
   
   // Filtrer par type de bien (villa, maison, etc.)
-  const typeMapping = getPropertyTypeMapping(propertyType);
+  // *** FIX: typeMapping déjà résolu en début de fonction ***
   if (typeMapping.include.length > 0 || typeMapping.exclude.length > 0) {
     const beforeFilter = allListings.length;
     allListings = filterByKeywords(allListings, typeMapping.include, typeMapping.exclude);
@@ -980,7 +991,8 @@ console.log(`Alonhadat après fallback: ${allListings.length} annonces`);
   return allListings;
 }
 
-function parseAlonhadatHtml(html, city) {
+// *** CORRECTION 2 : parseAlonhadatHtml reçoit propertyType ***
+function parseAlonhadatHtml(html, city, propertyType) {
   const listings = [];
   
   const articleRegex = /<article\s+class=["']property-item["'][^>]*>([\s\S]*?)<\/article>/gi;
@@ -1113,6 +1125,8 @@ function parseAlonhadatHtml(html, city) {
       }
       
       listing.source = 'alonhadat.com.vn';
+      // *** FIX: assigner le propertyType pour que filterByKeywords le trouve ***
+      listing.propertyType = propertyType || 'Nhà ở';
       listing.images = listing.thumbnail ? [listing.thumbnail] : [];
       
       if (listing.title && listing.price > 0) {
