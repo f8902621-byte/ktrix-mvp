@@ -776,11 +776,10 @@ async function fetchChotot(params) {
   console.log(`Chotot PARAMS DEBUG: ${baseParams.toString()}`);
 
   // Filtre par district DÉSACTIVÉ - codes Chotot obsolètes depuis fusion Thủ Đức 2021
-const districtCode = getChototDistrictCode(regionCode, district);
-if (districtCode) {
-    baseParams.append('area_v2', districtCode);
-    console.log(`Chotot: district="${district}" → area_v2=${districtCode}`);
-}
+  const districtCode = getChototDistrictCode(regionCode, district);
+  if (districtCode) {
+    console.log(`Chotot: district="${district}" → area_v2=${districtCode} (SKIP - filtrage post-requête)`);
+  }
   
   // Chotot API: filtre prix désactivé (format incompatible)
   if (false && (priceMin || priceMax)) {}
@@ -794,8 +793,11 @@ if (districtCode) {
   }
   
   const allAds = [];
-  const maxPages = Math.ceil((params.maxResults || 200) / 50);
-  const offsets = [0, 50, 100, 150, 200, 250].slice(0, maxPages);
+  // Si un district est spécifié, récupérer plus de pages car le filtrage post-requête va en éliminer beaucoup
+  const baseMaxResults = params.maxResults || 200;
+  const effectiveMaxResults = district ? Math.max(baseMaxResults, 500) : baseMaxResults;
+  const maxPages = Math.min(Math.ceil(effectiveMaxResults / 50), 10);
+  const offsets = Array.from({length: maxPages}, (_, i) => i * 50);
   console.log(`Chotot URL DEBUG: https://gateway.chotot.com/v1/public/ad-listing?${baseParams.toString()}&o=0`);
   
   for (const offset of offsets) {
@@ -1040,7 +1042,32 @@ function parseAlonhadatHtml(html, city, propertyType) {
       }
       
       const localityMatch = articleHtml.match(/itemprop=["']addressLocality["'][^>]*>([^<]+)</i);
-      listing.district = localityMatch ? localityMatch[1].trim() : '';
+      const regionMatch = articleHtml.match(/itemprop=["']addressRegion["'][^>]*>([^<]+)</i);
+      
+      // addressLocality = ward (phường), addressRegion = district (quận)
+      const locality = localityMatch ? localityMatch[1].trim() : '';
+      const region = regionMatch ? regionMatch[1].trim() : '';
+      
+      if (region) {
+        listing.district = region;
+        listing.ward = locality;
+      } else {
+        const localityLower = locality.toLowerCase();
+        if (localityLower.startsWith('quận') || localityLower.startsWith('huyện') || 
+            localityLower.startsWith('thành phố') || localityLower.startsWith('tp.') ||
+            localityLower.startsWith('tp ')) {
+          listing.district = locality;
+          listing.ward = '';
+        } else if (localityLower.startsWith('phường') || localityLower.startsWith('xã') ||
+                   localityLower.startsWith('thị trấn')) {
+          listing.ward = locality;
+          listing.district = '';
+        } else {
+          listing.district = locality;
+          listing.ward = '';
+        }
+      }
+      listing.address = [listing.ward, listing.district].filter(Boolean).join(', ');
       listing.city = city;
       
       const bedroomMatch = articleHtml.match(/itemprop=["']numberOfBedrooms["'][^>]*>(\d+)/i) ||
@@ -1281,12 +1308,13 @@ function applyFilters(results, filters) {
     const beforeCount = filtered.length;
     filtered = filtered.filter(item => {
       const itemDistrict = removeVietnameseAccents((item.district || '').toLowerCase());
+      const itemWard = removeVietnameseAccents((item.ward || '').toLowerCase());
       const itemTitle = removeVietnameseAccents((item.title || '').toLowerCase());
       const itemAddress = removeVietnameseAccents((item.address || '').toLowerCase());
-      const combined = itemDistrict + ' ' + itemTitle + ' ' + itemAddress;
+      const combined = itemDistrict + ' ' + itemWard + ' ' + itemTitle + ' ' + itemAddress;
       const matches = combined.includes(d);
-      if (!matches && itemDistrict) {
-        console.log(`District filter: "${d}" not in "${itemDistrict}" | title: ${itemTitle.substring(0, 30)}`);
+      if (!matches && (itemDistrict || itemWard)) {
+        console.log(`District filter: "${d}" not in district="${itemDistrict}" ward="${itemWard}" | title: ${itemTitle.substring(0, 30)}`);
       }
       return matches;
     });
