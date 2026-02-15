@@ -994,9 +994,17 @@ async function fetchAlonhadat(params) {
     }
   }
 
-  const maxPages = maxResults >= 200 ? 3 : maxResults >= 100 ? 2 : 1;
+  // Plus de pages si district spécifié (besoin de volume pour filtrer ensuite)
+  let maxPages;
+  if (district && ward) {
+    maxPages = 10;  // ~200 annonces, on filtrera district+ward ensuite
+  } else if (district) {
+    maxPages = 6;   // ~120 annonces
+  } else {
+    maxPages = maxResults >= 200 ? 3 : maxResults >= 100 ? 2 : 1;
+  }
   
-  console.log(`Alonhadat: scraping ${maxPages} pages`);
+  console.log(`Alonhadat: scraping ${maxPages} pages (district=${district || 'none'}, ward=${ward || 'none'})`);
   
   let allListings = [];
   
@@ -1483,6 +1491,30 @@ function applyFilters(results, filters) {
         'tam binh', 'tam phu', 'truong tho', 'thu duc'
       ];
       
+      // *** WARD NEIGHBORS: voisins géographiques immédiats ***
+      const WARD_NEIGHBORS = {
+        // Ancien Q2
+        'thao dien': ['an phu', 'an khanh', 'thu thiem', 'binh an'],
+        'an phu': ['thao dien', 'an khanh', 'binh trung tay', 'binh an', 'thu thiem'],
+        'an khanh': ['thao dien', 'an phu', 'thu thiem', 'binh an', 'binh khanh'],
+        'thu thiem': ['thao dien', 'an phu', 'an khanh', 'binh khanh', 'an loi dong'],
+        'binh an': ['thao dien', 'an phu', 'an khanh', 'binh khanh'],
+        'binh khanh': ['thu thiem', 'an khanh', 'binh an', 'cat lai'],
+        'thanh my loi': ['binh trung tay', 'binh trung dong', 'cat lai', 'an phu'],
+        'binh trung tay': ['an phu', 'thanh my loi', 'binh trung dong'],
+        'binh trung dong': ['binh trung tay', 'thanh my loi', 'cat lai'],
+        'cat lai': ['binh trung dong', 'thanh my loi', 'binh khanh'],
+        // Ancien Q9 - principaux
+        'hiep phu': ['tang nhon phu a', 'tang nhon phu b', 'phuoc long b', 'long thanh my'],
+        'long truong': ['long thanh my', 'truong thanh', 'long phuoc'],
+        'phuoc long b': ['phuoc long a', 'tang nhon phu b', 'hiep phu'],
+        // Ancien QTD - principaux
+        'linh dong': ['linh tay', 'linh chieu', 'hiep binh chanh'],
+        'hiep binh chanh': ['hiep binh phuoc', 'linh dong', 'tam binh', 'linh tay'],
+        'hiep binh phuoc': ['hiep binh chanh', 'tam binh', 'tam phu', 'linh xuan'],
+        'linh trung': ['linh xuan', 'linh chieu', 'binh tho', 'tam binh'],
+      };
+      
       // Trouver dans quel ancien district se trouve le ward demandé
       let nearbyWards = null;
       let formerDistrict = null;
@@ -1501,44 +1533,80 @@ function applyFilters(results, filters) {
         
         // Helper: word boundary check to avoid "van phuc" matching "an phu"
         const wordBoundaryMatch = (text, ward) => {
-          // Create regex with word boundaries
           const escaped = ward.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
           const regex = new RegExp(`(?:^|\\s|,)${escaped}(?:\\s|,|$)`, 'i');
           return regex.test(text);
         };
         
-        const narrowed = filtered.filter(item => {
-          const itemWard = removeVietnameseAccents((item.ward || '').toLowerCase());
-          const itemTitle = removeVietnameseAccents((item.title || '').toLowerCase());
-          const itemAddress = removeVietnameseAccents((item.address || '').toLowerCase());
-          
-          // Check 1: ward field (exact match after cleaning)
-          if (itemWard) {
-            const wardName = cleanWardName(itemWard);
-            if (nearbyWards.includes(wardName)) {
-              console.log(`  FALLBACK MATCH (ward field): "${wardName}" | src=${item.source}`);
+        // Helper: filter by a set of wards
+        const filterByWards = (items, targetWards, label) => {
+          return items.filter(item => {
+            const itemWard = removeVietnameseAccents((item.ward || '').toLowerCase());
+            const itemAddress = removeVietnameseAccents((item.address || '').toLowerCase());
+            
+            if (itemWard) {
+              const wardName = cleanWardName(itemWard);
+              if (targetWards.includes(wardName)) {
+                console.log(`  ${label} MATCH (ward field): "${wardName}" | src=${item.source}`);
+                return true;
+              }
+            }
+            
+            if (targetWards.some(nw => nw.length >= 6 && wordBoundaryMatch(itemAddress, nw))) {
+              const matched = targetWards.find(nw => nw.length >= 6 && wordBoundaryMatch(itemAddress, nw));
+              console.log(`  ${label} MATCH (addr "${matched}"): addr="${itemAddress.substring(0, 50)}" | src=${item.source}`);
               return true;
             }
-          }
-          
-          // Check 2: ward name appears in address with word boundaries
-          // (address is more reliable than title for location)
-          if (nearbyWards.some(nw => nw.length >= 6 && wordBoundaryMatch(itemAddress, nw))) {
-            const matched = nearbyWards.find(nw => nw.length >= 6 && wordBoundaryMatch(itemAddress, nw));
-            console.log(`  FALLBACK MATCH (addr "${matched}"): addr="${itemAddress.substring(0, 50)}" | src=${item.source}`);
-            return true;
-          }
-          
-          console.log(`  FALLBACK REJECT: ward="${itemWard}" addr="${itemAddress.substring(0, 50)}" | src=${item.source}`);
-          return false;
-        });
+            
+            return false;
+          });
+        };
         
-        if (narrowed.length > 0) {
-          filtered = narrowed;
-          console.log(`Filtre ward "${w}": ${beforeWard} → 0 exact (FALLBACK ${formerDistrict}: ${narrowed.length} résultats)`);
-        } else {
-          // Même le fallback ancien district donne 0 → garder tout le district
-          console.log(`Filtre ward "${w}": ${beforeWard} → 0 exact, FALLBACK ${formerDistrict} → 0 aussi (on garde les ${beforeWard} résultats du district)`);
+        // *** TIER 1: Voisins immédiats uniquement ***
+        const neighbors = WARD_NEIGHBORS[w];
+        let finalResults = null;
+        
+        if (neighbors && neighbors.length > 0) {
+          const neighborWards = [w, ...neighbors];  // le ward demandé + ses voisins
+          const neighborResults = filterByWards(filtered, neighborWards, 'NEIGHBOR');
+          
+          if (neighborResults.length > 0) {
+            finalResults = neighborResults;
+            // Tag les résultats comme voisins
+            neighborResults.forEach(item => { item.wardFallbackLevel = 'neighbor'; });
+            console.log(`Filtre ward "${w}": ${beforeWard} → 0 exact → VOISINS [${neighborWards.join(', ')}]: ${neighborResults.length} résultats`);
+          } else {
+            console.log(`Filtre ward "${w}": ${beforeWard} → 0 exact → VOISINS [${neighborWards.join(', ')}]: 0 résultats`);
+          }
+        }
+        
+        // *** TIER 2: Si 0 voisins, élargir à l'ancien district ***
+        if (!finalResults) {
+          const districtResults = filterByWards(filtered, nearbyWards, 'FALLBACK');
+          
+          // Log les rejets pour debug
+          filtered.forEach(item => {
+            const itemWard = removeVietnameseAccents((item.ward || '').toLowerCase());
+            const itemAddress = removeVietnameseAccents((item.address || '').toLowerCase());
+            if (itemWard) {
+              const wardName = cleanWardName(itemWard);
+              if (!nearbyWards.includes(wardName)) {
+                console.log(`  FALLBACK REJECT: ward="${itemWard}" addr="${itemAddress.substring(0, 50)}" | src=${item.source}`);
+              }
+            }
+          });
+          
+          if (districtResults.length > 0) {
+            finalResults = districtResults;
+            districtResults.forEach(item => { item.wardFallbackLevel = 'former_district'; });
+            console.log(`Filtre ward "${w}": ${beforeWard} → 0 exact, 0 voisins → FALLBACK ${formerDistrict}: ${districtResults.length} résultats`);
+          } else {
+            console.log(`Filtre ward "${w}": ${beforeWard} → 0 exact, FALLBACK ${formerDistrict} → 0 aussi (on garde les ${beforeWard} résultats du district)`);
+          }
+        }
+        
+        if (finalResults) {
+          filtered = finalResults;
         }
       } else {
         // Ward pas dans Thu Duc → fallback classique, garder tout
