@@ -775,10 +775,13 @@ async function fetchChotot(params) {
   baseParams.append('limit', '50');
   console.log(`Chotot PARAMS DEBUG: ${baseParams.toString()}`);
 
-  // Filtre par district DÉSACTIVÉ - codes Chotot obsolètes depuis fusion Thủ Đức 2021
+  // Filtre par district: RÉACTIVÉ avec fallback
   const districtCode = getChototDistrictCode(regionCode, district);
+  let useAreaFilter = false;
   if (districtCode) {
-    console.log(`Chotot: district="${district}" → area_v2=${districtCode} (SKIP - filtrage post-requête)`);
+    baseParams.append('area_v2', districtCode);
+    useAreaFilter = true;
+    console.log(`Chotot: district="${district}" → area_v2=${districtCode} (ACTIVÉ dans requête API)`);
   }
   
   // Chotot API: filtre prix désactivé (format incompatible)
@@ -818,6 +821,30 @@ async function fetchChotot(params) {
   }
   
   console.log(`Chotot TOTAL brut: ${allAds.length} annonces`);
+  
+  // FALLBACK: si area_v2 retourne 0 résultats, relancer sans le filtre district
+  if (allAds.length === 0 && useAreaFilter) {
+    console.log(`Chotot: area_v2=${districtCode} retourne 0 → FALLBACK sans filtre district`);
+    baseParams.delete('area_v2');
+    
+    for (const offset of offsets) {
+      try {
+        const url = `https://gateway.chotot.com/v1/public/ad-listing?${baseParams}&o=${offset}`;
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        if (data.ads && data.ads.length > 0) {
+          allAds.push(...data.ads);
+          console.log(`Chotot FALLBACK offset=${offset}: +${data.ads.length} (total API: ${data.total})`);
+        } else {
+          break;
+        }
+      } catch (error) {
+        console.error(`Chotot FALLBACK error offset=${offset}:`, error.message);
+      }
+    }
+    console.log(`Chotot FALLBACK TOTAL brut: ${allAds.length} annonces`);
+  }
   
   let results = allAds
     .filter(ad => ad.price && ad.price > 0)
