@@ -1357,8 +1357,11 @@ function applyFilters(results, filters) {
       const districtMatch = aliases.some(alias => itemDistrict.includes(alias));
       if (districtMatch) return true;
       
-      // Check 2: for Thu Duc searches, check if ward is a known Thu Duc ward (exact match)
-      if (isSearchingThuDuc && itemWard) {
+      // Check 2: for Thu Duc searches, check known wards BUT ONLY if district is empty/Thu Duc
+      const districtIsEmpty = !itemDistrict || itemDistrict === 'ho chi minh';
+      const districtIsThuDuc = itemDistrict.includes('thu duc') || itemDistrict.includes('quan 2') || itemDistrict.includes('quan 9');
+      
+      if (isSearchingThuDuc && itemWard && (districtIsEmpty || districtIsThuDuc)) {
         const wardName = itemWard.replace(/^(phuong|xa|thi tran)\s+/i, '').trim();
         const wardMatch = THU_DUC_WARDS.some(w => wardName === w);
         if (wardMatch) return true;
@@ -1423,17 +1426,31 @@ function applyFilters(results, filters) {
           // Check ward field (exact match after stripping prefix)
           if (itemWard) {
             const wardName = itemWard.replace(/^(phuong|xa|thi tran)\s+/i, '').trim();
-            if (nearbyWards.includes(wardName)) return true;
+            if (nearbyWards.includes(wardName)) {
+              console.log(`  FALLBACK MATCH (ward field): "${wardName}" | src=${item.source}`);
+              return true;
+            }
           }
           
           // Check title/address for nearby ward names
           const combined = itemTitle + ' ' + itemAddress;
-          if (nearbyWards.some(nw => combined.includes(nw))) return true;
+          const matchedWard = nearbyWards.find(nw => combined.includes(nw));
+          if (matchedWard) {
+            console.log(`  FALLBACK MATCH (text "${matchedWard}"): title="${itemTitle.substring(0, 40)}" addr="${itemAddress.substring(0, 40)}" | src=${item.source}`);
+            return true;
+          }
           
           // For former Q2: also check "quan 2" in title/address
-          if (formerDistrict === 'ancien Q2' && combined.includes('quan 2')) return true;
-          if (formerDistrict === 'ancien Q9' && combined.includes('quan 9')) return true;
+          if (formerDistrict === 'ancien Q2' && combined.includes('quan 2')) {
+            console.log(`  FALLBACK MATCH (quan 2 text): title="${itemTitle.substring(0, 40)}" | src=${item.source}`);
+            return true;
+          }
+          if (formerDistrict === 'ancien Q9' && combined.includes('quan 9')) {
+            console.log(`  FALLBACK MATCH (quan 9 text): title="${itemTitle.substring(0, 40)}" | src=${item.source}`);
+            return true;
+          }
           
+          console.log(`  FALLBACK REJECT: ward="${itemWard}" addr="${itemAddress.substring(0, 50)}" | src=${item.source}`);
           return false;
         });
         
@@ -1888,9 +1905,13 @@ export default async function handler(req, res) {
             // Check 1: district field matches any alias
             if (aliases.some(alias => itemDistrict.includes(alias))) return true;
             
-            // Check 2: for Thu Duc, also check known wards (exact match)
+            // Check 2: for Thu Duc, check known wards BUT ONLY if district is empty or already Thu Duc
+            // (avoid false positives: "Tân Phú" ward exists in both Q7 and Thủ Đức)
             const isSearchingThuDuc = d === 'thu duc' || d === 'quan 2' || d === 'quan 9';
-            if (isSearchingThuDuc && itemWard) {
+            const districtIsEmpty = !itemDistrict || itemDistrict === 'ho chi minh';
+            const districtIsThuDuc = itemDistrict.includes('thu duc') || itemDistrict.includes('quan 2') || itemDistrict.includes('quan 9');
+            
+            if (isSearchingThuDuc && itemWard && (districtIsEmpty || districtIsThuDuc)) {
               const THU_DUC_WARDS_PRE = [
                 'an khanh', 'an loi dong', 'an phu', 'binh chieu', 'binh tho', 'binh trung dong', 'binh trung tay',
                 'cat lai', 'hiep binh chanh', 'hiep binh phuoc', 'hiep phu', 'linh chieu', 'linh dong',
