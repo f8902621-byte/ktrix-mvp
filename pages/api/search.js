@@ -1295,6 +1295,8 @@ function applyFilters(results, filters) {
   const { city, district, ward, priceMin, priceMax, livingAreaMin, livingAreaMax, bedrooms, legalStatus, streetWidthMin, propertyType } = filters;
   let filtered = [...results];
   
+  console.log(`applyFilters PARAMS: district="${district||''}" ward="${ward||''}" priceMin="${priceMin||''}" priceMax="${priceMax||''}" areaMin="${livingAreaMin||''}" areaMax="${livingAreaMax||''}" bedrooms="${bedrooms||''}" type="${propertyType||''}" | ${filtered.length} entrées`);
+  
   if (priceMin) {
     const min = parseFloat(priceMin) * 1000000000;
     filtered = filtered.filter(item => {
@@ -1304,6 +1306,7 @@ function applyFilters(results, filters) {
   
   if (priceMax) {
     const maxTy = parseFloat(priceMax);
+    const beforePrice = filtered.length;
 
     filtered = filtered.filter(item => {
       if (item.source === 'alonhadat') {
@@ -1318,6 +1321,7 @@ function applyFilters(results, filters) {
 
       return priceTy <= maxTy;
     });
+    console.log(`Filtre prix max (≤${maxTy} tỷ): ${beforePrice} → ${filtered.length}`);
   }
 
   // *** FIX: Mapping des alias de districts (fusion 2021 Thủ Đức) ***
@@ -1377,6 +1381,7 @@ function applyFilters(results, filters) {
 
   if (ward) {
     const w = removeVietnameseAccents(ward.toLowerCase());
+    const beforeWard = filtered.length;
     filtered = filtered.filter(item => {
       const itemWard = removeVietnameseAccents((item.ward || '').toLowerCase());
       const itemTitle = removeVietnameseAccents((item.title || '').toLowerCase());
@@ -1384,30 +1389,39 @@ function applyFilters(results, filters) {
       const combined = itemWard + ' ' + itemTitle + ' ' + itemAddress;
       return combined.includes(w);
     });
+    console.log(`Filtre ward "${w}": ${beforeWard} → ${filtered.length}`);
   }
   
   if (livingAreaMin) {
+    const before = filtered.length;
     filtered = filtered.filter(item => (item.area || 0) >= parseInt(livingAreaMin));
+    console.log(`Filtre surface min (≥${livingAreaMin}m²): ${before} → ${filtered.length}`);
   }
   
   if (livingAreaMax) {
+    const before = filtered.length;
     filtered = filtered.filter(item => {
       const area = item.area || 0;
       return area > 0 && area <= parseInt(livingAreaMax);
     });
+    console.log(`Filtre surface max (≤${livingAreaMax}m²): ${before} → ${filtered.length}`);
   }
   
   if (bedrooms) {
+    const before = filtered.length;
     filtered = filtered.filter(item => item.bedrooms >= parseInt(bedrooms));
+    console.log(`Filtre chambres (≥${bedrooms}): ${before} → ${filtered.length}`);
   }
   
   if (legalStatus) {
+    const before = filtered.length;
     filtered = filtered.filter(item => {
       if (legalStatus === 'sohong') return item.legalStatus === 'Sổ đỏ/Sổ hồng';
       if (legalStatus === 'hopdong') return item.legalStatus === 'Hợp đồng mua bán';
       if (legalStatus === 'dangcho') return item.legalStatus === 'Đang chờ sổ';
       return true;
     });
+    console.log(`Filtre statut légal "${legalStatus}": ${before} → ${filtered.length}`);
   }
 
   if (propertyType) {
