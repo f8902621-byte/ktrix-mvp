@@ -1387,9 +1387,67 @@ function applyFilters(results, filters) {
       filtered = wardFiltered;
       console.log(`Filtre ward "${w}": ${beforeWard} → ${filtered.length}`);
     } else {
-      // *** FALLBACK: ward filter gives 0 results, keep district results ***
-      console.log(`Filtre ward "${w}": ${beforeWard} → 0 (FALLBACK: on garde les ${beforeWard} résultats du district)`);
-      // Marquer les résultats comme "district-level" pour info
+      // *** SMART FALLBACK: narrow to former district within TP. Thủ Đức ***
+      // Thủ Đức = ancien Q2 + ancien Q9 + ancien QThủĐức
+      // Si le ward demandé est dans l'ancien Q2, on ne garde que les wards de l'ancien Q2
+      const FORMER_Q2_WARDS = [
+        'an phu', 'an khanh', 'an loi dong', 'binh an', 'binh khanh',
+        'binh trung dong', 'binh trung tay', 'cat lai',
+        'thao dien', 'thanh my loi', 'thu thiem'
+      ];
+      const FORMER_Q9_WARDS = [
+        'hiep phu', 'long binh', 'long phuoc', 'long thanh my', 'long truong',
+        'phu huu', 'phuoc binh', 'phuoc long a', 'phuoc long b',
+        'tan phu', 'tang nhon phu a', 'tang nhon phu b', 'truong thanh'
+      ];
+      const FORMER_QTD_WARDS = [
+        'binh chieu', 'binh tho', 'hiep binh chanh', 'hiep binh phuoc',
+        'linh chieu', 'linh dong', 'linh tay', 'linh trung', 'linh xuan',
+        'tam binh', 'tam phu', 'truong tho', 'thu duc'
+      ];
+      
+      // Trouver dans quel ancien district se trouve le ward demandé
+      let nearbyWards = null;
+      let formerDistrict = null;
+      if (FORMER_Q2_WARDS.includes(w)) { nearbyWards = FORMER_Q2_WARDS; formerDistrict = 'ancien Q2'; }
+      else if (FORMER_Q9_WARDS.includes(w)) { nearbyWards = FORMER_Q9_WARDS; formerDistrict = 'ancien Q9'; }
+      else if (FORMER_QTD_WARDS.includes(w)) { nearbyWards = FORMER_QTD_WARDS; formerDistrict = 'ancien Q.Thủ Đức'; }
+      
+      if (nearbyWards) {
+        // Filtrer par wards de l'ancien district + mention dans titre/adresse
+        const narrowed = filtered.filter(item => {
+          const itemWard = removeVietnameseAccents((item.ward || '').toLowerCase());
+          const itemTitle = removeVietnameseAccents((item.title || '').toLowerCase());
+          const itemAddress = removeVietnameseAccents((item.address || '').toLowerCase());
+          
+          // Check ward field (exact match after stripping prefix)
+          if (itemWard) {
+            const wardName = itemWard.replace(/^(phuong|xa|thi tran)\s+/i, '').trim();
+            if (nearbyWards.includes(wardName)) return true;
+          }
+          
+          // Check title/address for nearby ward names
+          const combined = itemTitle + ' ' + itemAddress;
+          if (nearbyWards.some(nw => combined.includes(nw))) return true;
+          
+          // For former Q2: also check "quan 2" in title/address
+          if (formerDistrict === 'ancien Q2' && combined.includes('quan 2')) return true;
+          if (formerDistrict === 'ancien Q9' && combined.includes('quan 9')) return true;
+          
+          return false;
+        });
+        
+        if (narrowed.length > 0) {
+          filtered = narrowed;
+          console.log(`Filtre ward "${w}": ${beforeWard} → 0 exact (FALLBACK ${formerDistrict}: ${narrowed.length} résultats)`);
+        } else {
+          // Même le fallback ancien district donne 0 → garder tout le district
+          console.log(`Filtre ward "${w}": ${beforeWard} → 0 exact, FALLBACK ${formerDistrict} → 0 aussi (on garde les ${beforeWard} résultats du district)`);
+        }
+      } else {
+        // Ward pas dans Thu Duc → fallback classique, garder tout
+        console.log(`Filtre ward "${w}": ${beforeWard} → 0 (FALLBACK: on garde les ${beforeWard} résultats du district)`);
+      }
       filtered.forEach(item => { item.wardFilterFallback = true; });
     }
   }
