@@ -1352,27 +1352,20 @@ function applyFilters(results, filters) {
     filtered = filtered.filter(item => {
       const itemDistrict = removeVietnameseAccents((item.district || '').toLowerCase());
       const itemWard = removeVietnameseAccents((item.ward || '').toLowerCase());
-      const itemTitle = removeVietnameseAccents((item.title || '').toLowerCase());
-      const itemAddress = removeVietnameseAccents((item.address || '').toLowerCase());
-      const combined = itemDistrict + ' ' + itemWard + ' ' + itemTitle + ' ' + itemAddress;
       
       // Check 1: district field matches any alias
       const districtMatch = aliases.some(alias => itemDistrict.includes(alias));
       if (districtMatch) return true;
       
-      // Check 2: for Thu Duc searches, check if ward is a known Thu Duc ward
+      // Check 2: for Thu Duc searches, check if ward is a known Thu Duc ward (exact match)
       if (isSearchingThuDuc && itemWard) {
-        const wardName = itemWard.replace(/^(phuong|xa|thi tran)\s+/i, '');
-        const wardMatch = THU_DUC_WARDS.some(w => wardName.includes(w) || w.includes(wardName));
+        const wardName = itemWard.replace(/^(phuong|xa|thi tran)\s+/i, '').trim();
+        const wardMatch = THU_DUC_WARDS.some(w => wardName === w);
         if (wardMatch) return true;
       }
       
-      // Check 3: any alias appears in combined text (title, address, ward)
-      const textMatch = aliases.some(alias => combined.includes(alias));
-      if (textMatch) return true;
-      
       if (itemDistrict || itemWard) {
-        console.log(`District filter: "${d}" not in district="${itemDistrict}" ward="${itemWard}" | title: ${itemTitle.substring(0, 30)}`);
+        console.log(`District filter: "${d}" not in district="${itemDistrict}" ward="${itemWard}" | title: ${removeVietnameseAccents((item.title || '')).substring(0, 30)}`);
       }
       return false;
     });
@@ -1833,14 +1826,11 @@ export default async function handler(req, res) {
           const districtFiltered = srcResults.filter(item => {
             const itemDistrict = removeVietnameseAccents((item.district || '').toLowerCase());
             const itemWard = removeVietnameseAccents((item.ward || '').toLowerCase());
-            const itemTitle = removeVietnameseAccents((item.title || '').toLowerCase());
-            const itemAddress = removeVietnameseAccents((item.address || '').toLowerCase());
-            const combined = itemDistrict + ' ' + itemWard + ' ' + itemTitle + ' ' + itemAddress;
             
-            // Check 1: alias match in combined text
-            if (aliases.some(alias => combined.includes(alias))) return true;
+            // Check 1: district field matches any alias
+            if (aliases.some(alias => itemDistrict.includes(alias))) return true;
             
-            // Check 2: for Thu Duc, also check known wards
+            // Check 2: for Thu Duc, also check known wards (exact match)
             const isSearchingThuDuc = d === 'thu duc' || d === 'quan 2' || d === 'quan 9';
             if (isSearchingThuDuc && itemWard) {
               const THU_DUC_WARDS_PRE = [
@@ -1851,8 +1841,8 @@ export default async function handler(req, res) {
                 'tam binh', 'tam phu', 'tan phu', 'tang nhon phu a', 'tang nhon phu b',
                 'thao dien', 'thanh my loi', 'thu thiem', 'truong tho', 'truong thanh', 'thu duc'
               ];
-              const wardName = itemWard.replace(/^(phuong|xa|thi tran)\s+/i, '');
-              if (THU_DUC_WARDS_PRE.some(w => wardName.includes(w) || w.includes(wardName))) return true;
+              const wardName = itemWard.replace(/^(phuong|xa|thi tran)\s+/i, '').trim();
+              if (THU_DUC_WARDS_PRE.some(w => wardName === w)) return true;
             }
             
             return false;
