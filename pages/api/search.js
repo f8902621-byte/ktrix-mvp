@@ -1303,20 +1303,57 @@ function applyFilters(results, filters) {
     });
   }
 
+  // *** FIX: Mapping des alias de districts (fusion 2021 Thủ Đức) ***
+  const DISTRICT_ALIASES = {
+    'thu duc': ['thu duc', 'thanh pho thu duc', 'tp thu duc', 'tp. thu duc', 'quan 2', 'quan 9', 'quan thu duc'],
+    'quan 2': ['quan 2', 'thu duc', 'thanh pho thu duc', 'tp thu duc'],
+    'quan 9': ['quan 9', 'thu duc', 'thanh pho thu duc', 'tp thu duc'],
+  };
+
+  // Wards de TP. Thủ Đức (pour matcher même si le district est mal renseigné)
+  const THU_DUC_WARDS = [
+    'an khanh', 'an loi dong', 'an phu', 'binh chieu', 'binh tho', 'binh trung dong', 'binh trung tay',
+    'cat lai', 'hiep binh chanh', 'hiep binh phuoc', 'hiep phu', 'linh chieu', 'linh dong',
+    'linh tay', 'linh trung', 'linh xuan', 'long binh', 'long phuoc', 'long thanh my',
+    'long truong', 'phu huu', 'phuoc binh', 'phuoc long a', 'phuoc long b',
+    'tam binh', 'tam phu', 'tan phu', 'tang nhon phu a', 'tang nhon phu b',
+    'thao dien', 'thanh my loi', 'thu thiem', 'truong tho', 'truong thanh'
+  ];
+
   if (district) {
     const d = removeVietnameseAccents(district.toLowerCase());
+    const aliases = DISTRICT_ALIASES[d] || [d];
+    const isSearchingThuDuc = d === 'thu duc' || d === 'quan 2' || d === 'quan 9';
     const beforeCount = filtered.length;
+    
+    console.log(`District filter: searching "${d}" with aliases: [${aliases.join(', ')}]${isSearchingThuDuc ? ' + Thu Duc wards' : ''}`);
+    
     filtered = filtered.filter(item => {
       const itemDistrict = removeVietnameseAccents((item.district || '').toLowerCase());
       const itemWard = removeVietnameseAccents((item.ward || '').toLowerCase());
       const itemTitle = removeVietnameseAccents((item.title || '').toLowerCase());
       const itemAddress = removeVietnameseAccents((item.address || '').toLowerCase());
       const combined = itemDistrict + ' ' + itemWard + ' ' + itemTitle + ' ' + itemAddress;
-      const matches = combined.includes(d);
-      if (!matches && (itemDistrict || itemWard)) {
+      
+      // Check 1: district field matches any alias
+      const districtMatch = aliases.some(alias => itemDistrict.includes(alias));
+      if (districtMatch) return true;
+      
+      // Check 2: for Thu Duc searches, check if ward is a known Thu Duc ward
+      if (isSearchingThuDuc && itemWard) {
+        const wardName = itemWard.replace(/^(phuong|xa|thi tran)\s+/i, '');
+        const wardMatch = THU_DUC_WARDS.some(w => wardName.includes(w) || w.includes(wardName));
+        if (wardMatch) return true;
+      }
+      
+      // Check 3: any alias appears in combined text (title, address, ward)
+      const textMatch = aliases.some(alias => combined.includes(alias));
+      if (textMatch) return true;
+      
+      if (itemDistrict || itemWard) {
         console.log(`District filter: "${d}" not in district="${itemDistrict}" ward="${itemWard}" | title: ${itemTitle.substring(0, 30)}`);
       }
-      return matches;
+      return false;
     });
     console.log(`District filter: "${d}" → ${beforeCount} → ${filtered.length}`);
   }
