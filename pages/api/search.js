@@ -1362,7 +1362,7 @@ function applyFilters(results, filters) {
       const districtIsThuDuc = itemDistrict.includes('thu duc') || itemDistrict.includes('quan 2') || itemDistrict.includes('quan 9');
       
       if (isSearchingThuDuc && itemWard && (districtIsEmpty || districtIsThuDuc)) {
-        const wardName = itemWard.replace(/^(phuong|xa|thi tran)\s+/i, '').trim();
+        const wardName = itemWard.replace(/^(phuong|xa|thi tran)\s+/i, '').replace(/\s*\(.*\)\s*$/, '').trim();
         const wardMatch = THU_DUC_WARDS.some(w => wardName === w);
         if (wardMatch) return true;
       }
@@ -1417,36 +1417,41 @@ function applyFilters(results, filters) {
       else if (FORMER_QTD_WARDS.includes(w)) { nearbyWards = FORMER_QTD_WARDS; formerDistrict = 'ancien Q.Thủ Đức'; }
       
       if (nearbyWards) {
-        // Filtrer par wards de l'ancien district + mention dans titre/adresse
+        // Helper: strip Chotot's ward format "phuong xxx (quan yyy cu)" to just "xxx"
+        const cleanWardName = (raw) => {
+          return raw
+            .replace(/^(phuong|xa|thi tran)\s+/i, '')  // strip prefix
+            .replace(/\s*\(.*\)\s*$/, '')                // strip "(quan xxx cu)" suffix
+            .trim();
+        };
+        
+        // Helper: word boundary check to avoid "van phuc" matching "an phu"
+        const wordBoundaryMatch = (text, ward) => {
+          // Create regex with word boundaries
+          const escaped = ward.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const regex = new RegExp(`(?:^|\\s|,)${escaped}(?:\\s|,|$)`, 'i');
+          return regex.test(text);
+        };
+        
         const narrowed = filtered.filter(item => {
           const itemWard = removeVietnameseAccents((item.ward || '').toLowerCase());
           const itemTitle = removeVietnameseAccents((item.title || '').toLowerCase());
           const itemAddress = removeVietnameseAccents((item.address || '').toLowerCase());
           
-          // Check ward field (exact match after stripping prefix)
+          // Check 1: ward field (exact match after cleaning)
           if (itemWard) {
-            const wardName = itemWard.replace(/^(phuong|xa|thi tran)\s+/i, '').trim();
+            const wardName = cleanWardName(itemWard);
             if (nearbyWards.includes(wardName)) {
               console.log(`  FALLBACK MATCH (ward field): "${wardName}" | src=${item.source}`);
               return true;
             }
           }
           
-          // Check title/address for nearby ward names
-          const combined = itemTitle + ' ' + itemAddress;
-          const matchedWard = nearbyWards.find(nw => combined.includes(nw));
-          if (matchedWard) {
-            console.log(`  FALLBACK MATCH (text "${matchedWard}"): title="${itemTitle.substring(0, 40)}" addr="${itemAddress.substring(0, 40)}" | src=${item.source}`);
-            return true;
-          }
-          
-          // For former Q2: also check "quan 2" in title/address
-          if (formerDistrict === 'ancien Q2' && combined.includes('quan 2')) {
-            console.log(`  FALLBACK MATCH (quan 2 text): title="${itemTitle.substring(0, 40)}" | src=${item.source}`);
-            return true;
-          }
-          if (formerDistrict === 'ancien Q9' && combined.includes('quan 9')) {
-            console.log(`  FALLBACK MATCH (quan 9 text): title="${itemTitle.substring(0, 40)}" | src=${item.source}`);
+          // Check 2: ward name appears in address with word boundaries
+          // (address is more reliable than title for location)
+          if (nearbyWards.some(nw => nw.length >= 6 && wordBoundaryMatch(itemAddress, nw))) {
+            const matched = nearbyWards.find(nw => nw.length >= 6 && wordBoundaryMatch(itemAddress, nw));
+            console.log(`  FALLBACK MATCH (addr "${matched}"): addr="${itemAddress.substring(0, 50)}" | src=${item.source}`);
             return true;
           }
           
@@ -1920,7 +1925,7 @@ export default async function handler(req, res) {
                 'tam binh', 'tam phu', 'tan phu', 'tang nhon phu a', 'tang nhon phu b',
                 'thao dien', 'thanh my loi', 'thu thiem', 'truong tho', 'truong thanh', 'thu duc'
               ];
-              const wardName = itemWard.replace(/^(phuong|xa|thi tran)\s+/i, '').trim();
+              const wardName = itemWard.replace(/^(phuong|xa|thi tran)\s+/i, '').replace(/\s*\(.*\)\s*$/, '').trim();
               if (THU_DUC_WARDS_PRE.some(w => wardName === w)) return true;
             }
             
