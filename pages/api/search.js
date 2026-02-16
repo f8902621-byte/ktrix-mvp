@@ -951,8 +951,9 @@ async function fetchChotot(params) {
   
   console.log(`Chotot TOTAL brut: ${allAds.length} annonces`);
   
-  // DEBUG: Capturer les area_v2 et ward codes uniques des annonces Thu Duc
-  const thuDucAds = allAds.filter(ad => (ad.area_name || '').includes('Th\u1EE7 \u0110\u1EE9c'));
+  // DEBUG: Capturer les area_v2 et ward codes - résultat dans la réponse JSON
+  let chototDebugCodes = null;
+  const thuDucAds = allAds.filter(ad => (ad.area_name || '').includes('Thủ Đức'));
   if (thuDucAds.length > 0) {
     const areaV2Codes = {};
     const wardCodes = {};
@@ -962,21 +963,22 @@ async function fetchChotot(params) {
       areaV2Codes[av2] = (areaV2Codes[av2] || 0) + 1;
       wardCodes[w] = (wardCodes[w] || 0) + 1;
     });
-    console.log(`[DEBUG CHOTOT CODES] Thu Duc ads: ${thuDucAds.length}`);
-    console.log(`[DEBUG CHOTOT CODES] area_v2 values:`, JSON.stringify(areaV2Codes));
-    console.log(`[DEBUG CHOTOT CODES] ward codes (top 20):`, JSON.stringify(
-      Object.entries(wardCodes).sort((a,b) => b[1]-a[1]).slice(0, 20)
-    ));
-    // Spécifiquement les wards Q2 cũ pour trouver Thảo Điền
     const q2Wards = Object.entries(wardCodes).filter(([k]) => k.includes('Quận 2 cũ')).sort((a,b) => b[1]-a[1]);
-    console.log(`[DEBUG CHOTOT CODES] Q2 cũ wards (ALL):`, JSON.stringify(q2Wards));
-    // Log a sample ad's raw fields
-    const sample = thuDucAds[0];
-    console.log(`[DEBUG CHOTOT CODES] Sample ad keys:`, Object.keys(sample).filter(k => 
-      k.includes('area') || k.includes('ward') || k.includes('region') || k.includes('location')
-    ).map(k => `${k}=${sample[k]}`).join(', '));
-  } else {
-    console.log(`[DEBUG CHOTOT CODES] No Thu Duc ads found in batch`);
+    const allWardsSorted = Object.entries(wardCodes).sort((a,b) => b[1]-a[1]);
+    chototDebugCodes = {
+      thuDucAdsCount: thuDucAds.length,
+      areaV2Codes,
+      wardCodesTop30: allWardsSorted.slice(0, 30),
+      q2CuWards: q2Wards,
+      sampleAd: (() => {
+        const s = thuDucAds[0];
+        const keys = Object.keys(s).filter(k => 
+          k.includes('area') || k.includes('ward') || k.includes('region') || k.includes('location')
+        );
+        return Object.fromEntries(keys.map(k => [k, s[k]]));
+      })()
+    };
+    console.log('[DEBUG CHOTOT CODES] stored in response._debug');
   }
   
   // FALLBACK: si area_v2 retourne 0 résultats (pour districts non-Thu Duc), relancer sans filtre
@@ -1077,7 +1079,7 @@ async function fetchChotot(params) {
   const sortedDistricts = Object.entries(districtCounts).sort((a, b) => b[1] - a[1]);
   console.log(`Chotot DISTRICTS UNIQUES (${sortedDistricts.length}):`, JSON.stringify(sortedDistricts.slice(0, 30)));
 
-  return results;
+  return { results, _debug: chototDebugCodes };
 }
 
 // ============================================
@@ -2241,8 +2243,8 @@ export default async function handler(req, res) {
       // Sources actives : Chotot + Alonhadat
       ...(sources?.includes('chotot') ? [
         fetchChotot({ city, district, ward, priceMin, priceMax, sortBy, propertyType, maxResults })
-          .then(results => ({ source: 'chotot', results }))
-          .catch(e => { console.log(`Chotot erreur: ${e.message}`); return { source: 'chotot', results: [] }; })
+          .then(({ results, _debug }) => ({ source: 'chotot', results, _debug }))
+          .catch(e => { console.log(`Chotot erreur: ${e.message}`); return { source: 'chotot', results: [], _debug: null }; })
       ] : []),
       ...(sources?.includes('alonhadat') ? [
         fetchAlonhadat({ city, district, ward, propertyType, priceMax, maxResults })
@@ -2252,6 +2254,7 @@ export default async function handler(req, res) {
     ]);
 
     let allResults = [];
+    let chototDebug = null;
     
     console.log(
       'SOURCES AVANT TOUT FILTRAGE',
@@ -2260,6 +2263,13 @@ export default async function handler(req, res) {
         count: s.results?.length || 0
       }))
     );
+
+    // Extract debug data from chotot
+    for (const sr of sourceResults) {
+      if (sr.source === 'chotot' && sr._debug) {
+        chototDebug = sr._debug;
+      }
+    }
 
     const perSourceLimit = (ward && district) ? 1000 : (maxResults || 200);
 
@@ -2592,7 +2602,7 @@ export default async function handler(req, res) {
       console.error('Erreur sauvegarde Supabase:', err.message);
     }
     
-    return res.status(200).json({ success: true, results, stats, marketStats });
+    return res.status(200).json({ success: true, results, stats, marketStats, _debug: chototDebug || undefined });
 
   } catch (error) {
     console.error('Error:', error);
