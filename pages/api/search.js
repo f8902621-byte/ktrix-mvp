@@ -1289,17 +1289,20 @@ async function fetchAlonhadat(params) {
       if (!item.ward || !removeVietnameseAccents(item.ward.toLowerCase()).includes(removeVietnameseAccents(ward.toLowerCase()))) {
         item.ward = wardName;
       }
-      if (!item.district || item.district === '') {
+      if (!item.district || item.district === '' || 
+          removeVietnameseAccents(item.district.toLowerCase()).includes('ho chi minh') ||
+          removeVietnameseAccents(item.district.toLowerCase()).includes('ha noi')) {
         item.district = districtName;
       }
-      // Reconstruire l'adresse
       item.address = [item.street, item.ward, item.district].filter(Boolean).join(', ');
     });
   } else if (usedTier && districtInfo && district) {
     const districtName = district;
     console.log(`Alonhadat: injection district="${districtName}" sur ${allListings.length} résultats (tier district)`);
     allListings.forEach(item => {
-      if (!item.district || item.district === '') {
+      if (!item.district || item.district === '' ||
+          removeVietnameseAccents(item.district.toLowerCase()).includes('ho chi minh') ||
+          removeVietnameseAccents(item.district.toLowerCase()).includes('ha noi')) {
         item.district = districtName;
       }
     });
