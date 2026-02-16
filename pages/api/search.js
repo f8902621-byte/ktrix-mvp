@@ -329,6 +329,95 @@ const ALONHADAT_PROPERTY_TYPE = {
 };
 
 // ============================================
+// ALONHADAT DISTRICT SLUGS (pour URLs filtrées)
+// *** NOUVEAU: permet de construire des URLs comme
+// ***   alonhadat.com.vn/can-ban-nha/tp-thu-duc/phuong-thao-dien
+// *** au lieu de alonhadat.com.vn/can-ban-nha/ho-chi-minh
+// ============================================
+const ALONHADAT_DISTRICT_SLUGS = {
+  'ho chi minh': {
+    '1': 'quan-1', 'quan 1': 'quan-1',
+    '2': 'quan-2', 'quan 2': 'quan-2',
+    '3': 'quan-3', 'quan 3': 'quan-3',
+    '4': 'quan-4', 'quan 4': 'quan-4',
+    '5': 'quan-5', 'quan 5': 'quan-5',
+    '6': 'quan-6', 'quan 6': 'quan-6',
+    '7': 'quan-7', 'quan 7': 'quan-7',
+    '8': 'quan-8', 'quan 8': 'quan-8',
+    '9': 'quan-9', 'quan 9': 'quan-9',
+    '10': 'quan-10', 'quan 10': 'quan-10',
+    '11': 'quan-11', 'quan 11': 'quan-11',
+    '12': 'quan-12', 'quan 12': 'quan-12',
+    'binh tan': 'quan-binh-tan',
+    'binh thanh': 'quan-binh-thanh',
+    'go vap': 'quan-go-vap',
+    'phu nhuan': 'quan-phu-nhuan',
+    'tan binh': 'quan-tan-binh',
+    'tan phu': 'quan-tan-phu',
+    'thu duc': 'tp-thu-duc',
+    'thanh pho thu duc': 'tp-thu-duc',
+    'tp thu duc': 'tp-thu-duc',
+    'binh chanh': 'huyen-binh-chanh',
+    'can gio': 'huyen-can-gio',
+    'cu chi': 'huyen-cu-chi',
+    'hoc mon': 'huyen-hoc-mon',
+    'nha be': 'huyen-nha-be',
+  },
+  'ha noi': {
+    'ba dinh': 'quan-ba-dinh',
+    'hoan kiem': 'quan-hoan-kiem',
+    'hai ba trung': 'quan-hai-ba-trung',
+    'dong da': 'quan-dong-da',
+    'cau giay': 'quan-cau-giay',
+    'thanh xuan': 'quan-thanh-xuan',
+    'hoang mai': 'quan-hoang-mai',
+    'long bien': 'quan-long-bien',
+    'nam tu liem': 'quan-nam-tu-liem',
+    'bac tu liem': 'quan-bac-tu-liem',
+    'tay ho': 'quan-tay-ho',
+    'ha dong': 'quan-ha-dong',
+  },
+};
+
+// Génère un slug ward pour Alonhadat
+// Ex: "Thảo Điền" → "phuong-thao-dien"
+// Ex: "Phường Thảo Điền" → "phuong-thao-dien"  
+// Ex: "Thảo Điền (Quận 2 cũ)" → "phuong-thao-dien"
+function generateAlonhadatWardSlug(ward) {
+  if (!ward) return null;
+  let normalized = removeVietnameseAccents(ward.toLowerCase());
+  // Supprimer les suffixes entre parenthèses: "(quan 2 cu)" etc.
+  normalized = normalized.replace(/\s*\(.*\)\s*$/, '').trim();
+  // Supprimer les préfixes existants
+  const hasPrefix = /^(phuong|xa|thi tran)\s+/.test(normalized);
+  let clean = normalized.replace(/^(phuong|xa|thi tran)\s+/, '').trim();
+  // Ajouter le préfixe "phuong-" et remplacer les espaces par des tirets
+  return 'phuong-' + clean.replace(/\s+/g, '-');
+}
+
+// Résout le slug district Alonhadat à partir du nom
+function getAlonhadatDistrictSlug(city, district) {
+  if (!district) return null;
+  const cityKey = removeVietnameseAccents(city || 'ho chi minh').toLowerCase();
+  const districtMap = ALONHADAT_DISTRICT_SLUGS[cityKey];
+  if (!districtMap) return null;
+  
+  const dNorm = removeVietnameseAccents(district.toLowerCase())
+    .replace(/^(quan|huyen|thanh pho|tp\.?|tx\.?|q\.?)\s*/i, '')
+    .trim();
+  
+  if (districtMap[dNorm]) return districtMap[dNorm];
+  
+  // Recherche partielle
+  for (const [key, slug] of Object.entries(districtMap)) {
+    if (dNorm.includes(key) || key.includes(dNorm)) {
+      return slug;
+    }
+  }
+  return null;
+}
+
+// ============================================
 // MAPPING STATUT LÉGAL
 // ============================================
 const getLegalStatus = (code) => {
@@ -958,8 +1047,7 @@ async function fetchChotot(params) {
 
 // ============================================
 // ALONHADAT SCRAPER AVEC PAGINATION
-// *** CORRECTION 2+3 : résoudre typeMapping en début de fonction,
-// ***                   transmettre typeLabelVn à parseAlonhadatHtml
+// *** V5.1: URLs filtrées par district/ward + fallback 3 niveaux ***
 // ============================================
 async function fetchAlonhadat(params) {
   const { city, district, ward, propertyType, priceMax, maxResults } = params;
@@ -994,57 +1082,109 @@ async function fetchAlonhadat(params) {
     }
   }
 
-  // Plus de pages si district spécifié (besoin de volume pour filtrer ensuite)
-  let maxPages;
-  if (district && ward) {
-    maxPages = 10;  // ~200 annonces, on filtrera district+ward ensuite
-  } else if (district) {
-    maxPages = 6;   // ~120 annonces
-  } else {
-    maxPages = maxResults >= 200 ? 3 : maxResults >= 100 ? 2 : 1;
-  }
+  // *** V5.1: Résoudre les slugs district/ward pour URL Alonhadat ***
+  const districtSlug = district ? getAlonhadatDistrictSlug(city, district) : null;
+  const wardSlug = (ward && districtSlug) ? generateAlonhadatWardSlug(ward) : null;
   
-  console.log(`Alonhadat: scraping ${maxPages} pages (district=${district || 'none'}, ward=${ward || 'none'})`);
+  // Construire les URLs à essayer par ordre de spécificité
+  // Tier 1: district + ward (le plus précis)
+  // Tier 2: district seul
+  // Tier 3: ville (fallback)
+  const urlTiers = [];
+  
+  if (districtSlug && wardSlug) {
+    urlTiers.push({
+      base: `https://alonhadat.com.vn/can-ban-${typeSlug}/${districtSlug}/${wardSlug}`,
+      label: `ward (${districtSlug}/${wardSlug})`,
+      maxPages: 5
+    });
+  }
+  if (districtSlug) {
+    urlTiers.push({
+      base: `https://alonhadat.com.vn/can-ban-${typeSlug}/${districtSlug}`,
+      label: `district (${districtSlug})`,
+      maxPages: 5
+    });
+  }
+  // Toujours avoir le fallback ville
+  urlTiers.push({
+    base: `https://alonhadat.com.vn/can-ban-${typeSlug}/${citySlug}`,
+    label: `city (${citySlug})`,
+    maxPages: district ? 10 : (maxResults >= 200 ? 3 : maxResults >= 100 ? 2 : 1)
+  });
+  
+  console.log(`Alonhadat: URL tiers à essayer: ${urlTiers.map(t => t.label).join(' → ')}`);
   
   let allListings = [];
+  let usedTier = null;
   
-  for (let page = 1; page <= maxPages; page++) {
+  // Essayer chaque tier d'URL
+  for (const tier of urlTiers) {
+    console.log(`Alonhadat: essai tier "${tier.label}"...`);
+    
+    // Tester la première page
     try {
-      const targetUrl = page === 1 
-        ? `https://alonhadat.com.vn/can-ban-${typeSlug}/${citySlug}`
-        : `https://alonhadat.com.vn/can-ban-${typeSlug}/${citySlug}/trang-${page}`;
-      
-      const scraperUrl = `https://api.scraperapi.com/?api_key=${SCRAPER_API_KEY}&url=${encodeURIComponent(targetUrl)}&render=true`;
-      
-      console.log(`Alonhadat page ${page}: ${targetUrl}`);
+      const testUrl = tier.base;
+      const scraperUrl = `https://api.scraperapi.com/?api_key=${SCRAPER_API_KEY}&url=${encodeURIComponent(testUrl)}&render=true`;
+      console.log(`Alonhadat page 1: ${testUrl}`);
       
       const response = await fetch(scraperUrl);
       if (!response.ok) {
-        console.log(`Alonhadat page ${page}: HTTP ${response.status}`);
-        break;
+        console.log(`Alonhadat tier "${tier.label}": HTTP ${response.status} → essai tier suivant`);
+        continue;
       }
       
       const html = await response.text();
-      // *** FIX: passer typeLabelVn au parser ***
       const listings = parseAlonhadatHtml(html, city, typeLabelVn);
+      console.log(`Alonhadat page 1: ${listings.length} annonces`);
       
-      console.log(`Alonhadat page ${page}: ${listings.length} annonces`);
-      
-      if (listings.length === 0) break;
-      
-      allListings.push(...listings);
-      
-      if (page < maxPages) {
-        await new Promise(r => setTimeout(r, 500));
+      if (listings.length === 0) {
+        console.log(`Alonhadat tier "${tier.label}": 0 résultats → essai tier suivant`);
+        continue;
       }
       
-    } catch (error) {
-      console.log(`Alonhadat page ${page} erreur: ${error.message}`);
+      // Ce tier fonctionne ! Continuer avec les pages suivantes
+      allListings.push(...listings);
+      usedTier = tier;
+      
+      for (let page = 2; page <= tier.maxPages; page++) {
+        try {
+          const pageUrl = `${tier.base}/trang-${page}`;
+          const pageScraperUrl = `https://api.scraperapi.com/?api_key=${SCRAPER_API_KEY}&url=${encodeURIComponent(pageUrl)}&render=true`;
+          console.log(`Alonhadat page ${page}: ${pageUrl}`);
+          
+          const pageResponse = await fetch(pageScraperUrl);
+          if (!pageResponse.ok) {
+            console.log(`Alonhadat page ${page}: HTTP ${pageResponse.status}`);
+            break;
+          }
+          
+          const pageHtml = await pageResponse.text();
+          const pageListings = parseAlonhadatHtml(pageHtml, city, typeLabelVn);
+          console.log(`Alonhadat page ${page}: ${pageListings.length} annonces`);
+          
+          if (pageListings.length === 0) break;
+          allListings.push(...pageListings);
+          
+          // Pause entre les pages
+          await new Promise(r => setTimeout(r, 500));
+          
+        } catch (error) {
+          console.log(`Alonhadat page ${page} erreur: ${error.message}`);
+          break;
+        }
+      }
+      
+      // On a trouvé un tier qui fonctionne, sortir de la boucle
       break;
+      
+    } catch (error) {
+      console.log(`Alonhadat tier "${tier.label}" erreur: ${error.message} → essai tier suivant`);
+      continue;
     }
   }
   
-  console.log(`Alonhadat TOTAL: ${allListings.length} annonces`);
+  console.log(`Alonhadat TOTAL: ${allListings.length} annonces (tier utilisé: ${usedTier?.label || 'aucun'})`);
   
   // *** DIAGNOSTIC: Afficher les districts/wards uniques de Alonhadat ***
   const alonDistrictCounts = {};
@@ -1058,11 +1198,16 @@ async function fetchAlonhadat(params) {
   if (allListings.length < 10 && typeSlug !== 'nha-dat') {
     console.log(`Alonhadat: seulement ${allListings.length} résultats pour "${typeSlug}", fallback → nha-dat`);
     
+    // Réutiliser le même tier géographique mais avec type "nha-dat"
+    const fallbackBase = usedTier 
+      ? usedTier.base.replace(`can-ban-${typeSlug}`, 'can-ban-nha-dat')
+      : `https://alonhadat.com.vn/can-ban-nha-dat/${citySlug}`;
+    
     for (let page = 1; page <= 2; page++) {
       try {
         const fallbackUrl = page === 1
-          ? `https://alonhadat.com.vn/can-ban-nha-dat/${citySlug}`
-          : `https://alonhadat.com.vn/can-ban-nha-dat/${citySlug}/trang-${page}`;
+          ? fallbackBase
+          : `${fallbackBase}/trang-${page}`;
         
         const scraperUrl = `https://api.scraperapi.com/?api_key=${SCRAPER_API_KEY}&url=${encodeURIComponent(fallbackUrl)}&render=true`;
         const response = await fetch(scraperUrl);
@@ -1079,7 +1224,7 @@ async function fetchAlonhadat(params) {
         break;
       }
     }
-console.log(`Alonhadat après fallback: ${allListings.length} annonces`);
+    console.log(`Alonhadat après fallback type: ${allListings.length} annonces`);
   }
   
   // Filtrer par type de bien (villa, maison, etc.)
