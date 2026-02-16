@@ -877,6 +877,35 @@ async function fetchChotot(params) {
     baseParams.append('area_v2', '13119');
     useAreaFilter = true;
     console.log(`Chotot: Thu Duc → area_v2=13119 (code unifié)`);
+    
+    // Filtre ward Chotot pour Thủ Đức (codes découverts via debug 2025-02-16)
+    if (ward) {
+      const wNorm = removeVietnameseAccents(ward.toLowerCase()).replace(/^(phuong|xa|thi tran)\s+/i, '').trim();
+      const THU_DUC_WARD_CODES = {
+        // Ancien Q2
+        'thao dien': '9340', 'an phu': '9341', 'binh trung dong': '9343',
+        'binh trung tay': '9344', 'cat lai': '9347', 'thanh my loi': '9348',
+        'an khanh': '11221',
+        // Ancien Thủ Đức
+        'hiep binh chanh': '9244', 'hiep binh phuoc': '9243', 'linh xuan': '9238',
+        'linh tay': '9246', 'linh dong': '9247', 'binh chieu': '9239',
+        'linh trung': '9240', 'tam binh': '9241', 'tam phu': '9242',
+        'linh chieu': '9245', 'truong tho': '9249', 'binh tho': '9248',
+        // Ancien Q9
+        'long truong': '9260', 'phuoc long b': '9256', 'tang nhon phu a': '9254',
+        'tang nhon phu b': '9255', 'hiep phu': '9253', 'phu huu': '9262',
+        'long binh': '9250', 'long thanh my': '9251', 'phuoc binh': '9261',
+        'truong thanh': '9258', 'phuoc long a': '9257', 'tan phu': '9252',
+        'long phuoc': '9259',
+      };
+      const wardCode = THU_DUC_WARD_CODES[wNorm];
+      if (wardCode) {
+        baseParams.append('ward', wardCode);
+        console.log(`Chotot: ward="${wNorm}" → ward=${wardCode}`);
+      } else {
+        console.log(`Chotot: ward="${wNorm}" → code inconnu, filtre post-hoc`);
+      }
+    }
   } else if (districtCode) {
     baseParams.append('area_v2', districtCode);
     useAreaFilter = true;
@@ -951,35 +980,7 @@ async function fetchChotot(params) {
   
   console.log(`Chotot TOTAL brut: ${allAds.length} annonces`);
   
-  // DEBUG: Capturer les area_v2 et ward codes - résultat dans la réponse JSON
-  let chototDebugCodes = null;
-  const thuDucAds = allAds.filter(ad => (ad.area_name || '').includes('Thủ Đức'));
-  if (thuDucAds.length > 0) {
-    const areaV2Codes = {};
-    const wardCodes = {};
-    thuDucAds.forEach(ad => {
-      const av2 = ad.area_v2 || 'none';
-      const w = `${ad.ward || 'none'}:${ad.ward_name || 'unknown'}`;
-      areaV2Codes[av2] = (areaV2Codes[av2] || 0) + 1;
-      wardCodes[w] = (wardCodes[w] || 0) + 1;
-    });
-    const q2Wards = Object.entries(wardCodes).filter(([k]) => k.includes('Quận 2 cũ')).sort((a,b) => b[1]-a[1]);
-    const allWardsSorted = Object.entries(wardCodes).sort((a,b) => b[1]-a[1]);
-    chototDebugCodes = {
-      thuDucAdsCount: thuDucAds.length,
-      areaV2Codes,
-      wardCodesTop30: allWardsSorted.slice(0, 30),
-      q2CuWards: q2Wards,
-      sampleAd: (() => {
-        const s = thuDucAds[0];
-        const keys = Object.keys(s).filter(k => 
-          k.includes('area') || k.includes('ward') || k.includes('region') || k.includes('location')
-        );
-        return Object.fromEntries(keys.map(k => [k, s[k]]));
-      })()
-    };
-    console.log('[DEBUG CHOTOT CODES] stored in response._debug');
-  }
+
   
   // FALLBACK: si area_v2 retourne 0 résultats (pour districts non-Thu Duc), relancer sans filtre
   if (allAds.length === 0 && useAreaFilter) {
@@ -1079,7 +1080,7 @@ async function fetchChotot(params) {
   const sortedDistricts = Object.entries(districtCounts).sort((a, b) => b[1] - a[1]);
   console.log(`Chotot DISTRICTS UNIQUES (${sortedDistricts.length}):`, JSON.stringify(sortedDistricts.slice(0, 30)));
 
-  return { results, _debug: chototDebugCodes };
+  return results;
 }
 
 // ============================================
@@ -2243,8 +2244,8 @@ export default async function handler(req, res) {
       // Sources actives : Chotot + Alonhadat
       ...(sources?.includes('chotot') ? [
         fetchChotot({ city, district, ward, priceMin, priceMax, sortBy, propertyType, maxResults })
-          .then(({ results, _debug }) => ({ source: 'chotot', results, _debug }))
-          .catch(e => { console.log(`Chotot erreur: ${e.message}`); return { source: 'chotot', results: [], _debug: null }; })
+          .then(results => ({ source: 'chotot', results }))
+          .catch(e => { console.log(`Chotot erreur: ${e.message}`); return { source: 'chotot', results: [] }; })
       ] : []),
       ...(sources?.includes('alonhadat') ? [
         fetchAlonhadat({ city, district, ward, propertyType, priceMax, maxResults })
@@ -2254,8 +2255,6 @@ export default async function handler(req, res) {
     ]);
 
     let allResults = [];
-    let chototDebug = null;
-    
     console.log(
       'SOURCES AVANT TOUT FILTRAGE',
       sourceResults.map(s => ({
@@ -2264,12 +2263,7 @@ export default async function handler(req, res) {
       }))
     );
 
-    // Extract debug data from chotot
-    for (const sr of sourceResults) {
-      if (sr.source === 'chotot' && sr._debug) {
-        chototDebug = sr._debug;
-      }
-    }
+
 
     const perSourceLimit = (ward && district) ? 1000 : (maxResults || 200);
 
@@ -2602,7 +2596,7 @@ export default async function handler(req, res) {
       console.error('Erreur sauvegarde Supabase:', err.message);
     }
     
-    return res.status(200).json({ success: true, results, stats, marketStats, _debug: chototDebug || undefined });
+    return res.status(200).json({ success: true, results, stats, marketStats });
 
   } catch (error) {
     console.error('Error:', error);
