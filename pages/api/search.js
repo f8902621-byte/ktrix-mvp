@@ -868,17 +868,48 @@ async function fetchChotot(params) {
   const districtCode = getChototDistrictCode(regionCode, district);
   let useAreaFilter = false;
   
-  // Pour Thu Duc: area_v2 ne fonctionne pas (codes obsolètes post-fusion 2021)
-  // On récupère plus de données et on filtre côté serveur
+  // *** THU DUC MULTI-CODE STRATEGY ***
+  // Thủ Đức = fusion Q2 (13002) + Q9 (13009) + ancien QTD
+  // area_v2=13019 (nouveau code) retourne 0 sur l'API Chotot
+  // Solution: fetch les anciens codes en parallèle
   const dNorm = district ? removeVietnameseAccents(district.toLowerCase()).replace(/^(quan|huyen|thanh pho|tp\.?|tx\.?|q\.?)\s*/i, '').trim() : '';
   const isThuDuc = ['thu duc', 'thanh pho thu duc', 'tp thu duc'].includes(dNorm);
+  
+  // Mapping wards Thủ Đức → ancien code district Chotot
+  const THU_DUC_WARD_CODES = {
+    // Ancien Q2 → 13002
+    'an phu': '13002', 'an khanh': '13002', 'an loi dong': '13002',
+    'binh an': '13002', 'binh khanh': '13002', 'binh trung dong': '13002',
+    'binh trung tay': '13002', 'cat lai': '13002', 'thao dien': '13002',
+    'thanh my loi': '13002', 'thu thiem': '13002',
+    // Ancien Q9 → 13009
+    'hiep phu': '13009', 'long binh': '13009', 'long phuoc': '13009',
+    'long thanh my': '13009', 'long truong': '13009', 'phu huu': '13009',
+    'phuoc binh': '13009', 'phuoc long a': '13009', 'phuoc long b': '13009',
+    'tan phu': '13009', 'tang nhon phu a': '13009', 'tang nhon phu b': '13009',
+    'truong thanh': '13009',
+  };
+  
+  let thuDucCodes = null; // null = pas Thu Duc, utiliser le flow normal
+  
+  if (isThuDuc) {
+    const wNorm = ward ? removeVietnameseAccents(ward.toLowerCase()).replace(/^(phuong|xa|thi tran)\s+/i, '').trim() : '';
+    
+    if (wNorm && THU_DUC_WARD_CODES[wNorm]) {
+      // Ward connu dans ancien Q2 ou Q9 → fetch ce code spécifique
+      thuDucCodes = [THU_DUC_WARD_CODES[wNorm]];
+      console.log(`Chotot: Thu Duc ward="${wNorm}" → area_v2=${thuDucCodes[0]} (ancien district ciblé)`);
+    } else {
+      // Ward inconnu ou pas de ward → fetch les 2 anciens codes
+      thuDucCodes = ['13002', '13009'];
+      console.log(`Chotot: Thu Duc → MULTI-CODE [${thuDucCodes.join(', ')}] (ancien Q2 + Q9)`);
+    }
+  }
   
   if (districtCode && !isThuDuc) {
     baseParams.append('area_v2', districtCode);
     useAreaFilter = true;
     console.log(`Chotot: district="${district}" → area_v2=${districtCode} (ACTIVÉ)`);
-  } else if (isThuDuc) {
-    console.log(`Chotot: district="Thu Duc" → area_v2 DÉSACTIVÉ (codes obsolètes), volume augmenté`);
   }
   
   // Chotot API: filtre prix désactivé (format incompatible)
@@ -893,53 +924,79 @@ async function fetchChotot(params) {
   }
   
   const allAds = [];
-  // Volume adapté: district+ward → 2000 résultats, district seul → 1500, sinon → 200
-  const baseMaxResults = params.maxResults || 200;
-  let effectiveMaxResults = baseMaxResults;
-  if (district && ward) {
-    effectiveMaxResults = Math.max(baseMaxResults, 5000);
-  } else if (district) {
-    effectiveMaxResults = Math.max(baseMaxResults, 2000);
-  }
-  const maxPages = Math.min(Math.ceil(effectiveMaxResults / 50), 100);
-  console.log(`Chotot: fetching ${maxPages} pages (${maxPages * 50} résultats max)`);
-  console.log(`Chotot URL DEBUG: https://gateway.chotot.com/v1/public/ad-listing?${baseParams.toString()}&o=0`);
-  
-  // Fetch en parallèle par batch de 5 pour performance
   const batchSize = 5;
-  for (let batch = 0; batch < maxPages; batch += batchSize) {
-    const batchOffsets = Array.from(
-      {length: Math.min(batchSize, maxPages - batch)}, 
-      (_, i) => (batch + i) * 50
-    );
-    
-    const batchResults = await Promise.all(
-      batchOffsets.map(async (offset) => {
-        try {
-          const url = `https://gateway.chotot.com/v1/public/ad-listing?${baseParams}&o=${offset}`;
-          const response = await fetch(url);
-          const data = await response.json();
-          if (data.ads && data.ads.length > 0) {
-            console.log(`Chotot offset=${offset}: +${data.ads.length} (total API: ${data.total})`);
-            return data.ads;
+  
+  // Helper: fetch N pages avec des params donnés
+  async function fetchChototPages(fetchParams, maxPagesToFetch, label) {
+    const ads = [];
+    for (let batch = 0; batch < maxPagesToFetch; batch += batchSize) {
+      const batchOffsets = Array.from(
+        {length: Math.min(batchSize, maxPagesToFetch - batch)},
+        (_, i) => (batch + i) * 50
+      );
+      const batchResults = await Promise.all(
+        batchOffsets.map(async (offset) => {
+          try {
+            const url = `https://gateway.chotot.com/v1/public/ad-listing?${fetchParams}&o=${offset}`;
+            const response = await fetch(url);
+            const data = await response.json();
+            if (data.ads && data.ads.length > 0) {
+              console.log(`Chotot [${label}] offset=${offset}: +${data.ads.length} (total API: ${data.total})`);
+              return data.ads;
+            }
+            return null;
+          } catch (error) {
+            console.error(`Chotot [${label}] error offset=${offset}:`, error.message);
+            return [];
           }
-          return null; // no more results
-        } catch (error) {
-          console.error(`Chotot error offset=${offset}:`, error.message);
-          return [];
-        }
+        })
+      );
+      let hasEmpty = false;
+      for (const result of batchResults) {
+        if (result === null) { hasEmpty = true; break; }
+        ads.push(...result);
+      }
+      if (hasEmpty) break;
+    }
+    return ads;
+  }
+  
+  if (thuDucCodes) {
+    // *** THU DUC: fetch chaque ancien code en parallèle ***
+    const pagesPerCode = ward ? 30 : 20; // plus de pages si on cherche un ward spécifique
+    
+    const codeResults = await Promise.all(
+      thuDucCodes.map(async (code) => {
+        const codeParams = new URLSearchParams(baseParams.toString());
+        codeParams.append('area_v2', code);
+        const label = `area_v2=${code}`;
+        console.log(`Chotot: fetching ${pagesPerCode} pages pour ${label}`);
+        const ads = await fetchChototPages(codeParams, pagesPerCode, label);
+        console.log(`Chotot [${label}]: ${ads.length} annonces`);
+        return ads;
       })
     );
     
-    let hasEmpty = false;
-    for (const result of batchResults) {
-      if (result === null) {
-        hasEmpty = true;
-        break;
-      }
-      allAds.push(...result);
+    for (const ads of codeResults) {
+      allAds.push(...ads);
     }
-    if (hasEmpty) break;
+    console.log(`Chotot Thu Duc TOTAL: ${allAds.length} annonces (codes: [${thuDucCodes.join(', ')}])`);
+    
+  } else {
+    // *** NORMAL: un seul code district ou pas de filtre ***
+    const baseMaxResults = params.maxResults || 200;
+    let effectiveMaxResults = baseMaxResults;
+    if (district && ward) {
+      effectiveMaxResults = Math.max(baseMaxResults, 2000);
+    } else if (district) {
+      effectiveMaxResults = Math.max(baseMaxResults, 1500);
+    }
+    const maxPages = Math.min(Math.ceil(effectiveMaxResults / 50), 100);
+    console.log(`Chotot: fetching ${maxPages} pages (${maxPages * 50} résultats max)`);
+    console.log(`Chotot URL DEBUG: https://gateway.chotot.com/v1/public/ad-listing?${baseParams.toString()}&o=0`);
+    
+    const ads = await fetchChototPages(baseParams, maxPages, 'main');
+    allAds.push(...ads);
   }
   
   console.log(`Chotot TOTAL brut: ${allAds.length} annonces`);
