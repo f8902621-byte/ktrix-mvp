@@ -229,14 +229,14 @@ const CHOTOT_DISTRICTS = {
   // Hồ Chí Minh (13000)
   '13000': {
     'quan 1': '13001', '1': '13001',
-    'quan 2': '13002', '2': '13002',
+    'quan 2': '13119', '2': '13119',
     'quan 3': '13003', '3': '13003',
     'quan 4': '13004', '4': '13004',
     'quan 5': '13005', '5': '13005',
     'quan 6': '13006', '6': '13006',
     'quan 7': '13007', '7': '13007',
     'quan 8': '13008', '8': '13008',
-    'quan 9': '13009', '9': '13009',
+    'quan 9': '13119', '9': '13119',
     'quan 10': '13010', '10': '13010',
     'quan 11': '13011', '11': '13011',
     'quan 12': '13012', '12': '13012',
@@ -246,7 +246,7 @@ const CHOTOT_DISTRICTS = {
     'phu nhuan': '13016',
     'tan binh': '13017',
     'tan phu': '13018',
-    'thu duc': '13019', 'thanh pho thu duc': '13019', 'tp thu duc': '13019', 'tp. thu duc': '13019',
+    'thu duc': '13119', 'thanh pho thu duc': '13119', 'tp thu duc': '13119', 'tp. thu duc': '13119',
     'binh chanh': '13020', 'huyen binh chanh': '13020',
     'can gio': '13021', 'huyen can gio': '13021',
     'cu chi': '13022', 'huyen cu chi': '13022',
@@ -869,45 +869,15 @@ async function fetchChotot(params) {
   const districtCode = getChototDistrictCode(regionCode, district);
   let useAreaFilter = false;
   
-  // *** THU DUC MULTI-CODE STRATEGY ***
-  // Thủ Đức = fusion Q2 (13002) + Q9 (13009) + ancien QTD
-  // area_v2=13019 (nouveau code) retourne 0 sur l'API Chotot
-  // Solution: fetch les anciens codes en parallèle
+  // *** THU DUC: code unifié 13119 (fusion Q2+Q9+ancien TD depuis 2021) ***
   const dNorm = district ? removeVietnameseAccents(district.toLowerCase()).replace(/^(quan|huyen|thanh pho|tp\.?|tx\.?|q\.?)\s*/i, '').trim() : '';
-  const isThuDuc = ['thu duc', 'thanh pho thu duc', 'tp thu duc'].includes(dNorm);
-  
-  // Mapping wards Thủ Đức → ancien code district Chotot
-  const THU_DUC_WARD_CODES = {
-    // Ancien Q2 → 13002
-    'an phu': '13002', 'an khanh': '13002', 'an loi dong': '13002',
-    'binh an': '13002', 'binh khanh': '13002', 'binh trung dong': '13002',
-    'binh trung tay': '13002', 'cat lai': '13002', 'thao dien': '13002',
-    'thanh my loi': '13002', 'thu thiem': '13002',
-    // Ancien Q9 → 13009
-    'hiep phu': '13009', 'long binh': '13009', 'long phuoc': '13009',
-    'long thanh my': '13009', 'long truong': '13009', 'phu huu': '13009',
-    'phuoc binh': '13009', 'phuoc long a': '13009', 'phuoc long b': '13009',
-    'tan phu': '13009', 'tang nhon phu a': '13009', 'tang nhon phu b': '13009',
-    'truong thanh': '13009',
-  };
-  
-  let thuDucCodes = null; // null = pas Thu Duc, utiliser le flow normal
+  const isThuDuc = ['thu duc', '2', '9'].includes(dNorm);
   
   if (isThuDuc) {
-    const wNorm = ward ? removeVietnameseAccents(ward.toLowerCase()).replace(/^(phuong|xa|thi tran)\s+/i, '').trim() : '';
-    
-    if (wNorm && THU_DUC_WARD_CODES[wNorm]) {
-      // Ward connu dans ancien Q2 ou Q9 → fetch ce code spécifique
-      thuDucCodes = [THU_DUC_WARD_CODES[wNorm]];
-      console.log(`Chotot: Thu Duc ward="${wNorm}" → area_v2=${thuDucCodes[0]} (ancien district ciblé)`);
-    } else {
-      // Ward inconnu ou pas de ward → fetch les 2 anciens codes
-      thuDucCodes = ['13002', '13009'];
-      console.log(`Chotot: Thu Duc → MULTI-CODE [${thuDucCodes.join(', ')}] (ancien Q2 + Q9)`);
-    }
-  }
-  
-  if (districtCode && !isThuDuc) {
+    baseParams.append('area_v2', '13119');
+    useAreaFilter = true;
+    console.log(`Chotot: Thu Duc → area_v2=13119 (code unifié)`);
+  } else if (districtCode) {
     baseParams.append('area_v2', districtCode);
     useAreaFilter = true;
     console.log(`Chotot: district="${district}" → area_v2=${districtCode} (ACTIVÉ)`);
@@ -962,39 +932,8 @@ async function fetchChotot(params) {
     return ads;
   }
   
-  if (thuDucCodes) {
-    // *** THU DUC: fetch chaque ancien code en parallèle ***
-    const pagesPerCode = ward ? 30 : 20; // plus de pages si on cherche un ward spécifique
-    
-    const codeResults = await Promise.all(
-      thuDucCodes.map(async (code) => {
-        const codeParams = new URLSearchParams(baseParams.toString());
-        codeParams.append('area_v2', code);
-        const label = `area_v2=${code}`;
-        console.log(`Chotot: fetching ${pagesPerCode} pages pour ${label}`);
-        const ads = await fetchChototPages(codeParams, pagesPerCode, label);
-        console.log(`Chotot [${label}]: ${ads.length} annonces`);
-        return ads;
-      })
-    );
-    
-    for (const ads of codeResults) {
-      allAds.push(...ads);
-    }
-    console.log(`Chotot Thu Duc TOTAL: ${allAds.length} annonces (codes: [${thuDucCodes.join(', ')}])`);
-    
-    // *** FALLBACK: si les anciens codes retournent 0, fetch tout HCM ***
-    if (allAds.length === 0) {
-      console.log(`Chotot: area_v2 Thu Duc [${thuDucCodes.join(', ')}] → 0 résultats → FALLBACK tout HCM`);
-      const fallbackPages = ward ? 100 : 40; // 5000 ou 2000 résultats
-      console.log(`Chotot FALLBACK: fetching ${fallbackPages} pages de tout HCM (sans area_v2)`);
-      const fallbackAds = await fetchChototPages(baseParams, fallbackPages, 'thu-duc-fallback');
-      allAds.push(...fallbackAds);
-      console.log(`Chotot FALLBACK Thu Duc: ${allAds.length} annonces récupérées`);
-    }
-    
-  } else {
-    // *** NORMAL: un seul code district ou pas de filtre ***
+  // *** FETCH PRINCIPAL (fonctionne pour tous les districts y compris Thủ Đức) ***
+  {
     const baseMaxResults = params.maxResults || 200;
     let effectiveMaxResults = baseMaxResults;
     if (district && ward) {
@@ -1011,8 +950,9 @@ async function fetchChotot(params) {
   }
   
   console.log(`Chotot TOTAL brut: ${allAds.length} annonces`);
-  // DEBUG: Capturer les area_v2 et ward codes des annonces Thu Duc
-  const thuDucAds = allAds.filter(ad => (ad.area_name || '').includes('Thủ Đức'));
+  
+  // DEBUG: Capturer les area_v2 et ward codes uniques des annonces Thu Duc
+  const thuDucAds = allAds.filter(ad => (ad.area_name || '').includes('Th\u1EE7 \u0110\u1EE9c'));
   if (thuDucAds.length > 0) {
     const areaV2Codes = {};
     const wardCodes = {};
@@ -1027,11 +967,18 @@ async function fetchChotot(params) {
     console.log(`[DEBUG CHOTOT CODES] ward codes (top 20):`, JSON.stringify(
       Object.entries(wardCodes).sort((a,b) => b[1]-a[1]).slice(0, 20)
     ));
+    // Spécifiquement les wards Q2 cũ pour trouver Thảo Điền
+    const q2Wards = Object.entries(wardCodes).filter(([k]) => k.includes('Quận 2 cũ')).sort((a,b) => b[1]-a[1]);
+    console.log(`[DEBUG CHOTOT CODES] Q2 cũ wards (ALL):`, JSON.stringify(q2Wards));
+    // Log a sample ad's raw fields
     const sample = thuDucAds[0];
     console.log(`[DEBUG CHOTOT CODES] Sample ad keys:`, Object.keys(sample).filter(k => 
       k.includes('area') || k.includes('ward') || k.includes('region') || k.includes('location')
     ).map(k => `${k}=${sample[k]}`).join(', '));
+  } else {
+    console.log(`[DEBUG CHOTOT CODES] No Thu Duc ads found in batch`);
   }
+  
   // FALLBACK: si area_v2 retourne 0 résultats (pour districts non-Thu Duc), relancer sans filtre
   if (allAds.length === 0 && useAreaFilter) {
     console.log(`Chotot: area_v2=${districtCode} retourne 0 → FALLBACK sans filtre district`);
