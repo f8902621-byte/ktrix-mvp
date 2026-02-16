@@ -1011,7 +1011,27 @@ async function fetchChotot(params) {
   }
   
   console.log(`Chotot TOTAL brut: ${allAds.length} annonces`);
-  
+  // DEBUG: Capturer les area_v2 et ward codes des annonces Thu Duc
+  const thuDucAds = allAds.filter(ad => (ad.area_name || '').includes('Thủ Đức'));
+  if (thuDucAds.length > 0) {
+    const areaV2Codes = {};
+    const wardCodes = {};
+    thuDucAds.forEach(ad => {
+      const av2 = ad.area_v2 || 'none';
+      const w = `${ad.ward || 'none'}:${ad.ward_name || 'unknown'}`;
+      areaV2Codes[av2] = (areaV2Codes[av2] || 0) + 1;
+      wardCodes[w] = (wardCodes[w] || 0) + 1;
+    });
+    console.log(`[DEBUG CHOTOT CODES] Thu Duc ads: ${thuDucAds.length}`);
+    console.log(`[DEBUG CHOTOT CODES] area_v2 values:`, JSON.stringify(areaV2Codes));
+    console.log(`[DEBUG CHOTOT CODES] ward codes (top 20):`, JSON.stringify(
+      Object.entries(wardCodes).sort((a,b) => b[1]-a[1]).slice(0, 20)
+    ));
+    const sample = thuDucAds[0];
+    console.log(`[DEBUG CHOTOT CODES] Sample ad keys:`, Object.keys(sample).filter(k => 
+      k.includes('area') || k.includes('ward') || k.includes('region') || k.includes('location')
+    ).map(k => `${k}=${sample[k]}`).join(', '));
+  }
   // FALLBACK: si area_v2 retourne 0 résultats (pour districts non-Thu Duc), relancer sans filtre
   if (allAds.length === 0 && useAreaFilter) {
     console.log(`Chotot: area_v2=${districtCode} retourne 0 → FALLBACK sans filtre district`);
