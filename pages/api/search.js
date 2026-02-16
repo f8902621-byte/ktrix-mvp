@@ -982,6 +982,16 @@ async function fetchChotot(params) {
     }
     console.log(`Chotot Thu Duc TOTAL: ${allAds.length} annonces (codes: [${thuDucCodes.join(', ')}])`);
     
+    // *** FALLBACK: si les anciens codes retournent 0, fetch tout HCM ***
+    if (allAds.length === 0) {
+      console.log(`Chotot: area_v2 Thu Duc [${thuDucCodes.join(', ')}] → 0 résultats → FALLBACK tout HCM`);
+      const fallbackPages = ward ? 100 : 40; // 5000 ou 2000 résultats
+      console.log(`Chotot FALLBACK: fetching ${fallbackPages} pages de tout HCM (sans area_v2)`);
+      const fallbackAds = await fetchChototPages(baseParams, fallbackPages, 'thu-duc-fallback');
+      allAds.push(...fallbackAds);
+      console.log(`Chotot FALLBACK Thu Duc: ${allAds.length} annonces récupérées`);
+    }
+    
   } else {
     // *** NORMAL: un seul code district ou pas de filtre ***
     const baseMaxResults = params.maxResults || 200;
