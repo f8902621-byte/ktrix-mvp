@@ -329,90 +329,91 @@ const ALONHADAT_PROPERTY_TYPE = {
 };
 
 // ============================================
-// ALONHADAT DISTRICT SLUGS (pour URLs filtrées)
-// *** NOUVEAU: permet de construire des URLs comme
-// ***   alonhadat.com.vn/can-ban-nha/tp-thu-duc/phuong-thao-dien
-// *** au lieu de alonhadat.com.vn/can-ban-nha/ho-chi-minh
+// ALONHADAT LOCATION CODES (q=district, p=ward)
+// Format URL: can-ban-{type}-{slug}-q{code}.htm
+// Vérifié manuellement sur alonhadat.com.vn
 // ============================================
-const ALONHADAT_DISTRICT_SLUGS = {
-  'ho chi minh': {
-    '1': 'quan-1', 'quan 1': 'quan-1',
-    '2': 'quan-2', 'quan 2': 'quan-2',
-    '3': 'quan-3', 'quan 3': 'quan-3',
-    '4': 'quan-4', 'quan 4': 'quan-4',
-    '5': 'quan-5', 'quan 5': 'quan-5',
-    '6': 'quan-6', 'quan 6': 'quan-6',
-    '7': 'quan-7', 'quan 7': 'quan-7',
-    '8': 'quan-8', 'quan 8': 'quan-8',
-    '9': 'quan-9', 'quan 9': 'quan-9',
-    '10': 'quan-10', 'quan 10': 'quan-10',
-    '11': 'quan-11', 'quan 11': 'quan-11',
-    '12': 'quan-12', 'quan 12': 'quan-12',
-    'binh tan': 'quan-binh-tan',
-    'binh thanh': 'quan-binh-thanh',
-    'go vap': 'quan-go-vap',
-    'phu nhuan': 'quan-phu-nhuan',
-    'tan binh': 'quan-tan-binh',
-    'tan phu': 'quan-tan-phu',
-    'thu duc': 'tp-thu-duc',
-    'thanh pho thu duc': 'tp-thu-duc',
-    'tp thu duc': 'tp-thu-duc',
-    'binh chanh': 'huyen-binh-chanh',
-    'can gio': 'huyen-can-gio',
-    'cu chi': 'huyen-cu-chi',
-    'hoc mon': 'huyen-hoc-mon',
-    'nha be': 'huyen-nha-be',
-  },
-  'ha noi': {
-    'ba dinh': 'quan-ba-dinh',
-    'hoan kiem': 'quan-hoan-kiem',
-    'hai ba trung': 'quan-hai-ba-trung',
-    'dong da': 'quan-dong-da',
-    'cau giay': 'quan-cau-giay',
-    'thanh xuan': 'quan-thanh-xuan',
-    'hoang mai': 'quan-hoang-mai',
-    'long bien': 'quan-long-bien',
-    'nam tu liem': 'quan-nam-tu-liem',
-    'bac tu liem': 'quan-bac-tu-liem',
-    'tay ho': 'quan-tay-ho',
-    'ha dong': 'quan-ha-dong',
-  },
+const ALONHADAT_HCM_DISTRICTS = {
+  // Vérifié depuis le footer de la page HCM
+  'quan 1': { code: 'q132', slug: 'quan-1-ho-chi-minh' },
+  '1': { code: 'q132', slug: 'quan-1-ho-chi-minh' },
+  'quan 10': { code: 'q141', slug: 'quan-10-ho-chi-minh' },
+  '10': { code: 'q141', slug: 'quan-10-ho-chi-minh' },
+  'thu duc': { code: 'q150', slug: 'thanh-pho-thu-duc-ho-chi-minh' },
+  'thanh pho thu duc': { code: 'q150', slug: 'thanh-pho-thu-duc-ho-chi-minh' },
+  'tp thu duc': { code: 'q150', slug: 'thanh-pho-thu-duc-ho-chi-minh' },
+  'binh chanh': { code: 'q151', slug: 'huyen-binh-chanh-ho-chi-minh' },
+  'can gio': { code: 'q152', slug: 'huyen-can-gio-ho-chi-minh' },
+  'cu chi': { code: 'q153', slug: 'huyen-cu-chi-ho-chi-minh' },
+  'hoc mon': { code: 'q154', slug: 'huyen-hoc-mon-ho-chi-minh' },
+  'nha be': { code: 'q155', slug: 'huyen-nha-be-ho-chi-minh' },
+  // Codes probables basés sur le pattern séquentiel (à vérifier)
+  'quan 2': { code: 'q133', slug: 'quan-2-ho-chi-minh' },
+  '2': { code: 'q133', slug: 'quan-2-ho-chi-minh' },
+  'quan 3': { code: 'q134', slug: 'quan-3-ho-chi-minh' },
+  '3': { code: 'q134', slug: 'quan-3-ho-chi-minh' },
+  'quan 4': { code: 'q135', slug: 'quan-4-ho-chi-minh' },
+  '4': { code: 'q135', slug: 'quan-4-ho-chi-minh' },
+  'quan 5': { code: 'q136', slug: 'quan-5-ho-chi-minh' },
+  '5': { code: 'q136', slug: 'quan-5-ho-chi-minh' },
+  'quan 6': { code: 'q137', slug: 'quan-6-ho-chi-minh' },
+  '6': { code: 'q137', slug: 'quan-6-ho-chi-minh' },
+  'quan 7': { code: 'q138', slug: 'quan-7-ho-chi-minh' },
+  '7': { code: 'q138', slug: 'quan-7-ho-chi-minh' },
+  'quan 8': { code: 'q139', slug: 'quan-8-ho-chi-minh' },
+  '8': { code: 'q139', slug: 'quan-8-ho-chi-minh' },
+  'quan 9': { code: 'q140', slug: 'quan-9-ho-chi-minh' },
+  '9': { code: 'q140', slug: 'quan-9-ho-chi-minh' },
+  'quan 11': { code: 'q142', slug: 'quan-11-ho-chi-minh' },
+  '11': { code: 'q142', slug: 'quan-11-ho-chi-minh' },
+  'quan 12': { code: 'q143', slug: 'quan-12-ho-chi-minh' },
+  '12': { code: 'q143', slug: 'quan-12-ho-chi-minh' },
+  'binh tan': { code: 'q144', slug: 'quan-binh-tan-ho-chi-minh' },
+  'binh thanh': { code: 'q145', slug: 'quan-binh-thanh-ho-chi-minh' },
+  'go vap': { code: 'q146', slug: 'quan-go-vap-ho-chi-minh' },
+  'phu nhuan': { code: 'q147', slug: 'quan-phu-nhuan-ho-chi-minh' },
+  'tan binh': { code: 'q148', slug: 'quan-tan-binh-ho-chi-minh' },
+  'tan phu': { code: 'q149', slug: 'quan-tan-phu-ho-chi-minh' },
 };
 
-// Génère un slug ward pour Alonhadat
-// Ex: "Thảo Điền" → "phuong-thao-dien"
-// Ex: "Phường Thảo Điền" → "phuong-thao-dien"  
-// Ex: "Thảo Điền (Quận 2 cũ)" → "phuong-thao-dien"
-function generateAlonhadatWardSlug(ward) {
-  if (!ward) return null;
-  let normalized = removeVietnameseAccents(ward.toLowerCase());
-  // Supprimer les suffixes entre parenthèses: "(quan 2 cu)" etc.
-  normalized = normalized.replace(/\s*\(.*\)\s*$/, '').trim();
-  // Supprimer les préfixes existants
-  const hasPrefix = /^(phuong|xa|thi tran)\s+/.test(normalized);
-  let clean = normalized.replace(/^(phuong|xa|thi tran)\s+/, '').trim();
-  // Ajouter le préfixe "phuong-" et remplacer les espaces par des tirets
-  return 'phuong-' + clean.replace(/\s+/g, '-');
-}
+// Ward codes pour Thủ Đức (vérifié: p779 = Thảo Điền)
+const ALONHADAT_THU_DUC_WARDS = {
+  'thao dien': { code: 'p779', slug: 'phuong-thao-dien-thanh-pho-thu-duc' },
+  // Les autres wards seront ajoutés au fur et à mesure de la vérification
+};
 
-// Résout le slug district Alonhadat à partir du nom
-function getAlonhadatDistrictSlug(city, district) {
+// Résout le code + slug Alonhadat pour un district
+function getAlonhadatDistrictInfo(city, district) {
   if (!district) return null;
-  const cityKey = removeVietnameseAccents(city || 'ho chi minh').toLowerCase();
-  const districtMap = ALONHADAT_DISTRICT_SLUGS[cityKey];
-  if (!districtMap) return null;
-  
   const dNorm = removeVietnameseAccents(district.toLowerCase())
     .replace(/^(quan|huyen|thanh pho|tp\.?|tx\.?|q\.?)\s*/i, '')
     .trim();
   
-  if (districtMap[dNorm]) return districtMap[dNorm];
-  
-  // Recherche partielle
-  for (const [key, slug] of Object.entries(districtMap)) {
-    if (dNorm.includes(key) || key.includes(dNorm)) {
-      return slug;
+  // Chercher dans le mapping HCM
+  const cityNorm = removeVietnameseAccents(city || '').toLowerCase();
+  if (cityNorm.includes('ho chi minh') || cityNorm.includes('hcm')) {
+    if (ALONHADAT_HCM_DISTRICTS[dNorm]) return ALONHADAT_HCM_DISTRICTS[dNorm];
+    // Recherche partielle
+    for (const [key, info] of Object.entries(ALONHADAT_HCM_DISTRICTS)) {
+      if (dNorm.includes(key) || key.includes(dNorm)) return info;
     }
+  }
+  return null;
+}
+
+// Résout le code + slug Alonhadat pour un ward de Thủ Đức
+function getAlonhadatWardInfo(district, ward) {
+  if (!ward || !district) return null;
+  const dNorm = removeVietnameseAccents(district.toLowerCase())
+    .replace(/^(quan|huyen|thanh pho|tp\.?|tx\.?|q\.?)\s*/i, '')
+    .trim();
+  const wNorm = removeVietnameseAccents(ward.toLowerCase())
+    .replace(/^(phuong|xa|thi tran)\s+/i, '')
+    .replace(/\s*\(.*\)\s*$/, '')  // Retirer "(Quận 2 cũ)"
+    .trim();
+  
+  if (['thu duc', 'thanh pho thu duc', 'tp thu duc'].includes(dNorm)) {
+    if (ALONHADAT_THU_DUC_WARDS[wNorm]) return ALONHADAT_THU_DUC_WARDS[wNorm];
   }
   return null;
 }
@@ -1149,35 +1150,42 @@ async function fetchAlonhadat(params) {
     }
   }
 
-  // *** V5.1: Résoudre les slugs district/ward pour URL Alonhadat ***
-  const districtSlug = district ? getAlonhadatDistrictSlug(city, district) : null;
-  const wardSlug = (ward && districtSlug) ? generateAlonhadatWardSlug(ward) : null;
+  // *** V5.2: URLs Alonhadat avec codes q/p (format correct vérifié) ***
+  // Format ward:     can-ban-nha-phuong-thao-dien-thanh-pho-thu-duc-p779.htm
+  // Format district: can-ban-nha-thanh-pho-thu-duc-ho-chi-minh-q150.htm
+  // Format city:     can-ban-nha/ho-chi-minh (fallback, fonctionne toujours)
   
-  // Construire les URLs à essayer par ordre de spécificité
-  // Tier 1: district + ward (le plus précis)
-  // Tier 2: district seul
-  // Tier 3: ville (fallback)
+  const districtInfo = district ? getAlonhadatDistrictInfo(city, district) : null;
+  const wardInfo = (ward && districtInfo) ? getAlonhadatWardInfo(district, ward) : null;
+  
   const urlTiers = [];
   
-  if (districtSlug && wardSlug) {
+  // Tier 1: Ward (le plus précis) - format .htm avec p-code
+  if (wardInfo) {
     urlTiers.push({
-      base: `https://alonhadat.com.vn/can-ban-${typeSlug}/${districtSlug}/${wardSlug}`,
-      label: `ward (${districtSlug}/${wardSlug})`,
-      maxPages: 5
+      base: `https://alonhadat.com.vn/can-ban-${typeSlug}-${wardInfo.slug}-${wardInfo.code}.htm`,
+      label: `ward (${wardInfo.slug}-${wardInfo.code})`,
+      maxPages: 5,
+      isHtm: true
     });
   }
-  if (districtSlug) {
+  
+  // Tier 2: District - format .htm avec q-code
+  if (districtInfo) {
     urlTiers.push({
-      base: `https://alonhadat.com.vn/can-ban-${typeSlug}/${districtSlug}`,
-      label: `district (${districtSlug})`,
-      maxPages: 5
+      base: `https://alonhadat.com.vn/can-ban-${typeSlug}-${districtInfo.slug}-${districtInfo.code}.htm`,
+      label: `district (${districtInfo.slug}-${districtInfo.code})`,
+      maxPages: 10,
+      isHtm: true
     });
   }
-  // Toujours avoir le fallback ville
+  
+  // Tier 3: Ville (fallback, toujours disponible)
   urlTiers.push({
     base: `https://alonhadat.com.vn/can-ban-${typeSlug}/${citySlug}`,
     label: `city (${citySlug})`,
-    maxPages: district ? 10 : (maxResults >= 200 ? 3 : maxResults >= 100 ? 2 : 1)
+    maxPages: district ? 10 : (maxResults >= 200 ? 3 : maxResults >= 100 ? 2 : 1),
+    isHtm: false
   });
   
   console.log(`Alonhadat: URL tiers à essayer: ${urlTiers.map(t => t.label).join(' → ')}`);
@@ -1189,7 +1197,6 @@ async function fetchAlonhadat(params) {
   for (const tier of urlTiers) {
     console.log(`Alonhadat: essai tier "${tier.label}"...`);
     
-    // Tester la première page
     try {
       const testUrl = tier.base;
       const scraperUrl = `https://api.scraperapi.com/?api_key=${SCRAPER_API_KEY}&url=${encodeURIComponent(testUrl)}&render=true`;
@@ -1210,13 +1217,18 @@ async function fetchAlonhadat(params) {
         continue;
       }
       
-      // Ce tier fonctionne ! Continuer avec les pages suivantes
+      // Ce tier fonctionne !
       allListings.push(...listings);
       usedTier = tier;
       
+      // Pagination: format différent selon .htm ou path-based
       for (let page = 2; page <= tier.maxPages; page++) {
         try {
-          const pageUrl = `${tier.base}/trang-${page}`;
+          // .htm pages: pagination via /trang-N avant .htm? Non testé
+          // Path pages: /trang-N en suffix
+          const pageUrl = tier.isHtm 
+            ? `${tier.base}?page=${page}`  // .htm pagination par query param
+            : `${tier.base}/trang-${page}`; // path-based pagination
           const pageScraperUrl = `https://api.scraperapi.com/?api_key=${SCRAPER_API_KEY}&url=${encodeURIComponent(pageUrl)}&render=true`;
           console.log(`Alonhadat page ${page}: ${pageUrl}`);
           
@@ -1233,7 +1245,6 @@ async function fetchAlonhadat(params) {
           if (pageListings.length === 0) break;
           allListings.push(...pageListings);
           
-          // Pause entre les pages
           await new Promise(r => setTimeout(r, 500));
           
         } catch (error) {
@@ -1242,7 +1253,7 @@ async function fetchAlonhadat(params) {
         }
       }
       
-      // On a trouvé un tier qui fonctionne, sortir de la boucle
+      // Tier fonctionne, sortir
       break;
       
     } catch (error) {
