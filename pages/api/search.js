@@ -1221,13 +1221,15 @@ async function fetchAlonhadat(params) {
       allListings.push(...listings);
       usedTier = tier;
       
+      // Track URLs for dedup (some pagination formats return duplicates)
+      const seenUrls = new Set(allListings.map(l => l.url));
+      
       // Pagination: format différent selon .htm ou path-based
       for (let page = 2; page <= tier.maxPages; page++) {
         try {
-          // .htm pages: pagination via /trang-N avant .htm? Non testé
-          // Path pages: /trang-N en suffix
+          // .htm pages: /trang-N.htm format (tested: ?page=N returns duplicates!)
           const pageUrl = tier.isHtm 
-            ? `${tier.base}?page=${page}`  // .htm pagination par query param
+            ? `${tier.base.replace('.htm', '')}/trang-${page}.htm`
             : `${tier.base}/trang-${page}`; // path-based pagination
           const pageScraperUrl = `https://api.scraperapi.com/?api_key=${SCRAPER_API_KEY}&url=${encodeURIComponent(pageUrl)}&render=true`;
           console.log(`Alonhadat page ${page}: ${pageUrl}`);
@@ -1243,7 +1245,18 @@ async function fetchAlonhadat(params) {
           console.log(`Alonhadat page ${page}: ${pageListings.length} annonces`);
           
           if (pageListings.length === 0) break;
-          allListings.push(...pageListings);
+          
+          // Dedup: vérifier combien sont nouvelles
+          const newListings = pageListings.filter(l => !seenUrls.has(l.url));
+          console.log(`Alonhadat page ${page}: ${newListings.length} nouvelles (${pageListings.length - newListings.length} doublons)`);
+          
+          if (newListings.length === 0) {
+            console.log(`Alonhadat: pagination retourne des doublons → arrêt`);
+            break;
+          }
+          
+          newListings.forEach(l => seenUrls.add(l.url));
+          allListings.push(...newListings);
           
           await new Promise(r => setTimeout(r, 500));
           
@@ -1264,6 +1277,33 @@ async function fetchAlonhadat(params) {
   
   console.log(`Alonhadat TOTAL: ${allListings.length} annonces (tier utilisé: ${usedTier?.label || 'aucun'})`);
   
+  // *** FIX: Injecter le ward/district correct quand on utilise un tier ward/district ***
+  // Ex: page p779 = Thảo Điền, tous les résultats sont de Thảo Điền même si l'adresse
+  //     parsée montre "An Khánh" (nom post-fusion 2021)
+  if (usedTier && wardInfo && ward) {
+    const wardName = ward; // ex: "Thảo Điền"
+    const districtName = district || 'Thành phố Thủ Đức';
+    console.log(`Alonhadat: injection ward="${wardName}" district="${districtName}" sur ${allListings.length} résultats (tier ward)`);
+    allListings.forEach(item => {
+      // Toujours mettre le ward cherché (on SAIT que la page p779 = Thảo Điền)
+      if (!item.ward || !removeVietnameseAccents(item.ward.toLowerCase()).includes(removeVietnameseAccents(ward.toLowerCase()))) {
+        item.ward = wardName;
+      }
+      if (!item.district || item.district === '') {
+        item.district = districtName;
+      }
+      // Reconstruire l'adresse
+      item.address = [item.street, item.ward, item.district].filter(Boolean).join(', ');
+    });
+  } else if (usedTier && districtInfo && district) {
+    const districtName = district;
+    console.log(`Alonhadat: injection district="${districtName}" sur ${allListings.length} résultats (tier district)`);
+    allListings.forEach(item => {
+      if (!item.district || item.district === '') {
+        item.district = districtName;
+      }
+    });
+  }
   // *** DIAGNOSTIC: Afficher les districts/wards uniques de Alonhadat ***
   const alonDistrictCounts = {};
   allListings.forEach(r => {
