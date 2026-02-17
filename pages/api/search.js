@@ -1299,7 +1299,7 @@ async function fetchAlonhadat(params) {
       ? usedTier.base.replace(`can-ban-${typeSlug}`, 'can-ban-nha-dat')
       : `https://alonhadat.com.vn/can-ban-nha-dat/${citySlug}`;
     
-    ffor (let page = 1; page <= 4; page++) {
+    for (let page = 1; page <= 4; page++) {
       try {
         const fallbackUrl = page === 1
           ? fallbackBase
