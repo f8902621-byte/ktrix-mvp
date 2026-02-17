@@ -1154,7 +1154,7 @@ async function fetchAlonhadat(params) {
   urlTiers.push({
     base: `https://alonhadat.com.vn/can-ban-${typeSlug}/${citySlug}`,
     label: `city (${citySlug})`,
-    maxPages: district ? 10 : (maxResults >= 200 ? 3 : maxResults >= 100 ? 2 : 1),
+    maxPages: district ? 10 : (maxResults >= 200 ? 8 : maxResults >= 100 ? 5 : 3),
     isHtm: false
   });
   
@@ -1181,7 +1181,12 @@ async function fetchAlonhadat(params) {
       const html = await response.text();
       const listings = parseAlonhadatHtml(html, city, typeLabelVn);
       console.log(`Alonhadat page 1: ${listings.length} annonces`);
-      
+      if (!listing.price) {
+  const priceTrieuMatch = articleHtml.match(/([\d,\.]+)\s*triệu/i);
+  if (priceTrieuMatch) {
+    listing.price = Math.round(parseFloat(priceTrieuMatch[1].replace(',', '.')) * 1000000);
+  }
+}
       if (listings.length === 0) {
         console.log(`Alonhadat tier "${tier.label}": 0 résultats → essai tier suivant`);
         continue;
@@ -1294,7 +1299,7 @@ async function fetchAlonhadat(params) {
       ? usedTier.base.replace(`can-ban-${typeSlug}`, 'can-ban-nha-dat')
       : `https://alonhadat.com.vn/can-ban-nha-dat/${citySlug}`;
     
-    for (let page = 1; page <= 2; page++) {
+    ffor (let page = 1; page <= 4; page++) {
       try {
         const fallbackUrl = page === 1
           ? fallbackBase
