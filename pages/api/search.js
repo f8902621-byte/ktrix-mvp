@@ -1154,7 +1154,7 @@ async function fetchAlonhadat(params) {
   urlTiers.push({
     base: `https://alonhadat.com.vn/can-ban-${typeSlug}/${citySlug}`,
     label: `city (${citySlug})`,
-    maxPages: district ? 10 : (maxResults >= 200 ? 8 : maxResults >= 100 ? 5 : 3),
+    maxPages: district ? 10 : (maxResults >= 200 ? 5 : maxResults >= 100 ? 3 : 2),
     isHtm: false
   });
   
