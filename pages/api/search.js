@@ -1181,12 +1181,7 @@ async function fetchAlonhadat(params) {
       const html = await response.text();
       const listings = parseAlonhadatHtml(html, city, typeLabelVn);
       console.log(`Alonhadat page 1: ${listings.length} annonces`);
-      if (!listing.price) {
-  const priceTrieuMatch = articleHtml.match(/([\d,\.]+)\s*triệu/i);
-  if (priceTrieuMatch) {
-    listing.price = Math.round(parseFloat(priceTrieuMatch[1].replace(',', '.')) * 1000000);
-  }
-}
+
       if (listings.length === 0) {
         console.log(`Alonhadat tier "${tier.label}": 0 résultats → essai tier suivant`);
         continue;
@@ -1368,7 +1363,13 @@ function parseAlonhadatHtml(html, city, propertyType) {
           listing.price = Math.round(parseFloat(priceTextMatch[1].replace(',', '.')) * 1000000000);
         }
       }
-      
+            // Prix en triệu (millions) — biens moins chers
+      if (!listing.price) {
+        const priceTrieuMatch = articleHtml.match(/([\d,\.]+)\s*triệu/i);
+        if (priceTrieuMatch) {
+          listing.price = Math.round(parseFloat(priceTrieuMatch[1].replace(',', '.')) * 1000000);
+        }
+      }
       const areaPatterns = [/(\d+(?:[,\.]\d+)?)\s*m²/i, /(\d+(?:[,\.]\d+)?)\s*m2/i, /(\d+(?:[,\.]\d+)?)m²/i];
       for (const pattern of areaPatterns) {
         const areaMatch = articleHtml.match(pattern);
