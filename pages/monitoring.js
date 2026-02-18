@@ -106,9 +106,9 @@ export default function MonitoringPage() {
   }, [autoRefresh]);
 
   const getStatusColor = (status) => {
-    if (status === 'healthy') return 'bg-green-100 text-green-800 border-green-300';
-    if (status === 'degraded') return 'bg-yellow-100 text-yellow-800 border-yellow-300';
-    return 'bg-red-100 text-red-800 border-red-300';
+    if (status === 'healthy') return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
+    if (status === 'degraded') return 'bg-amber-500/10 text-amber-400 border-amber-500/30';
+    return 'bg-red-500/10 text-red-400 border-red-500/30';
   };
 
   const getStatusEmoji = (status) => {
@@ -130,12 +130,12 @@ export default function MonitoringPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 p-6">
+    <div className="min-h-screen bg-gray-950 p-6">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-bold">🔍 {t.title}</h1>
+            <h1 className="text-2xl font-bold text-white">🔍 {t.title}</h1>
             {report && (
               <span className={`px-4 py-2 rounded-full font-bold border ${getStatusColor(report.status)}`}>
                 {getStatusEmoji(report.status)} {getStatusLabel(report.status)}
@@ -146,20 +146,20 @@ export default function MonitoringPage() {
             <select 
               value={language} 
               onChange={(e) => setLanguage(e.target.value)} 
-              className="px-3 py-2 border rounded-lg bg-white"
+              className="px-3 py-2 border border-gray-700 rounded-lg bg-gray-900 text-gray-300"
             >
               <option value="vn">🇻🇳 VN</option>
               <option value="en">🇬🇧 EN</option>
               <option value="fr">🇫🇷 FR</option>
             </select>
-            <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={autoRefresh} onChange={(e) => setAutoRefresh(e.target.checked)} />
+            <label className="flex items-center gap-2 text-sm text-gray-400">
+              <input type="checkbox" checked={autoRefresh} onChange={(e) => setAutoRefresh(e.target.checked)} className="rounded bg-gray-800 border-gray-600" />
               {t.autoRefresh}
             </label>
-            <button onClick={fetchReport} disabled={loading} className="px-4 py-2 bg-sky-500 text-white rounded-lg disabled:opacity-50">
+            <button onClick={fetchReport} disabled={loading} className="px-4 py-2 bg-blue-600 text-white rounded-lg disabled:opacity-50 hover:bg-blue-500 transition">
               {loading ? '⏳' : '🔄'} {t.refresh}
             </button>
-            <button onClick={() => router.push('/')} className="px-4 py-2 bg-gray-200 rounded-lg">
+            <button onClick={() => router.push('/')} className="px-4 py-2 bg-gray-800 text-gray-300 rounded-lg border border-gray-700 hover:bg-gray-700 transition">
               ← {t.back}
             </button>
           </div>
@@ -168,8 +168,8 @@ export default function MonitoringPage() {
         {report && (
           <>
             {/* Services */}
-            <div className="bg-white rounded-xl shadow p-6 mb-6">
-              <h2 className="text-xl font-bold mb-4">📡 {t.services}</h2>
+            <div className="bg-gray-900 rounded-xl border border-gray-800 p-6 mb-6">
+              <h2 className="text-xl font-bold text-white mb-4">📡 {t.services}</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {Object.entries(report.services).map(([name, data]) => (
                   <div key={name} className={`p-4 rounded-lg border-2 ${getStatusColor(data.status)}`}>
@@ -177,35 +177,35 @@ export default function MonitoringPage() {
                       <span className="font-bold capitalize">{name.replace('_', ' ')}</span>
                       <span>{getStatusEmoji(data.status)}</span>
                     </div>
-                    {data.responseTime && <p className="text-sm">⏱️ {data.responseTime}ms</p>}
-                    {data.successRate !== undefined && <p className="text-sm">📊 {data.successRate}% {t.success}</p>}
-                    {data.tasksLast24h !== undefined && <p className="text-sm">📋 {data.tasksLast24h} {t.tasks24h}</p>}
+                    {data.responseTime && <p className="text-sm opacity-80">⏱️ {data.responseTime}ms</p>}
+                    {data.successRate !== undefined && <p className="text-sm opacity-80">📊 {data.successRate}% {t.success}</p>}
+                    {data.tasksLast24h !== undefined && <p className="text-sm opacity-80">📋 {data.tasksLast24h} {t.tasks24h}</p>}
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Stats */}
-            <div className="bg-white rounded-xl shadow p-6 mb-6">
-              <h2 className="text-xl font-bold mb-4">📊 {t.statistics}</h2>
+            <div className="bg-gray-900 rounded-xl border border-gray-800 p-6 mb-6">
+              <h2 className="text-xl font-bold text-white mb-4">📊 {t.statistics}</h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="bg-sky-50 p-4 rounded-lg text-center">
-                  <p className="text-3xl font-bold text-sky-600">{report.stats.total_listings?.toLocaleString() || '-'}</p>
-                  <p className="text-sm text-gray-600">{t.totalListings}</p>
+                <div className="bg-blue-500/10 border border-blue-500/20 p-4 rounded-lg text-center">
+                  <p className="text-3xl font-bold text-blue-400">{report.stats.total_listings?.toLocaleString() || '-'}</p>
+                  <p className="text-sm text-gray-500">{t.totalListings}</p>
                 </div>
-                <div className="bg-purple-50 p-4 rounded-lg text-center">
-                  <p className="text-3xl font-bold text-purple-600">{report.stats.total_archive?.toLocaleString() || '-'}</p>
-                  <p className="text-sm text-gray-600">{t.totalArchive}</p>
+                <div className="bg-purple-500/10 border border-purple-500/20 p-4 rounded-lg text-center">
+                  <p className="text-3xl font-bold text-purple-400">{report.stats.total_archive?.toLocaleString() || '-'}</p>
+                  <p className="text-sm text-gray-500">{t.totalArchive}</p>
                 </div>
                 {report.stats.bds_tasks_24h && (
                   <>
-                    <div className="bg-green-50 p-4 rounded-lg text-center">
-                      <p className="text-3xl font-bold text-green-600">{report.stats.bds_tasks_24h.completed}</p>
-                      <p className="text-sm text-gray-600">{t.bdsTasks}</p>
+                    <div className="bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-lg text-center">
+                      <p className="text-3xl font-bold text-emerald-400">{report.stats.bds_tasks_24h.completed}</p>
+                      <p className="text-sm text-gray-500">{t.bdsTasks}</p>
                     </div>
-                    <div className="bg-orange-50 p-4 rounded-lg text-center">
-                      <p className="text-3xl font-bold text-orange-600">{report.stats.bds_tasks_24h.successRate}%</p>
-                      <p className="text-sm text-gray-600">{t.successRate}</p>
+                    <div className="bg-orange-500/10 border border-orange-500/20 p-4 rounded-lg text-center">
+                      <p className="text-3xl font-bold text-orange-400">{report.stats.bds_tasks_24h.successRate}%</p>
+                      <p className="text-sm text-gray-500">{t.successRate}</p>
                     </div>
                   </>
                 )}
@@ -214,18 +214,18 @@ export default function MonitoringPage() {
 
             {/* Alertes */}
             {(report.errors.length > 0 || report.warnings.length > 0) && (
-              <div className="bg-white rounded-xl shadow p-6 mb-6">
-                <h2 className="text-xl font-bold mb-4">⚠️ {t.alerts}</h2>
+              <div className="bg-gray-900 rounded-xl border border-gray-800 p-6 mb-6">
+                <h2 className="text-xl font-bold text-white mb-4">⚠️ {t.alerts}</h2>
                 {report.errors.map((err, i) => (
-                  <div key={i} className="bg-red-50 p-3 rounded mb-2 text-red-700">🚨 {err}</div>
+                  <div key={i} className="bg-red-500/10 border border-red-500/20 p-3 rounded mb-2 text-red-400">🚨 {err}</div>
                 ))}
                 {report.warnings.map((warn, i) => (
-                  <div key={i} className="bg-yellow-50 p-3 rounded mb-2 text-yellow-700">⚠️ {warn}</div>
+                  <div key={i} className="bg-amber-500/10 border border-amber-500/20 p-3 rounded mb-2 text-amber-400">⚠️ {warn}</div>
                 ))}
               </div>
             )}
 
-            <p className="text-center text-gray-500 text-sm">
+            <p className="text-center text-gray-600 text-sm">
               {t.lastCheck} : {new Date(report.timestamp).toLocaleString(getLocale())}
             </p>
           </>
