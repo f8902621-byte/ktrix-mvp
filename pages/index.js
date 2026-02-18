@@ -120,7 +120,7 @@ useEffect(() => {
       tryBeta: 'Try for free',
       learnMore: 'Learn more',
       statSources: 'Data sources',
-      sstatListings: 'Listings in database',
+      statListings: 'Listings in database',
       statCoverage: 'Market coverage',
       statCities: 'Provinces',
       sourcesTitle: 'Data from leading sources',
