@@ -367,7 +367,7 @@ useEffect(() => {
             <div className="grid grid-cols-2 gap-3 sm:gap-4">
               {[
                 { icon: <BarChart3 className="w-6 h-6 text-cyan-400" />, value: '2', label: t.statSources, bg: 'bg-cyan-500/10', border: 'border-cyan-500/20' },
-                { icon: <TrendingUp className="w-6 h-6 text-orange-400" />, value: stats?.total_archive ? stats.total_archive.toLocaleString() : '...', label: t.statListings, bg: 'bg-orange-500/10', border: 'border-orange-500/20' },
+                { icon: <TrendingUp className="w-6 h-6 text-orange-400" />, vvalue: stats?.total_archive ? stats.total_archive.toLocaleString() : '8,000+', label: t.statListings, bg: 'bg-orange-500/10', border: 'border-orange-500/20' },
                 { icon: <Shield className="w-6 h-6 text-blue-400" />, value: '65%', label: t.statCoverage, bg: 'bg-blue-500/10', border: 'border-blue-500/20', gradient: true },
                 { icon: <Globe className="w-6 h-6 text-emerald-400" />, value: '12+', label: t.statCities, bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
               ].map((stat, i) => (
