@@ -29,7 +29,7 @@ export default function Landing() {
 const [stats, setStats] = useState(null);
 
 useEffect(() => {
-  fetch('/api/monitoring')
+  fetch('/.netlify/functions/monitoring')
     .then(res => res.json())
     .then(data => setStats(data.stats))
     .catch(() => {});
