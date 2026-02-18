@@ -6,7 +6,7 @@ import { wardsByDistrict, premiumWards } from '../lib/wards-data';
 export default function SearchPage() {
   const router = useRouter();
   const [language, setLanguage] = useState('vn');
-  const [currency, setCurrency] = useState('VND');
+  //const [currency, setCurrency] = useState('VND');
   const [mode, setMode] = useState('buy');
   const [showSearch, setShowSearch] = useState(true);
   const [results, setResults] = useState([]);
@@ -388,11 +388,10 @@ export default function SearchPage() {
     }
   };
 
-  const formatPrice = (price) => {
-    if (!price) return '-';
-    if (currency === 'VND') return `${(price / 1000000000).toFixed(1).replace('.', ',')} Tỷ`;
-    return `$${(price / 25000).toFixed(0).replace(/\\B(?=(\\d{3})+(?!\\d))/g, ',')}`;
-  };
+const formatPrice = (price) => {
+  if (!price) return '-';
+  return `${(price / 1000000000).toFixed(1).replace('.', ',')} Tỷ`;
+};
 
   const formatPricePerM2 = (price) => {
     if (!price) return '-';
@@ -550,17 +549,13 @@ export default function SearchPage() {
               ⭐ <span className="hidden md:inline">{t.savedSearches}</span> ({savedSearches.length})
             </button>
           </div>
-          <div className="hidden md:flex items-center gap-4">
-            <select value={language} onChange={(e) => setLanguage(e.target.value)} className="px-3 py-2 border border-gray-700 rounded-lg bg-gray-900 text-gray-300">
-              <option value="vn">🇻🇳 VN</option>
-              <option value="en">🇬🇧 EN</option>
-              <option value="fr">🇫🇷 FR</option>
-            </select>
-            <select value={currency} onChange={(e) => setCurrency(e.target.value)} className="px-3 py-2 border border-gray-700 rounded-lg bg-gray-900 text-gray-300">
-              <option value="VND">VND</option>
-              <option value="USD">USD</option>
-            </select>
-          </div>
+ <div className="hidden md:flex items-center gap-4">
+  <select value={language} onChange={(e) => setLanguage(e.target.value)} className="px-3 py-2 border border-gray-700 rounded-lg bg-gray-900 text-gray-300">
+    <option value="vn">🇻🇳 VN</option>
+    <option value="en">🇬🇧 EN</option>
+    <option value="fr">🇫🇷 FR</option>
+  </select>
+</div>
         </div>
       </header>
 
