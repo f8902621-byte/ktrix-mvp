@@ -715,7 +715,7 @@ const formatPrice = (price) => {
             </div>
 
             {/* Extra filters */}
-            <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-bold text-gray-300 mb-2">🚿 {t.bathrooms}</label>
                 <input type="number" value={searchParams.bathrooms} onChange={(e) => setSearchParams({...searchParams, bathrooms: e.target.value})} className="w-full px-4 py-2.5 border border-gray-700 rounded-lg bg-gray-800 text-gray-200" placeholder="1" />
