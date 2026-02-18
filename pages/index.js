@@ -302,10 +302,10 @@ export default function Landing() {
               <option value="en">🇬🇧 EN</option>
               <option value="fr">🇫🇷 FR</option>
             </select>
-            <button className="hidden sm:flex items-center gap-2 px-4 py-2 text-sm text-gray-400 hover:text-white border border-gray-700 rounded-lg hover:border-gray-600 transition">
-              <LogIn className="w-4 h-4" />
-              {t.login}
-            </button>
+<button onClick={() => router.push(`/search?lang=${language}`)} className="hidden sm:flex items-center gap-2 px-4 py-2 text-sm text-gray-400 hover:text-white border border-gray-700 rounded-lg hover:border-gray-600 transition">
+  <LogIn className="w-4 h-4" />
+  {t.login}
+</button>
             <button
               onClick={() => router.push(`/search?lang=${language}`)}
               className="px-4 sm:px-5 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-lg font-medium hover:from-blue-500 hover:to-cyan-400 transition shadow-lg shadow-blue-500/20 flex items-center gap-2 text-sm"
@@ -618,9 +618,9 @@ export default function Landing() {
             </div>
             <div className="flex gap-6 text-sm">
               <a href="mailto:contact@ktrix.ai" className="text-gray-500 hover:text-white transition">{t.footerContact}</a>
-              <a href="#" className="text-gray-500 hover:text-white transition">{t.footerPrivacy}</a>
-              <a href="#" className="text-gray-500 hover:text-white transition">{t.footerTerms}</a>
-              <a href="/status" className="text-gray-500 hover:text-white transition">Status</a>
+<a href="/privacy" className="text-gray-500 hover:text-white transition">{t.footerPrivacy}</a>
+<a href="/terms" className="text-gray-500 hover:text-white transition">{t.footerTerms}</a>
+              <a href="/monitoring" className="text-gray-500 hover:text-white transition">Status</a>
             </div>
           </div>
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-sm text-gray-600">
