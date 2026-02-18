@@ -447,7 +447,7 @@ const vietnamCities = [
 
 const CheckboxGroup = ({ label, options, field }) => (
   <div className="mb-3">
-      <label className="block text-sm font-bold text-gray-700 mb-2">{label}</label>
+      <label className="block text-sm font-bold text-gray-400 mb-2">{label}</label>
       <div className="flex flex-wrap gap-2">
         {options.map(opt => (
           <button
@@ -456,8 +456,8 @@ const CheckboxGroup = ({ label, options, field }) => (
             onClick={() => toggleArrayItem(field, opt.id)}
             className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
               formData[field].includes(opt.id)
-                ? 'bg-sky-500 text-white shadow-md'
-                : 'bg-slate-100 text-gray-700 hover:bg-slate-200 border border-slate-200'
+                ? 'bg-orange-500 text-white shadow-md shadow-orange-500/20'
+                : 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700'
             }`}
           >
             {formData[field].includes(opt.id) && '✓ '}{opt[language]}
@@ -468,29 +468,29 @@ const CheckboxGroup = ({ label, options, field }) => (
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b sticky top-0 z-50">
+    <div className="min-h-screen bg-gray-950">
+      {/* Header - Dark */}
+      <header className="bg-gray-950/90 backdrop-blur-md border-b border-gray-800 sticky top-0 z-50">
         <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <button onClick={() => router.push('/')} className="p-2 hover:bg-sky-50 rounded-lg text-sky-600">
+            <button onClick={() => router.push('/')} className="p-2 hover:bg-gray-800 rounded-lg text-blue-400">
               <Home className="w-5 h-5" />
             </button>
             <div className="flex items-center gap-2">
               <img src="https://raw.githubusercontent.com/f8902621-byte/traxhome-mvp/main/Ktrixlogo.png" alt="K Trix" className="w-12 h-12 object-contain" />
               <div>
-                <h1 className="text-lg font-bold text-gray-800">💰 {t.title}</h1>
+                <h1 className="text-lg font-bold text-white">💰 {t.title}</h1>
                 <p className="text-xs text-gray-500">{t.subtitle}</p>
               </div>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <select value={language} onChange={(e) => setLanguage(e.target.value)} className="px-3 py-2 border rounded-lg bg-white text-sm">
+            <select value={language} onChange={(e) => setLanguage(e.target.value)} className="px-3 py-2 border border-gray-700 rounded-lg bg-gray-900 text-gray-300 text-sm">
               <option value="vn">🇻🇳 VN</option>
               <option value="en">🇬🇧 EN</option>
               <option value="fr">🇫🇷 FR</option>
             </select>
-            <button onClick={() => router.push('/search')} className="px-3 py-2 bg-sky-100 text-sky-700 rounded-lg text-sm font-medium">
+            <button onClick={() => router.push('/search')} className="px-3 py-2 bg-blue-500/10 text-blue-400 rounded-lg text-sm font-medium border border-blue-500/20">
               🔍 {t.backToSearch}
             </button>
           </div>
@@ -500,21 +500,20 @@ const CheckboxGroup = ({ label, options, field }) => (
       <div className="max-w-4xl mx-auto px-4 py-6">
       <div className="space-y-6">
         
-             
             {/* Section: Localisation */}
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                <MapPin className="w-5 h-5 text-orange-500" />
+            <div className="bg-gray-900 rounded-xl border border-gray-800 p-6">
+              <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                <MapPin className="w-5 h-5 text-orange-400" />
                 {t.location}
               </h2>
               
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">{t.city} <span className="text-orange-500">*</span></label>
+                  <label className="block text-sm font-bold text-gray-300 mb-1">{t.city} <span className="text-orange-400">*</span></label>
                   <select 
                     value={formData.city} 
                     onChange={(e) => setFormData({...formData, city: e.target.value, district: '', ward: ''})} 
-                    className="w-full px-3 py-2 border rounded-lg"
+                    className="w-full px-3 py-2 border border-gray-700 rounded-lg bg-gray-800 text-gray-200"
                   >
                     <option value="">{t.selectCity}</option>
                     {vietnamCities.map((c, i) => <option key={i} value={c.vn}>{c[language]}</option>)}
@@ -522,11 +521,11 @@ const CheckboxGroup = ({ label, options, field }) => (
                 </div>
                 <div>
 <div>
-  <label className="block text-sm font-bold text-gray-700 mb-1">{t.district} <span className="text-orange-500">*</span></label>
+  <label className="block text-sm font-bold text-gray-300 mb-1">{t.district} <span className="text-orange-400">*</span></label>
   <select 
     value={formData.district} 
     onChange={(e) => setFormData({...formData, district: e.target.value, ward: ''})}
-    className="w-full px-3 py-2 border rounded-lg"
+    className="w-full px-3 py-2 border border-gray-700 rounded-lg bg-gray-800 text-gray-200"
     disabled={!formData.city}
   >
     <option value="">{t.selectDistrict}</option>
@@ -539,29 +538,29 @@ const CheckboxGroup = ({ label, options, field }) => (
               
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">{t.ward}</label>
+                  <label className="block text-sm font-bold text-gray-300 mb-1">{t.ward}</label>
                   <input 
                     type="text" 
                     value={formData.ward} 
                     onChange={(e) => setFormData({...formData, ward: e.target.value})}
-                    className="w-full px-3 py-2 border rounded-lg"
+                    className="w-full px-3 py-2 border border-gray-700 rounded-lg bg-gray-800 text-gray-200"
                     placeholder={t.selectWard}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">{t.street}</label>
+                  <label className="block text-sm font-bold text-gray-300 mb-1">{t.street}</label>
                   <input 
                     type="text" 
                     value={formData.street} 
                     onChange={(e) => setFormData({...formData, street: e.target.value})}
-                    className="w-full px-3 py-2 border rounded-lg"
+                    className="w-full px-3 py-2 border border-gray-700 rounded-lg bg-gray-800 text-gray-200"
                     placeholder="123 Nguyễn Văn A"
                   />
                 </div>
               </div>
               
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">{t.propertyType} <span className="text-orange-500">*</span></label>
+                <label className="block text-sm font-bold text-gray-300 mb-2">{t.propertyType} <span className="text-orange-400">*</span></label>
                 <div className="flex flex-wrap gap-2">
                   {propertyTypes.map((pt, i) => (
                     <button
@@ -570,8 +569,8 @@ const CheckboxGroup = ({ label, options, field }) => (
                       onClick={() => setFormData({...formData, propertyType: pt.vn})}
                       className={`px-3 py-2 rounded-lg text-sm font-medium transition ${
                         formData.propertyType === pt.vn
-                          ? 'bg-orange-500 text-white shadow-md'
-                          : 'bg-slate-100 text-gray-700 hover:bg-slate-200 border border-slate-200'
+                          ? 'bg-orange-500 text-white shadow-md shadow-orange-500/20'
+                          : 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700'
                       }`}
                     >
                       {pt[language]}
@@ -582,24 +581,24 @@ const CheckboxGroup = ({ label, options, field }) => (
             </div>
 
             {/* Section: Prix & Infos de base */}
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h2 className="text-lg font-bold text-gray-800 mb-4">💰 {t.priceSection}</h2>
+            <div className="bg-gray-900 rounded-xl border border-gray-800 p-6">
+              <h2 className="text-lg font-bold text-white mb-4">💰 {t.priceSection}</h2>
               
               <div className="grid grid-cols-3 gap-4 mb-4">
                 <div className="col-span-2">
-                  <label className="block text-sm font-bold text-gray-700 mb-1">{t.price} <span className="text-orange-500">*</span></label>
+                  <label className="block text-sm font-bold text-gray-300 mb-1">{t.price} <span className="text-orange-400">*</span></label>
                   <div className="flex gap-2">
                     <input 
                       type="number" 
                       value={formData.price} 
                       onChange={(e) => setFormData({...formData, price: e.target.value})}
-                      className="flex-1 px-3 py-2 border rounded-lg"
+                      className="flex-1 px-3 py-2 border border-gray-700 rounded-lg bg-gray-800 text-gray-200"
                       placeholder="5"
                     />
                     <select 
                       value={formData.priceUnit} 
                       onChange={(e) => setFormData({...formData, priceUnit: e.target.value})}
-                      className="px-3 py-2 border rounded-lg"
+                      className="px-3 py-2 border border-gray-700 rounded-lg bg-gray-800 text-gray-200"
                     >
                       <option value="ty">Tỷ</option>
                       <option value="trieu">Triệu</option>
@@ -612,53 +611,53 @@ const CheckboxGroup = ({ label, options, field }) => (
                       type="checkbox" 
                       checked={formData.priceNegotiable}
                       onChange={(e) => setFormData({...formData, priceNegotiable: e.target.checked})}
-                      className="w-5 h-5 text-orange-500 rounded"
+                      className="w-5 h-5 text-orange-500 rounded bg-gray-800 border-gray-600"
                     />
-                    <span className="text-sm font-medium">{t.priceNegotiable}</span>
+                    <span className="text-sm font-medium text-gray-300">{t.priceNegotiable}</span>
                   </label>
                 </div>
               </div>
               
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">{t.landArea} <span className="text-orange-500">*</span></label>
-                  <input type="number" value={formData.landArea} onChange={(e) => setFormData({...formData, landArea: e.target.value})} className="w-full px-3 py-2 border rounded-lg" placeholder="100" />
+                  <label className="block text-sm font-bold text-gray-300 mb-1">{t.landArea} <span className="text-orange-400">*</span></label>
+                  <input type="number" value={formData.landArea} onChange={(e) => setFormData({...formData, landArea: e.target.value})} className="w-full px-3 py-2 border border-gray-700 rounded-lg bg-gray-800 text-gray-200" placeholder="100" />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">{t.livingArea}</label>
-                  <input type="number" value={formData.livingArea} onChange={(e) => setFormData({...formData, livingArea: e.target.value})} className="w-full px-3 py-2 border rounded-lg" placeholder="80" />
+                  <label className="block text-sm font-bold text-gray-300 mb-1">{t.livingArea}</label>
+                  <input type="number" value={formData.livingArea} onChange={(e) => setFormData({...formData, livingArea: e.target.value})} className="w-full px-3 py-2 border border-gray-700 rounded-lg bg-gray-800 text-gray-200" placeholder="80" />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">{t.bedrooms}</label>
-                  <input type="number" value={formData.bedrooms} onChange={(e) => setFormData({...formData, bedrooms: e.target.value})} className="w-full px-3 py-2 border rounded-lg" placeholder="3" />
+                  <label className="block text-sm font-bold text-gray-300 mb-1">{t.bedrooms}</label>
+                  <input type="number" value={formData.bedrooms} onChange={(e) => setFormData({...formData, bedrooms: e.target.value})} className="w-full px-3 py-2 border border-gray-700 rounded-lg bg-gray-800 text-gray-200" placeholder="3" />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">{t.bathrooms}</label>
-                  <input type="number" value={formData.bathrooms} onChange={(e) => setFormData({...formData, bathrooms: e.target.value})} className="w-full px-3 py-2 border rounded-lg" placeholder="2" />
+                  <label className="block text-sm font-bold text-gray-300 mb-1">{t.bathrooms}</label>
+                  <input type="number" value={formData.bathrooms} onChange={(e) => setFormData({...formData, bathrooms: e.target.value})} className="w-full px-3 py-2 border border-gray-700 rounded-lg bg-gray-800 text-gray-200" placeholder="2" />
                 </div>
               </div>
             </div>
 
             {/* Section: Dimensions */}
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h2 className="text-lg font-bold text-gray-800 mb-4">📐 {t.dimensions}</h2>
+            <div className="bg-gray-900 rounded-xl border border-gray-800 p-6">
+              <h2 className="text-lg font-bold text-white mb-4">📐 {t.dimensions}</h2>
               
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">{t.floors}</label>
-                  <input type="number" value={formData.floors} onChange={(e) => setFormData({...formData, floors: e.target.value})} className="w-full px-3 py-2 border rounded-lg" placeholder="2" />
+                  <label className="block text-sm font-bold text-gray-300 mb-1">{t.floors}</label>
+                  <input type="number" value={formData.floors} onChange={(e) => setFormData({...formData, floors: e.target.value})} className="w-full px-3 py-2 border border-gray-700 rounded-lg bg-gray-800 text-gray-200" placeholder="2" />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">{t.landLength}</label>
-                  <input type="number" value={formData.landLength} onChange={(e) => setFormData({...formData, landLength: e.target.value})} className="w-full px-3 py-2 border rounded-lg" placeholder="20" />
+                  <label className="block text-sm font-bold text-gray-300 mb-1">{t.landLength}</label>
+                  <input type="number" value={formData.landLength} onChange={(e) => setFormData({...formData, landLength: e.target.value})} className="w-full px-3 py-2 border border-gray-700 rounded-lg bg-gray-800 text-gray-200" placeholder="20" />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">{t.landWidth}</label>
-                  <input type="number" value={formData.landWidth} onChange={(e) => setFormData({...formData, landWidth: e.target.value})} className="w-full px-3 py-2 border rounded-lg" placeholder="5" />
+                  <label className="block text-sm font-bold text-gray-300 mb-1">{t.landWidth}</label>
+                  <input type="number" value={formData.landWidth} onChange={(e) => setFormData({...formData, landWidth: e.target.value})} className="w-full px-3 py-2 border border-gray-700 rounded-lg bg-gray-800 text-gray-200" placeholder="5" />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">{t.direction}</label>
-                  <select value={formData.direction} onChange={(e) => setFormData({...formData, direction: e.target.value})} className="w-full px-3 py-2 border rounded-lg">
+                  <label className="block text-sm font-bold text-gray-300 mb-1">{t.direction}</label>
+                  <select value={formData.direction} onChange={(e) => setFormData({...formData, direction: e.target.value})} className="w-full px-3 py-2 border border-gray-700 rounded-lg bg-gray-800 text-gray-200">
                     <option value="">--</option>
                     {directions.map((d, i) => <option key={i} value={d.vn}>{d[language]}</option>)}
                   </select>
@@ -667,22 +666,22 @@ const CheckboxGroup = ({ label, options, field }) => (
               
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">{t.legalStatus}</label>
-                  <select value={formData.legalStatus} onChange={(e) => setFormData({...formData, legalStatus: e.target.value})} className="w-full px-3 py-2 border rounded-lg">
+                  <label className="block text-sm font-bold text-gray-300 mb-1">{t.legalStatus}</label>
+                  <select value={formData.legalStatus} onChange={(e) => setFormData({...formData, legalStatus: e.target.value})} className="w-full px-3 py-2 border border-gray-700 rounded-lg bg-gray-800 text-gray-200">
                     <option value="">--</option>
                     {legalStatuses.map((s, i) => <option key={i} value={s.vn}>{s[language]}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">{t.propertyCondition}</label>
-                  <select value={formData.propertyCondition} onChange={(e) => setFormData({...formData, propertyCondition: e.target.value})} className="w-full px-3 py-2 border rounded-lg">
+                  <label className="block text-sm font-bold text-gray-300 mb-1">{t.propertyCondition}</label>
+                  <select value={formData.propertyCondition} onChange={(e) => setFormData({...formData, propertyCondition: e.target.value})} className="w-full px-3 py-2 border border-gray-700 rounded-lg bg-gray-800 text-gray-200">
                     <option value="">--</option>
                     {propertyConditions.map((c, i) => <option key={i} value={c.vn}>{c[language]}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">{t.furniture}</label>
-                  <select value={formData.furniture} onChange={(e) => setFormData({...formData, furniture: e.target.value})} className="w-full px-3 py-2 border rounded-lg">
+                  <label className="block text-sm font-bold text-gray-300 mb-1">{t.furniture}</label>
+                  <select value={formData.furniture} onChange={(e) => setFormData({...formData, furniture: e.target.value})} className="w-full px-3 py-2 border border-gray-700 rounded-lg bg-gray-800 text-gray-200">
                     <option value="">--</option>
                     {furnitureOptions.map((f, i) => <option key={i} value={f.vn}>{f[language]}</option>)}
                   </select>
@@ -692,16 +691,16 @@ const CheckboxGroup = ({ label, options, field }) => (
 
 {/* Section: Points forts + Proximités côte à côte */}
 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-  <div className="bg-white rounded-xl shadow-lg p-5">
-    <h2 className="text-lg font-bold text-gray-800 mb-3">✨ {t.highlights}</h2>
+  <div className="bg-gray-900 rounded-xl border border-gray-800 p-5">
+    <h2 className="text-lg font-bold text-white mb-3">✨ {t.highlights}</h2>
     <CheckboxGroup label="" options={highlightOptions} field="highlights" />
     
-    <h2 className="text-lg font-bold text-gray-800 mb-3 mt-4">💼 {t.saleConditions}</h2>
+    <h2 className="text-lg font-bold text-white mb-3 mt-4">💼 {t.saleConditions}</h2>
     <CheckboxGroup label="" options={saleConditionOptions} field="saleConditions" />
   </div>
   
-  <div className="bg-white rounded-xl shadow-lg p-5">
-    <h2 className="text-lg font-bold text-gray-800 mb-3">📍 Proximités</h2>
+  <div className="bg-gray-900 rounded-xl border border-gray-800 p-5">
+    <h2 className="text-lg font-bold text-white mb-3">📍 Proximités</h2>
     <CheckboxGroup label={`🎓 ${t.nearbyEducation}`} options={nearbyEducationOptions} field="nearbyEducation" />
     <CheckboxGroup label={`🏥 ${t.nearbyHealth}`} options={nearbyHealthOptions} field="nearbyHealth" />
     <CheckboxGroup label={`🛒 ${t.nearbyAmenities}`} options={nearbyAmenitiesOptions} field="nearbyAmenities" />
@@ -710,12 +709,12 @@ const CheckboxGroup = ({ label, options, field }) => (
 </div>
 
             {/* Notes additionnelles */}
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h2 className="text-lg font-bold text-gray-800 mb-4">📝 {t.additionalNotes}</h2>
+            <div className="bg-gray-900 rounded-xl border border-gray-800 p-6">
+              <h2 className="text-lg font-bold text-white mb-4">📝 {t.additionalNotes}</h2>
               <textarea
                 value={formData.additionalNotes}
                 onChange={(e) => setFormData({...formData, additionalNotes: e.target.value})}
-                className="w-full px-4 py-3 border rounded-lg h-24 resize-none"
+                className="w-full px-4 py-3 border border-gray-700 rounded-lg bg-gray-800 text-gray-200 h-24 resize-none"
                 placeholder={t.additionalNotesPlaceholder}
               />
             </div>
@@ -723,13 +722,13 @@ const CheckboxGroup = ({ label, options, field }) => (
           </div>
 
           {/* Résultat généré */}
-          <div className="space-y-4">
+          <div className="space-y-4 mt-6">
             
             {/* Bouton générer */}
             <button
               onClick={handleGenerate}
               disabled={generating || !formData.city || !formData.propertyType || !formData.price || !formData.landArea}
-              className="w-full py-4 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-xl font-bold text-lg flex items-center justify-center gap-3 shadow-lg hover:from-orange-600 hover:to-amber-600 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              className="w-full py-4 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-xl font-bold text-lg flex items-center justify-center gap-3 shadow-lg shadow-orange-500/20 hover:from-orange-600 hover:to-amber-600 disabled:opacity-50 disabled:cursor-not-allowed transition"
             >
               {generating ? (
                 <>
@@ -744,12 +743,12 @@ const CheckboxGroup = ({ label, options, field }) => (
               )}
             </button>
 
-            <p className="text-sm text-center text-orange-700 font-medium">⚠️ {t.required}</p>
+            <p className="text-sm text-center text-orange-400 font-medium">⚠️ {t.required}</p>
 
             {/* Zone de texte généré */}
             {generatedText && (
-              <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-                <div className="bg-gradient-to-r from-green-500 to-emerald-500 px-4 py-3 flex items-center justify-between">
+              <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+                <div className="bg-gradient-to-r from-emerald-600 to-emerald-500 px-4 py-3 flex items-center justify-between">
                   <h3 className="text-white font-bold flex items-center gap-2">
                     <CheckCircle className="w-5 h-5" />
                     {t.generatedTitle}
@@ -767,18 +766,18 @@ const CheckboxGroup = ({ label, options, field }) => (
                   <textarea
                     value={generatedText}
                     onChange={(e) => setGeneratedText(e.target.value)}
-                    className="w-full h-96 p-4 bg-slate-50 border rounded-lg font-mono text-sm resize-none"
+                    className="w-full h-96 p-4 bg-gray-800 border border-gray-700 rounded-lg font-mono text-sm text-gray-200 resize-none"
                   />
                 </div>
                 
                 <div className="px-4 pb-4">
-                  <p className="text-sm font-bold text-gray-700 mb-2">{t.postOn}:</p>
+                  <p className="text-sm font-bold text-gray-400 mb-2">{t.postOn}:</p>
                   <div className="flex gap-2">
                     <a 
                       href="https://www.chotot.com/dang-tin" 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="flex-1 py-3 bg-green-500 text-white rounded-lg font-medium text-center flex items-center justify-center gap-2 hover:bg-green-600 transition"
+                      className="flex-1 py-3 bg-emerald-600 text-white rounded-lg font-medium text-center flex items-center justify-center gap-2 hover:bg-emerald-500 transition"
                     >
                       <ExternalLink className="w-4 h-4" />
                       Chotot.com
@@ -787,7 +786,7 @@ const CheckboxGroup = ({ label, options, field }) => (
                       href="https://alonhadat.com.vn/dang-tin.html" 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="flex-1 py-3 bg-purple-500 text-white rounded-lg font-medium text-center flex items-center justify-center gap-2 hover:bg-purple-600 transition"
+                      className="flex-1 py-3 bg-purple-600 text-white rounded-lg font-medium text-center flex items-center justify-center gap-2 hover:bg-purple-500 transition"
                     >
                       <ExternalLink className="w-4 h-4" />
                       Alonhadat.com.vn
