@@ -733,7 +733,7 @@ const formatPrice = (price) => {
                   <option value="dangcho">{t.legalDangcho}</option>
                 </select>
               </div>
-              <div className="flex items-end">
+              <div className="flex items-end mt-4">
                 <label className="flex items-center gap-2 cursor-pointer pb-2">
                   <input type="checkbox" checked={searchParams.hasParking} onChange={(e) => setSearchParams({...searchParams, hasParking: e.target.checked})} className="w-5 h-5 rounded bg-gray-800 border-gray-600 text-blue-500" />
                   <span className="text-sm font-medium text-gray-300">🚗 {t.hasParking}</span>
