@@ -26,7 +26,14 @@ export default function Landing() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
   const router = useRouter();
+const [stats, setStats] = useState(null);
 
+useEffect(() => {
+  fetch('/api/monitoring')
+    .then(res => res.json())
+    .then(data => setStats(data.stats))
+    .catch(() => {});
+}, []);
   const t = {
     vn: {
       tagline: 'Nền tảng Tìm kiếm BĐS Thông minh',
@@ -38,7 +45,7 @@ export default function Landing() {
       tryBeta: 'Dùng thử miễn phí',
       learnMore: 'Tìm hiểu thêm',
       statSources: 'Nguồn dữ liệu',
-      statListings: 'Tin đăng mỗi ngày',
+     statListings: 'Tin đăng trong cơ sở dữ liệu',
       statCoverage: 'Độ phủ thị trường',
       statCities: 'Tỉnh thành',
       sourcesTitle: 'Dữ liệu từ các nguồn hàng đầu',
@@ -113,7 +120,7 @@ export default function Landing() {
       tryBeta: 'Try for free',
       learnMore: 'Learn more',
       statSources: 'Data sources',
-      statListings: 'Listings per day',
+      sstatListings: 'Listings in database',
       statCoverage: 'Market coverage',
       statCities: 'Provinces',
       sourcesTitle: 'Data from leading sources',
@@ -187,7 +194,7 @@ export default function Landing() {
       tryBeta: 'Essai gratuit',
       learnMore: 'En savoir plus',
       statSources: 'Sources de données',
-      statListings: 'Annonces par jour',
+      statListings: 'Annonces en base',
       statCoverage: 'Couverture marché',
       statCities: 'Provinces',
       sourcesTitle: 'Données des sources leaders',
@@ -360,7 +367,7 @@ export default function Landing() {
             <div className="grid grid-cols-2 gap-3 sm:gap-4">
               {[
                 { icon: <BarChart3 className="w-6 h-6 text-cyan-400" />, value: '2', label: t.statSources, bg: 'bg-cyan-500/10', border: 'border-cyan-500/20' },
-                { icon: <TrendingUp className="w-6 h-6 text-orange-400" />, value: '10K+', label: t.statListings, bg: 'bg-orange-500/10', border: 'border-orange-500/20' },
+                { icon: <TrendingUp className="w-6 h-6 text-orange-400" />, value: stats?.total_archive ? stats.total_archive.toLocaleString() : '...', label: t.statListings, bg: 'bg-orange-500/10', border: 'border-orange-500/20' },
                 { icon: <Shield className="w-6 h-6 text-blue-400" />, value: '65%', label: t.statCoverage, bg: 'bg-blue-500/10', border: 'border-blue-500/20', gradient: true },
                 { icon: <Globe className="w-6 h-6 text-emerald-400" />, value: '12+', label: t.statCities, bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
               ].map((stat, i) => (
