@@ -671,7 +671,7 @@ const formatPrice = (price) => {
                 </select>
               </div>
               <div>
-               <label className="block text-sm font-bold text-gray-300 mb-2">🏘 {t.ward}</label>
+               <label className="block text-sm font-bold text-gray-300 mb-2"> {t.ward}</label>
                 <select value={searchParams.ward} onChange={(e) => setSearchParams({...searchParams, ward: e.target.value})} className="w-full px-4 py-2.5 border border-gray-700 rounded-lg bg-gray-800 text-gray-200" disabled={!searchParams.district}>
                   <option value="">{t.wardAll || 'All'}</option>
                   {currentWards.map((w, i) => <option key={i} value={w}>{premiumWards[w] ? `⭐ ${w}` : w}</option>)}
