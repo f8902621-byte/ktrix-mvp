@@ -700,7 +700,7 @@ const CheckboxGroup = ({ label, options, field }) => (
   </div>
   
   <div className="bg-gray-900 rounded-xl border border-gray-800 p-5">
-    <h2 className="text-lg font-bold text-white mb-3">📍 Proximités</h2>
+    <h2 className="text-lg font-bold text-white mb-3">📍 {language === 'vn' ? 'Tiện ích lân cận' : language === 'en' ? 'Nearby' : 'Proximités'}</h2>
     <CheckboxGroup label={`🎓 ${t.nearbyEducation}`} options={nearbyEducationOptions} field="nearbyEducation" />
     <CheckboxGroup label={`🏥 ${t.nearbyHealth}`} options={nearbyHealthOptions} field="nearbyHealth" />
     <CheckboxGroup label={`🛒 ${t.nearbyAmenities}`} options={nearbyAmenitiesOptions} field="nearbyAmenities" />
