@@ -29,7 +29,14 @@ export default function SearchPage() {
   const [selectedProperty, setSelectedProperty] = useState(null);
   const [savedSearches, setSavedSearches] = useState([]);
   const [showSavedSearches, setShowSavedSearches] = useState(false);
-  
+  useEffect(() => {
+  if (typeof window !== 'undefined') {
+    const betaCode = localStorage.getItem('ktrix_beta_code');
+    if (!betaCode) {
+      router.push('/beta');
+    }
+  }
+}, []);
   const [searchParams, setSearchParams] = useState({
     city: '',
     district: '',
