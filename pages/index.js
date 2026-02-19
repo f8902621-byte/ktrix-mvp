@@ -309,12 +309,12 @@ useEffect(() => {
               <option value="en">🇬🇧 EN</option>
               <option value="fr">🇫🇷 FR</option>
             </select>
-<button onClick={() => router.push(`/search?lang=${language}`)} className="hidden sm:flex items-center gap-2 px-4 py-2 text-sm text-gray-400 hover:text-white border border-gray-700 rounded-lg hover:border-gray-600 transition">
+<button onClick={() => router.push(`/beta?lang=${language}`)} className="hidden sm:flex items-center gap-2 px-4 py-2 text-sm text-gray-400 hover:text-white border border-gray-700 rounded-lg hover:border-gray-600 transition">
   <LogIn className="w-4 h-4" />
   {t.login}
 </button>
             <button
-              onClick={() => router.push(`/search?lang=${language}`)}
+              onClick={() => router.push(`/beta?lang=${language}`)}
               className="px-4 sm:px-5 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-lg font-medium hover:from-blue-500 hover:to-cyan-400 transition shadow-lg shadow-blue-500/20 flex items-center gap-2 text-sm"
             >
               <Search className="w-4 h-4" />
@@ -351,7 +351,7 @@ useEffect(() => {
               <p className="text-base sm:text-lg text-gray-400 mb-8 leading-relaxed">{t.heroDesc}</p>
               <div className="flex flex-wrap gap-3 sm:gap-4">
                 <button
-                  onClick={() => router.push(`/search?lang=${language}`)}
+                  onClick={() => router.push(`/beta?lang=${language}`)}
                   className="px-6 sm:px-8 py-3.5 sm:py-4 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl font-semibold hover:from-blue-500 hover:to-cyan-400 transition shadow-xl shadow-blue-500/25 flex items-center gap-2 text-base sm:text-lg"
                 >
                   {t.tryBeta}
@@ -589,7 +589,7 @@ useEffect(() => {
                 )}
                 <div className="flex items-center justify-center gap-2 text-blue-100">
                   <span>{t.ctaDirect}</span>
-                  <button onClick={() => router.push(`/search?lang=${language}`)} className="text-white font-semibold underline hover:no-underline">
+                  <button onClick={() => router.push(`/beta?lang=${language}`)} className="text-white font-semibold underline hover:no-underline">
                     {t.tryBeta} →
                   </button>
                 </div>
