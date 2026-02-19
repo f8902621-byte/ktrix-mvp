@@ -159,6 +159,7 @@ export default function SearchPage() {
       progressFinalizing: 'Đang hoàn tất...',
       progressDone: 'Hoàn tất!',
       progressTime: 'Đang tìm kiếm...',
+      ward: 'Phường/Xã',
       wardAll: 'Tất cả phường/xã',
     },
     en: {
@@ -205,6 +206,7 @@ export default function SearchPage() {
       progressFinalizing: 'Finalizing...',
       progressDone: 'Done!',
       progressTime: 'Searching sources...',
+      ward: 'Ward',
       wardAll: 'All wards',
     },
     fr: {
@@ -250,7 +252,8 @@ export default function SearchPage() {
       progressScoring: 'Analyse et scoring...',
       progressFinalizing: 'Finalisation...',
       progressDone: 'Terminé !',
-     progressTime: 'Recherche en cours...',
+      progressTime: 'Recherche en cours...',
+      ward: 'Quartier',
       wardAll: 'Tous les quartiers',
     }
   }[language];
