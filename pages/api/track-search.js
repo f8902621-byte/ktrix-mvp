@@ -11,25 +11,25 @@ export default async function handler(req, res) {
   const { code } = req.body;
   if (!code) return res.status(400).end();
 
-  await supabase.rpc('increment_search_count', { tester_code: code }).catch(() => {
-    // Fallback: manual increment
-    supabase
+  try {
+    const { data } = await supabase
       .from('beta_testers')
       .select('search_count')
       .eq('code', code)
-      .single()
-      .then(({ data }) => {
-        if (data) {
-          supabase
-            .from('beta_testers')
-            .update({ 
-              search_count: (data.search_count || 0) + 1,
-              last_search_at: new Date().toISOString()
-            })
-            .eq('code', code);
-        }
-      });
-  });
+      .single();
+
+    if (data) {
+      await supabase
+        .from('beta_testers')
+        .update({ 
+          search_count: (data.search_count || 0) + 1,
+          last_search_at: new Date().toISOString()
+        })
+        .eq('code', code);
+    }
+  } catch (err) {
+    console.error('Track error:', err);
+  }
 
   res.status(200).json({ ok: true });
 }
