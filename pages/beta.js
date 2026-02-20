@@ -156,9 +156,9 @@ export default function BetaPage() {
 
         {/* Footer links */}
         <div className="text-center mt-6 space-y-3">
-          <p className="text-gray-500 text-sm">
-            {t.noCode} <a href="mailto:contact@ktrix.ai" className="text-blue-400 hover:underline">contact@ktrix.ai</a>
-          </p>
+<button onClick={() => router.push(`/beta-register?lang=${language}`)} className="text-blue-400 text-sm hover:underline transition">
+            {language === 'vn' ? 'Chưa có mã? Đăng ký tại đây' : language === 'en' ? 'No code? Register here' : 'Pas de code ? Inscrivez-vous ici'}
+          </button>
           <button onClick={() => router.push('/')} className="text-gray-500 text-sm hover:text-gray-300 transition">
             ← {t.backHome}
           </button>
