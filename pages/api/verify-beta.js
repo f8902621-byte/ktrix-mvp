@@ -1,29 +1,12 @@
 // pages/api/verify-beta.js
+import { createClient } from '@supabase/supabase-js';
 
-const VALID_CODES = [
-  'KTRIX-7F3K9M',
-  'KTRIX-B2N8P4',
-  'KTRIX-D5Q1W6',
-  'KTRIX-H9L3X7',
-  'KTRIX-J4R8Y2',
-  'KTRIX-M6T2Z5',
-  'KTRIX-P1V9A3',
-  'KTRIX-S8C4E6',
-  'KTRIX-U3G7F1',
-  'KTRIX-W5K2H8',
-  'KTRIX-X9N6J4',
-  'KTRIX-Z1R3L7',
-  'KTRIX-A4T8M2',
-  'KTRIX-C6V5P9',
-  'KTRIX-E2W1Q3',
-  'KTRIX-G8Y4S6',
-  'KTRIX-K3Z7U1',
-  'KTRIX-L5A9V4',
-  'KTRIX-N7B2X8',
-  'KTRIX-Q1D6F3',
-];
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
-export default function handler(req, res) {
+export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -34,7 +17,52 @@ export default function handler(req, res) {
     return res.status(400).json({ valid: false, error: 'No code provided' });
   }
 
-  const isValid = VALID_CODES.includes(code.toUpperCase().trim());
+  const trimmed = code.toUpperCase().trim();
 
-  return res.status(200).json({ valid: isValid });
+  try {
+    // Check code in database
+    const { data, error } = await supabase
+      .from('beta_testers')
+      .select('*')
+      .eq('code', trimmed)
+      .single();
+
+    if (error || !data) {
+      return res.status(200).json({ valid: false, error: 'Code not found' });
+    }
+
+    // Check if active
+    if (!data.is_active) {
+      return res.status(200).json({ valid: false, error: 'Code deactivated' });
+    }
+
+    // Check expiration
+    if (data.expires_at && new Date(data.expires_at) < new Date()) {
+      return res.status(200).json({ valid: false, error: 'Code expired' });
+    }
+
+    // Check if registered (has email)
+    if (!data.email || data.email === '' || data.email === 'EMPTY') {
+      return res.status(200).json({ valid: false, needsRegistration: true, error: 'Registration required' });
+    }
+
+    // Update last access
+    await supabase
+      .from('beta_testers')
+      .update({ last_search_at: new Date().toISOString() })
+      .eq('code', trimmed);
+
+    return res.status(200).json({ 
+      valid: true, 
+      tester: {
+        first_name: data.first_name,
+        last_name: data.last_name,
+        code: data.code
+      }
+    });
+
+  } catch (err) {
+    console.error('Beta verification error:', err);
+    return res.status(500).json({ valid: false, error: 'Server error' });
+  }
 }
