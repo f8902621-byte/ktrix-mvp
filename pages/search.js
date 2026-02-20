@@ -343,7 +343,9 @@ export default function SearchPage() {
       setError(t.required);
       return;
     }
-    
+    // Track search for beta tester
+    const betaCode = typeof window !== 'undefined' ? localStorage.getItem('ktrix_beta_code') : null;
+    if (betaCode) fetch('/api/track-search', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: betaCode }) });
     setLoading(true);
     setSearchProgress(0);
     const progressInterval = setInterval(() => {
