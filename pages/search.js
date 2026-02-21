@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Search, Menu, Download, MapPin, AlertCircle, Loader, Home, Info, TrendingUp, TrendingDown, Minus, Database } from 'lucide-react';
 import { useRouter } from 'next/router';
 import { wardsByDistrict, premiumWards } from '../lib/wards-data';
-
+import { NeedleGauge, PriceDistribution, ScoreBars, AlertBadge, SignalItem, NEON_CSS, NEON } from '../components/HolographicCharts';
 export default function SearchPage() {
   const router = useRouter();
   const [language, setLanguage] = useState('vn');
