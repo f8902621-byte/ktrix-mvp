@@ -2152,7 +2152,7 @@ function calculateDistrictStats(results) {
   for (const [district, data] of Object.entries(districtData)) {
     if (data.count < 3) continue;
     
-    const sortedPrices = [...data.pricesPerM2].sort((a, b) => a - b);
+    const sortedPrices = [...data.pricesPerM2].filter(p => p > 1).sort((a, b) => a - b);
     const count = sortedPrices.length;
     
     const p25Index = Math.floor(count * 0.25);
