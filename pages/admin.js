@@ -8,7 +8,11 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [noteEdit, setNoteEdit] = useState({ code: null, text: '' });
-
+// Auto-login si password sauvegardé
+  const savedPwd = typeof window !== 'undefined' && localStorage.getItem('ktrix_admin_pwd');
+  if (savedPwd && !authenticated && !loading) {
+    fetchTesters(savedPwd);
+  }
   const fetchTesters = async (pwd) => {
     setLoading(true);
     setError('');
@@ -34,6 +38,7 @@ export default function AdminPage() {
 
   const handleLogin = () => {
     if (!password) return;
+    localStorage.setItem('ktrix_admin_pwd', password);
     fetchTesters(password);
   };
 
@@ -45,7 +50,15 @@ export default function AdminPage() {
     });
     fetchTesters();
   };
-
+const handleReset = async (code) => {
+    if (!confirm('Reset search count to 0 for this tester?')) return;
+    await fetch('/api/admin-data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password, action: 'reset', code }),
+    });
+    fetchTesters();
+  };
   const handleExtend = async (code, days) => {
     await fetch('/api/admin-data', {
       method: 'POST',
