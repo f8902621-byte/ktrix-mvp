@@ -70,7 +70,15 @@ export default async function handler(req, res) {
       if (error) throw error;
       return res.status(200).json({ success: true });
     }
-
+// Reset search count
+    if (action === 'reset') {
+      const { error } = await supabase
+        .from('beta_testers')
+        .update({ search_count: 0 })
+        .eq('code', code);
+      if (error) throw error;
+      return res.status(200).json({ success: true });
+    }
     return res.status(400).json({ error: 'Invalid action' });
 
   } catch (err) {
