@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Lock, Users, RefreshCw, ToggleLeft, ToggleRight, Clock, MessageSquare, Shield, AlertCircle } from 'lucide-react';
 
 export default function AdminPage() {
@@ -8,11 +8,13 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [noteEdit, setNoteEdit] = useState({ code: null, text: '' });
-// Auto-login si password sauvegardé
-  const savedPwd = typeof window !== 'undefined' && localStorage.getItem('ktrix_admin_pwd');
-  if (savedPwd && !authenticated && !loading) {
-    fetchTesters(savedPwd);
-  }
+  useEffect(() => {
+    const savedPwd = localStorage.getItem('ktrix_admin_pwd');
+    if (savedPwd) {
+      setPassword(savedPwd);
+      fetchTesters(savedPwd);
+    }
+  }, []);
   const fetchTesters = async (pwd) => {
     setLoading(true);
     setError('');
