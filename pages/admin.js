@@ -226,6 +226,13 @@ export default function AdminPage() {
                           >
                             <MessageSquare className="w-4 h-4 text-gray-400" />
                           </button>
+                          <button
+                  onClick={() => handleReset(tester.code)}
+                  title="Reset searches"
+                  className="p-1.5 rounded hover:bg-gray-800 transition"
+                >
+                  <RefreshCw className="w-4 h-4 text-orange-400" />
+                </button>
                         </div>
                       </td>
                     </tr>
