@@ -43,39 +43,43 @@ export default function AdminPage() {
   };
 
   const handleToggle = async (code) => {
+    const pwd = password || localStorage.getItem('ktrix_admin_pwd');
     await fetch('/api/admin-data', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password, action: 'toggle', code }),
+      body: JSON.stringify({ password: pwd, action: 'toggle', code }),
     });
-    fetchTesters();
+    fetchTesters(pwd);
   };
-const handleReset = async (code) => {
+  const handleReset = async (code) => {
     if (!confirm('Reset search count to 0 for this tester?')) return;
+    const pwd = password || localStorage.getItem('ktrix_admin_pwd');
     await fetch('/api/admin-data', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password, action: 'reset', code }),
+      body: JSON.stringify({ password: pwd, action: 'reset', code }),
     });
-    fetchTesters();
+    fetchTesters(pwd);
   };
   const handleExtend = async (code, days) => {
+    const pwd = password || localStorage.getItem('ktrix_admin_pwd');
     await fetch('/api/admin-data', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password, action: 'extend', code, data: { days } }),
+      body: JSON.stringify({ password: pwd, action: 'extend', code, data: { days } }),
     });
-    fetchTesters();
+    fetchTesters(pwd);
   };
 
-  const handleNote = async (code) => {
+const handleNote = async (code) => {
+    const pwd = password || localStorage.getItem('ktrix_admin_pwd');
     await fetch('/api/admin-data', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password, action: 'note', code, data: { note: noteEdit.text } }),
+      body: JSON.stringify({ password: pwd, action: 'note', code, data: { note: noteEdit.text } }),
     });
     setNoteEdit({ code: null, text: '' });
-    fetchTesters();
+    fetchTesters(pwd);
   };
 
   const registered = testers.filter(t => t.email && t.email !== '' && t.email !== 'EMPTY');
