@@ -1030,7 +1030,7 @@ const formatPrice = (price) => {
               <h2 className="text-lg font-bold text-white flex items-center gap-2">
                 🤖 {language === 'vn' ? 'Báo cáo AI' : language === 'fr' ? 'Rapport IA' : 'AI Report'}
                 {selectedProperty.negotiationLevel && (
-                  <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                  <span className={`px-3 py-1 rounded-full text-xs md:text-sm font-bold ${
                     selectedProperty.negotiationLevel === 'excellent' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
                     selectedProperty.negotiationLevel === 'good' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' :
                     selectedProperty.negotiationLevel === 'moderate' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
