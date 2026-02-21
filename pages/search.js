@@ -564,7 +564,7 @@ const formatPrice = (price) => {
               ⭐ <span className="hidden md:inline">{t.savedSearches}</span> ({savedSearches.length})
             </button>
           </div>
-className="flex items-center gap-4"
+<div className="flex items-center gap-4">
   <select value={language} onChange={(e) => setLanguage(e.target.value)} className="px-3 py-2 border border-gray-700 rounded-lg bg-gray-900 text-gray-300">
     <option value="vn">🇻🇳 VN</option>
     <option value="en">🇬🇧 EN</option>
