@@ -1096,6 +1096,14 @@ const formatPrice = (price) => {
               />
             </div>
           )}
+{!selectedProperty.pricePosition && (
+            <div style={{background: 'linear-gradient(135deg, #0d1225 0%, rgba(0,212,255,0.03) 100%)', border: '1px solid rgba(0,212,255,0.15)', borderRadius: 16, padding: 16, margin: '12px 0', textAlign: 'center'}}>
+              <p style={{color: '#f0f8ff', fontSize: 14, fontWeight: 700, margin: '0 0 8px', letterSpacing: 1, textTransform: 'uppercase', textShadow: '0 0 10px rgba(0,212,255,0.4)'}}>📊 Price vs Market</p>
+              <p style={{color: 'rgba(240,248,255,0.5)', fontSize: 13, margin: 0}}>
+                {language === 'vn' ? '⚠️ Diện tích không có — không thể phân tích giá/m²' : language === 'fr' ? '⚠️ Surface non renseignée — analyse prix/m² indisponible' : '⚠️ Area not provided — price/m² analysis unavailable'}
+              </p>
+            </div>
+          )}
 {/* Score Bars */}
           <div style={{margin: '12px 0'}}>
             <ScoreBars scores={{
