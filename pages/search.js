@@ -1096,7 +1096,29 @@ const formatPrice = (price) => {
               />
             </div>
           )}
-
+{/* Score Bars */}
+          <div style={{margin: '12px 0'}}>
+            <ScoreBars scores={{
+              location: selectedProperty.pricePosition ? 60 : 40,
+              price: selectedProperty.scoreDetails && selectedProperty.scoreDetails.priceAnalysis
+                ? (selectedProperty.scoreDetails.priceAnalysis.verdict === 'excellent' ? 90
+                  : selectedProperty.scoreDetails.priceAnalysis.verdict === 'good' ? 75
+                  : selectedProperty.scoreDetails.priceAnalysis.verdict === 'fair' ? 55
+                  : 35)
+                : 50,
+              size: selectedProperty.area > 100 ? 80 : selectedProperty.area > 50 ? 65 : selectedProperty.area > 30 ? 50 : 35,
+              legal: selectedProperty.scoreDetails && selectedProperty.scoreDetails.legalStatus
+                ? (selectedProperty.scoreDetails.legalStatus.verdict === 'excellent' ? 90
+                  : selectedProperty.scoreDetails.legalStatus.verdict === 'good' ? 70
+                  : 40)
+                : 30,
+              urgency: selectedProperty.scoreDetails && selectedProperty.scoreDetails.urgentKeywords && selectedProperty.scoreDetails.urgentKeywords.length > 0
+                ? 85
+                : selectedProperty.scoreDetails && selectedProperty.scoreDetails.listingAge && selectedProperty.scoreDetails.listingAge.verdict === 'old'
+                  ? 70 : 40,
+              quality: selectedProperty.score || 50,
+            }} />
+          </div>
           {/* Negotiation Signals */}
           {selectedProperty.scoreDetails && (
             <div style={{background: 'linear-gradient(135deg, #0d1225 0%, rgba(0,212,255,0.03) 100%)', border: '1px solid rgba(0,212,255,0.15)', borderRadius: 16, padding: 16, margin: '12px 0', position: 'relative', overflow: 'hidden'}}>
