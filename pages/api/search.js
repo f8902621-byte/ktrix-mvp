@@ -728,7 +728,9 @@ function getPropertyTypeMapping(userInput) {
   if (!userInput) return PROPERTY_TYPE_MAPPING['tat_ca'];
   
   const input = removeVietnameseAccents(userInput.toLowerCase());
-  
+  if (input.includes('tat ca') || input.includes('all properties') || input.includes('tous biens') || input === 'all') {
+      return PROPERTY_TYPE_MAPPING['tat_ca'];
+    }
   if (input.includes('shophouse')) {
     return PROPERTY_TYPE_MAPPING['shophouse'];
   }
