@@ -861,9 +861,7 @@ async function fetchChotot(params) {
   console.log(`Chotot: ville="${city}" → region=${regionCode}, type="${propertyType}" → code=${typeMapping.chotot}`);
   
   const baseParams = new URLSearchParams();
- if (typeMapping.chotot !== 1000) {
-  baseParams.append('cg', typeMapping.chotot.toString());
-}
+baseParams.append('cg', typeMapping.chotot.toString());
   baseParams.append('region_v2', regionCode);
   baseParams.append('st', 's,k');
   baseParams.append('limit', '50');
