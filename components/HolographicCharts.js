@@ -90,7 +90,9 @@ export function NeedleGauge({ score, label }) {
 }
 
 // === PRICE DISTRIBUTION ===
-export function PriceDistribution({ propertyPrice, min, median, max, count }) {
+export function PriceDistribution({ propertyPrice, min, median, max, count, title }) {
+
+const titleText = title || '📊 Price vs Market';
   const data = [];
   const range = max - min;
   const step = range / 20;
@@ -116,7 +118,7 @@ export function PriceDistribution({ propertyPrice, min, median, max, count }) {
   return (
     <div style={{ background: `linear-gradient(135deg, ${NEON.card} 0%, rgba(0,212,255,0.03) 100%)`, border: `1px solid ${NEON.border}`, borderRadius: 16, padding: '16px 8px 8px', position: 'relative', overflow: 'hidden' }}>
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundImage: `linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px)`, backgroundSize: '20px 20px', pointerEvents: 'none' }} />
-      <p style={{ color: NEON.white, fontSize: 14, fontWeight: 700, textAlign: 'center', margin: '0 0 12px', letterSpacing: 1, textTransform: 'uppercase', textShadow: `0 0 10px ${NEON.blueGlow}` }}>📊 Price vs Market</p>
+      <p style={{color: '#f0f8ff', fontSize: 14, fontWeight: 700, textAlign: 'center', margin: '0 0 12px', letterSpacing: 1, textTransform: 'uppercase', textShadow: '0 0 10px rgba(0,212,255,0.4)'}}>{title || '📊 Price vs Market'}</p>
       <div style={{ textAlign: 'center', margin: '0 0 8px' }}>
         <span style={{ fontSize: 32, fontWeight: 900, color: isBelow ? NEON.green : NEON.red, textShadow: `0 0 20px ${isBelow ? NEON.green : NEON.red}60`, fontFamily: 'Orbitron, monospace' }}>
           {isBelow ? '-' : '+'}{Math.abs(Math.round(((propertyPrice - median) / median) * 100))}%
@@ -149,7 +151,7 @@ export function PriceDistribution({ propertyPrice, min, median, max, count }) {
 }
 
 // === SCORE BARS ===
-export function ScoreBars({ scores }) {
+export function ScoreBars({ scores, title }) {
   const items = [
     { icon: '📍', label: 'Location', value: scores.location },
     { icon: '💰', label: 'Price', value: scores.price },
