@@ -603,7 +603,7 @@ const formatPrice = (price) => {
       {/* Search Form - Dark */}
       {showSearch && (
         <div className="max-w-6xl mx-auto px-4 py-6">
-          <div className="bg-gray-900 rounded-xl border border-gray-800 p-6 space-y-6">
+         <div className="bg-gray-900 rounded-xl border border-gray-800 p-6 space-y-6" onKeyDown={(e) => { if (e.key === 'Enter' && !loading) handleSearch(); }}>
             {/* Sources */}
             <div>
               <label className="block text-sm font-medium text-gray-400 mb-2">🌐 {t.sources}</label>
