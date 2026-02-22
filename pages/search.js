@@ -1232,7 +1232,7 @@ title={language === 'vn' ? '📊 Phân tích giá' : language === 'fr' ? '📊 A
               if (totalArea >= 80) return 60;
               if (totalArea >= 50) return 45;
               if (area > 0) return 35;
-              return 30;
+              return null; // Pas d'info surface disponible
             })(),
             legal: (() => {
               const legalText = (selectedProperty.legalStatus || '').toLowerCase();
@@ -1250,7 +1250,7 @@ title={language === 'vn' ? '📊 Phân tích giá' : language === 'fr' ? '📊 A
                 if (selectedProperty.scoreDetails.legalStatus.verdict === 'good') return 70;
                 return 45;
               }
-              return 40;
+              return null; // Pas d'info légale disponible
             })(),
             urgency: selectedProperty.scoreDetails && selectedProperty.scoreDetails.urgentKeywords && selectedProperty.scoreDetails.urgentKeywords.length > 0
               ? 85
