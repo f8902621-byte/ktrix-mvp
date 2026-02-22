@@ -401,7 +401,7 @@ try {
             setSourceStats(statsBySource);
           }
         }
-
+setAlonhadatLoading(true);
         // Phase 2 : Sources lentes (Alonhadat) → ajout en arrière-plan
         if (slowSources.length > 0 && fastSources.length > 0) {
           fetch('/api/search', {
@@ -442,7 +442,8 @@ try {
                 });
               }
             }
-          }).catch(err => console.error('Alonhadat background error:', err));
+             setAlonhadatLoading(false);
+         }).catch(err => { console.error('Alonhadat background error:', err); setAlonhadatLoading(false); });
         }
 
         // Cas : seulement Alonhadat sélectionné (pas de source rapide)
