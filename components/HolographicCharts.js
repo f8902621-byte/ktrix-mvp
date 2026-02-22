@@ -158,8 +158,7 @@ export function ScoreBars({ scores, title }) {
     { icon: '📏', label: 'Size', value: scores.size },
     { icon: '📜', label: 'Legal', value: scores.legal },
     { icon: '🔥', label: 'Urgency', value: scores.urgency },
-    { icon: '📋', label: 'Listing', value: scores.quality },
-  ];
+   ];
   const getBarColor = (v) => {
     if (v >= 75) return NEON.green;
     if (v >= 50) return NEON.blue;
