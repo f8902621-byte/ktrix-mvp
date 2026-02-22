@@ -1093,6 +1093,7 @@ const formatPrice = (price) => {
                 median={Math.round(selectedProperty.pricePosition.districtMedian / 1000000)}
                 max={Math.round(selectedProperty.pricePosition.districtMax / 1000000)}
                 count={selectedProperty.pricePosition.districtCount}
+title={language === 'vn' ? '📊 Phân tích giá' : language === 'fr' ? '📊 Analyse Prix vs Marché' : '📊 Price vs Market'}
               />
             </div>
           )}
@@ -1125,7 +1126,7 @@ const formatPrice = (price) => {
                 : selectedProperty.scoreDetails && selectedProperty.scoreDetails.listingAge && selectedProperty.scoreDetails.listingAge.verdict === 'old'
                   ? 70 : 40,
               quality: selectedProperty.score || 50,
-            }} />
+            }} title={language === 'vn' ? '🎯 Điểm đánh giá' : language === 'fr' ? '🎯 Score du bien' : '🎯 Property Score'} />
           </div>
           {/* Negotiation Signals */}
           {selectedProperty.scoreDetails && (
