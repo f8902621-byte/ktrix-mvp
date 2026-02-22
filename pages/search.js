@@ -1252,8 +1252,7 @@ title={language === 'vn' ? '📊 Phân tích giá' : language === 'fr' ? '📊 A
               return Math.min(95, q);
             })(),
         }} title={language === 'vn' ? '🎯 Điểm đánh giá' : language === 'fr' ? '🎯 Score du bien' : '🎯 Property Score'} />
-            }} title={language === 'vn' ? '🎯 Điểm đánh giá' : language === 'fr' ? '🎯 Score du bien' : '🎯 Property Score'} />
-          </div>
+                  </div>
           {/* Negotiation Signals */}
           {selectedProperty.scoreDetails && (
             <div style={{background: 'linear-gradient(135deg, #0d1225 0%, rgba(0,212,255,0.03) 100%)', border: '1px solid rgba(0,212,255,0.15)', borderRadius: 16, padding: 16, margin: '12px 0', position: 'relative', overflow: 'hidden'}}>
