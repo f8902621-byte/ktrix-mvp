@@ -365,35 +365,108 @@ export default function SearchPage() {
     setBdsCount(0);
     setSourceStats({});
     setMarketStats([]);
-    try {
-      const response = await fetch('/api/search', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+try {
+        // Séparer sources rapides et lentes
+        const allSources = searchParams.sources || ['chotot', 'alonhadat'];
+        const fastSources = allSources.filter(s => s !== 'alonhadat');
+        const slowSources = allSources.filter(s => s === 'alonhadat');
+        
+        const searchBody = {
           ...searchParams,
           keywords: searchParams.keywords || [],
           keywordsOnly: searchParams.keywordsOnly || false,
           sortBy: sortBy === 'priceAsc' ? 'price_asc' : sortBy === 'priceDesc' ? 'price_desc' : 'score_desc'
-        })
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Search error');
-      setResults(data.results || []);
-      setStats(data.stats);
-      if (data.marketStats && data.marketStats.length > 0) setMarketStats(data.marketStats);
-      if (data.results && data.results.length > 0) {
-        const statsBySource = {};
-        data.results.forEach(result => {
-          const source = result.source || 'unknown';
-          if (!statsBySource[source]) statsBySource[source] = 0;
-          statsBySource[source]++;
-        });
-        setSourceStats(statsBySource);
-      }
-      if (data.bdsTaskId) {
-        setBdsTaskId(data.bdsTaskId);
-        setBdsStatus('polling');
-      }
+        };
+
+        // Phase 1 : Sources rapides (Chotot) → affichage immédiat
+        if (fastSources.length > 0) {
+          const fastResponse = await fetch('/api/search', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...searchBody, sources: fastSources })
+          });
+          const fastData = await fastResponse.json();
+          if (!fastResponse.ok) throw new Error(fastData.error || 'Search error');
+          
+          setResults(fastData.results || []);
+          setStats(fastData.stats);
+          if (fastData.marketStats && fastData.marketStats.length > 0) setMarketStats(fastData.marketStats);
+          if (fastData.results && fastData.results.length > 0) {
+            const statsBySource = {};
+            fastData.results.forEach(result => {
+              const source = result.source || 'unknown';
+              if (!statsBySource[source]) statsBySource[source] = 0;
+              statsBySource[source]++;
+            });
+            setSourceStats(statsBySource);
+          }
+        }
+
+        // Phase 2 : Sources lentes (Alonhadat) → ajout en arrière-plan
+        if (slowSources.length > 0 && fastSources.length > 0) {
+          fetch('/api/search', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...searchBody, sources: slowSources })
+          }).then(res => res.json()).then(slowData => {
+            if (slowData.results && slowData.results.length > 0) {
+              setResults(prev => {
+                const merged = [...prev, ...slowData.results];
+                if (sortBy === 'priceAsc') merged.sort((a, b) => (a.price || 0) - (b.price || 0));
+                else if (sortBy === 'priceDesc') merged.sort((a, b) => (b.price || 0) - (a.price || 0));
+                else merged.sort((a, b) => (b.score || 0) - (a.score || 0));
+                return merged;
+              });
+              setSourceStats(prev => {
+                const updated = { ...prev };
+                slowData.results.forEach(result => {
+                  const source = result.source || 'unknown';
+                  if (!updated[source]) updated[source] = 0;
+                  updated[source]++;
+                });
+                return updated;
+              });
+              if (slowData.marketStats && slowData.marketStats.length > 0) {
+                setMarketStats(prev => {
+                  if (!prev || prev.length === 0) return slowData.marketStats;
+                  const merged = [...prev];
+                  slowData.marketStats.forEach(newStat => {
+                    const existing = merged.find(m => m.district === newStat.district);
+                    if (existing) {
+                      existing.count = (existing.count || 0) + (newStat.count || 0);
+                    } else {
+                      merged.push(newStat);
+                    }
+                  });
+                  return merged;
+                });
+              }
+            }
+          }).catch(err => console.error('Alonhadat background error:', err));
+        }
+
+        // Cas : seulement Alonhadat sélectionné (pas de source rapide)
+        if (fastSources.length === 0 && slowSources.length > 0) {
+          const response = await fetch('/api/search', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...searchBody, sources: slowSources })
+          });
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.error || 'Search error');
+          setResults(data.results || []);
+          setStats(data.stats);
+          if (data.marketStats && data.marketStats.length > 0) setMarketStats(data.marketStats);
+          if (data.results && data.results.length > 0) {
+            const statsBySource = {};
+            data.results.forEach(result => {
+              const source = result.source || 'unknown';
+              if (!statsBySource[source]) statsBySource[source] = 0;
+              statsBySource[source]++;
+            });
+            setSourceStats(statsBySource);
+          }
+        }
     } catch (err) {
       setError(err.message);
     } finally {
