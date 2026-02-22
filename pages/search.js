@@ -1180,6 +1180,7 @@ title={language === 'vn' ? '📊 Phân tích giá' : language === 'fr' ? '📊 A
           )}
 {/* Score Bars */}
           <div style={{margin: '12px 0'}}>
+            {console.log('DEBUG:', JSON.stringify({title: selectedProperty.title, legalStatus: selectedProperty.legalStatus, area: selectedProperty.area, floors: selectedProperty.floors, streetWidth: selectedProperty.streetWidth, facadeWidth: selectedProperty.facadeWidth, description: (selectedProperty.description || '').substring(0, 200)}))}
             <ScoreBars scores={{
             location: (() => {
               let loc = 40;
