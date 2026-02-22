@@ -1186,17 +1186,12 @@ title={language === 'vn' ? '📊 Phân tích giá' : language === 'fr' ? '📊 A
               const title = (selectedProperty.title || '').toLowerCase();
               const desc = (selectedProperty.description || '').toLowerCase();
               const text = title + ' ' + desc;
-              // Mặt tiền (façade sur rue) = fort bonus
-              if (text.includes('mặt tiền') || text.includes(' mt ') || text.includes('2mt') || text.includes('3mt')) loc += 25;
-              // Góc (angle) = bonus supplémentaire
+              if (text.includes('mặt tiền') || text.includes('mat tien') || text.includes(' mt ') || text.includes('2mt') || text.includes('3mt') || text.includes('2 mặt') || text.includes('3 mặt')) loc += 25;
               if (text.includes('góc') || text.includes('goc')) loc += 10;
-              // Largeur de rue > 10m = bonne artère
               if (selectedProperty.streetWidth && selectedProperty.streetWidth >= 20) loc += 15;
               else if (selectedProperty.streetWidth && selectedProperty.streetWidth >= 10) loc += 10;
               else if (selectedProperty.streetWidth && selectedProperty.streetWidth >= 6) loc += 5;
-              // Hẻm (ruelle) = malus
-              if (text.includes('hẻm') || text.includes('hem ')) loc -= 10;
-              // Façade large
+              if (text.includes('hẻm') || text.includes('hem ') || text.includes('kiệt') || text.includes('ngõ')) loc -= 10;
               if (selectedProperty.facadeWidth && selectedProperty.facadeWidth >= 8) loc += 5;
               else if (selectedProperty.facadeWidth && selectedProperty.facadeWidth >= 5) loc += 3;
               return Math.min(95, Math.max(15, loc));
@@ -1208,49 +1203,56 @@ title={language === 'vn' ? '📊 Phân tích giá' : language === 'fr' ? '📊 A
                 : 35)
               : 50,
             size: (() => {
-              const area = selectedProperty.area || 0;
-              const floors = selectedProperty.floors || 1;
+              let area = selectedProperty.area || 0;
+              let floors = selectedProperty.floors || 1;
+              // Parser les dimensions depuis le titre si pas de surface
+              if (area === 0) {
+                const text = (selectedProperty.title || '') + ' ' + (selectedProperty.description || '');
+                const dimMatch = text.match(/(\d+[.,]?\d*)\s*x\s*(\d+[.,]?\d*)/i);
+                if (dimMatch) {
+                  area = parseFloat(dimMatch[1].replace(',', '.')) * parseFloat(dimMatch[2].replace(',', '.'));
+                }
+                const areaMatch = text.match(/(\d+)\s*m[²2]/i);
+                if (!dimMatch && areaMatch) {
+                  area = parseInt(areaMatch[1]);
+                }
+              }
+              // Parser les étages depuis le titre si pas renseigné
+              if (floors <= 1) {
+                const text = (selectedProperty.title || '') + ' ' + (selectedProperty.description || '');
+                const floorMatch = text.match(/(\d+)\s*(?:tầng|tang|lầu|lau)/i);
+                if (floorMatch && parseInt(floorMatch[1]) > 1) floors = parseInt(floorMatch[1]);
+              }
               const totalArea = area * floors;
               if (totalArea >= 300) return 90;
               if (totalArea >= 150) return 75;
               if (totalArea >= 80) return 60;
               if (totalArea >= 50) return 45;
               if (area > 0) return 35;
-              return 30; // Pas d'info surface
+              return 30;
             })(),
             legal: (() => {
               const legalText = (selectedProperty.legalStatus || '').toLowerCase();
               const title = (selectedProperty.title || '').toLowerCase();
               const desc = (selectedProperty.description || '').toLowerCase();
               const allText = legalText + ' ' + title + ' ' + desc;
-              if (allText.includes('sổ hồng') || allText.includes('sổ đỏ') || allText.includes('so hong') || allText.includes('so do')) return 90;
-              if (allText.includes('hợp đồng mua bán') || allText.includes('hop dong mua ban') || allText.includes('công nhận đủ') || allText.includes('cong nhan du')) return 65;
-              if (allText.includes('chờ sổ') || allText.includes('cho so') || allText.includes('đang chờ') || allText.includes('giấy tay')) return 35;
+              // Aussi vérifier les données brutes du scraper
+              const rawData = JSON.stringify(selectedProperty.nlpAnalysis || {}).toLowerCase();
+              const fullText = allText + ' ' + rawData;
+              if (fullText.includes('sổ hồng') || fullText.includes('sổ đỏ') || fullText.includes('so hong') || fullText.includes('so do') || fullText.includes('shr') || fullText.includes('công nhận đủ') || fullText.includes('cong nhan du')) return 90;
+              if (fullText.includes('hợp đồng') || fullText.includes('hop dong') || fullText.includes('gpxd') || fullText.includes('giấy phép')) return 65;
+              if (fullText.includes('chờ sổ') || fullText.includes('cho so') || fullText.includes('giấy tay') || fullText.includes('giay tay') || fullText.includes('vi bằng')) return 35;
               if (selectedProperty.scoreDetails && selectedProperty.scoreDetails.legalStatus) {
                 if (selectedProperty.scoreDetails.legalStatus.verdict === 'excellent') return 90;
                 if (selectedProperty.scoreDetails.legalStatus.verdict === 'good') return 70;
-                return 40;
+                return 45;
               }
-              return 40; // Pas d'info = prudent
+              return 40;
             })(),
             urgency: selectedProperty.scoreDetails && selectedProperty.scoreDetails.urgentKeywords && selectedProperty.scoreDetails.urgentKeywords.length > 0
               ? 85
               : selectedProperty.scoreDetails && selectedProperty.scoreDetails.listingAge && selectedProperty.scoreDetails.listingAge.verdict === 'old'
               ? 70 : 40,
-            quality: (() => {
-              // Basé sur la richesse des informations fournies, pas sur une visite
-              let q = 30;
-              if (selectedProperty.area && selectedProperty.area > 0) q += 10;
-              if (selectedProperty.bedrooms && selectedProperty.bedrooms > 0) q += 10;
-              if (selectedProperty.floors && selectedProperty.floors > 0) q += 5;
-              if (selectedProperty.legalStatus) q += 10;
-              if (selectedProperty.direction) q += 5;
-              if (selectedProperty.facadeWidth && selectedProperty.facadeWidth > 0) q += 5;
-              if (selectedProperty.streetWidth && selectedProperty.streetWidth > 0) q += 5;
-              if (selectedProperty.images && selectedProperty.images.length >= 3) q += 10;
-              if (selectedProperty.description && selectedProperty.description.length > 200) q += 10;
-              return Math.min(95, q);
-            })(),
         }} title={language === 'vn' ? '🎯 Điểm đánh giá' : language === 'fr' ? '🎯 Score du bien' : '🎯 Property Score'} />
                   </div>
           {/* Negotiation Signals */}
