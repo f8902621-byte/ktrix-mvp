@@ -1147,7 +1147,7 @@ async function fetchAlonhadat(params) {
     urlTiers.push({
       base: `https://alonhadat.com.vn/can-ban-${typeSlug}-${districtInfo.slug}-${districtInfo.code}.htm`,
       label: `district (${districtInfo.slug}-${districtInfo.code})`,
-      maxPages: 10,
+      maxPages: 3,
       isHtm: true
     });
   }
@@ -1156,7 +1156,7 @@ async function fetchAlonhadat(params) {
   urlTiers.push({
     base: `https://alonhadat.com.vn/can-ban-${typeSlug}/${citySlug}`,
     label: `city (${citySlug})`,
-    maxPages: district ? 10 : (maxResults >= 200 ? 5 : maxResults >= 100 ? 3 : 2),
+    maxPages: district ? 3 : (maxResults >= 200 ? 2 : 1),
     isHtm: false
   });
   
