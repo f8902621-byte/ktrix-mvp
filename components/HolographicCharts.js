@@ -155,13 +155,15 @@ export function ScoreBars({ scores, title }) {
   const items = [
     { icon: '📍', label: 'Location', value: scores.location },
     { icon: '💰', label: 'Price', value: scores.price },
-    { icon: '📏', label: 'Size', value: scores.size },
+    { icon: '✏', label: 'Size', value: scores.size },
     { icon: '📜', label: 'Legal', value: scores.legal },
     { icon: '🔥', label: 'Urgency', value: scores.urgency },
-   ];
+  ];
+
   const getBarColor = (v) => {
+    if (v === null || v === undefined) return '#555';
     if (v >= 75) return NEON.green;
-    if (v >= 50) return NEON.blue;
+    if (v >= 50) return NEON.cyan;
     if (v >= 25) return NEON.orange;
     return NEON.red;
   };
