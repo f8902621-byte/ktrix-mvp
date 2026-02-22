@@ -1181,24 +1181,77 @@ title={language === 'vn' ? '📊 Phân tích giá' : language === 'fr' ? '📊 A
 {/* Score Bars */}
           <div style={{margin: '12px 0'}}>
             <ScoreBars scores={{
-              location: selectedProperty.pricePosition ? 60 : 40,
-              price: selectedProperty.scoreDetails && selectedProperty.scoreDetails.priceAnalysis
-                ? (selectedProperty.scoreDetails.priceAnalysis.verdict === 'excellent' ? 90
-                  : selectedProperty.scoreDetails.priceAnalysis.verdict === 'good' ? 75
-                  : selectedProperty.scoreDetails.priceAnalysis.verdict === 'fair' ? 55
-                  : 35)
-                : 50,
-              size: selectedProperty.area > 100 ? 80 : selectedProperty.area > 50 ? 65 : selectedProperty.area > 30 ? 50 : 35,
-              legal: selectedProperty.scoreDetails && selectedProperty.scoreDetails.legalStatus
-                ? (selectedProperty.scoreDetails.legalStatus.verdict === 'excellent' ? 90
-                  : selectedProperty.scoreDetails.legalStatus.verdict === 'good' ? 70
-                  : 40)
-                : 30,
-              urgency: selectedProperty.scoreDetails && selectedProperty.scoreDetails.urgentKeywords && selectedProperty.scoreDetails.urgentKeywords.length > 0
-                ? 85
-                : selectedProperty.scoreDetails && selectedProperty.scoreDetails.listingAge && selectedProperty.scoreDetails.listingAge.verdict === 'old'
-                  ? 70 : 40,
-              quality: selectedProperty.score || 50,
+            location: (() => {
+              let loc = 40;
+              const title = (selectedProperty.title || '').toLowerCase();
+              const desc = (selectedProperty.description || '').toLowerCase();
+              const text = title + ' ' + desc;
+              // Mặt tiền (façade sur rue) = fort bonus
+              if (text.includes('mặt tiền') || text.includes(' mt ') || text.includes('2mt') || text.includes('3mt')) loc += 25;
+              // Góc (angle) = bonus supplémentaire
+              if (text.includes('góc') || text.includes('goc')) loc += 10;
+              // Largeur de rue > 10m = bonne artère
+              if (selectedProperty.streetWidth && selectedProperty.streetWidth >= 20) loc += 15;
+              else if (selectedProperty.streetWidth && selectedProperty.streetWidth >= 10) loc += 10;
+              else if (selectedProperty.streetWidth && selectedProperty.streetWidth >= 6) loc += 5;
+              // Hẻm (ruelle) = malus
+              if (text.includes('hẻm') || text.includes('hem ')) loc -= 10;
+              // Façade large
+              if (selectedProperty.facadeWidth && selectedProperty.facadeWidth >= 8) loc += 5;
+              else if (selectedProperty.facadeWidth && selectedProperty.facadeWidth >= 5) loc += 3;
+              return Math.min(95, Math.max(15, loc));
+            })(),
+            price: selectedProperty.scoreDetails && selectedProperty.scoreDetails.priceAnalysis
+              ? (selectedProperty.scoreDetails.priceAnalysis.verdict === 'excellent' ? 90
+                : selectedProperty.scoreDetails.priceAnalysis.verdict === 'good' ? 75
+                : selectedProperty.scoreDetails.priceAnalysis.verdict === 'fair' ? 55
+                : 35)
+              : 50,
+            size: (() => {
+              const area = selectedProperty.area || 0;
+              const floors = selectedProperty.floors || 1;
+              const totalArea = area * floors;
+              if (totalArea >= 300) return 90;
+              if (totalArea >= 150) return 75;
+              if (totalArea >= 80) return 60;
+              if (totalArea >= 50) return 45;
+              if (area > 0) return 35;
+              return 30; // Pas d'info surface
+            })(),
+            legal: (() => {
+              const legalText = (selectedProperty.legalStatus || '').toLowerCase();
+              const title = (selectedProperty.title || '').toLowerCase();
+              const desc = (selectedProperty.description || '').toLowerCase();
+              const allText = legalText + ' ' + title + ' ' + desc;
+              if (allText.includes('sổ hồng') || allText.includes('sổ đỏ') || allText.includes('so hong') || allText.includes('so do')) return 90;
+              if (allText.includes('hợp đồng mua bán') || allText.includes('hop dong mua ban') || allText.includes('công nhận đủ') || allText.includes('cong nhan du')) return 65;
+              if (allText.includes('chờ sổ') || allText.includes('cho so') || allText.includes('đang chờ') || allText.includes('giấy tay')) return 35;
+              if (selectedProperty.scoreDetails && selectedProperty.scoreDetails.legalStatus) {
+                if (selectedProperty.scoreDetails.legalStatus.verdict === 'excellent') return 90;
+                if (selectedProperty.scoreDetails.legalStatus.verdict === 'good') return 70;
+                return 40;
+              }
+              return 40; // Pas d'info = prudent
+            })(),
+            urgency: selectedProperty.scoreDetails && selectedProperty.scoreDetails.urgentKeywords && selectedProperty.scoreDetails.urgentKeywords.length > 0
+              ? 85
+              : selectedProperty.scoreDetails && selectedProperty.scoreDetails.listingAge && selectedProperty.scoreDetails.listingAge.verdict === 'old'
+              ? 70 : 40,
+            quality: (() => {
+              // Basé sur la richesse des informations fournies, pas sur une visite
+              let q = 30;
+              if (selectedProperty.area && selectedProperty.area > 0) q += 10;
+              if (selectedProperty.bedrooms && selectedProperty.bedrooms > 0) q += 10;
+              if (selectedProperty.floors && selectedProperty.floors > 0) q += 5;
+              if (selectedProperty.legalStatus) q += 10;
+              if (selectedProperty.direction) q += 5;
+              if (selectedProperty.facadeWidth && selectedProperty.facadeWidth > 0) q += 5;
+              if (selectedProperty.streetWidth && selectedProperty.streetWidth > 0) q += 5;
+              if (selectedProperty.images && selectedProperty.images.length >= 3) q += 10;
+              if (selectedProperty.description && selectedProperty.description.length > 200) q += 10;
+              return Math.min(95, q);
+            })(),
+        }} title={language === 'vn' ? '🎯 Điểm đánh giá' : language === 'fr' ? '🎯 Score du bien' : '🎯 Property Score'} />
             }} title={language === 'vn' ? '🎯 Điểm đánh giá' : language === 'fr' ? '🎯 Score du bien' : '🎯 Property Score'} />
           </div>
           {/* Negotiation Signals */}
