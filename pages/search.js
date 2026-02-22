@@ -23,7 +23,7 @@ export default function SearchPage() {
   const [bdsStatus, setBdsStatus] = useState('idle');
   const [bdsProgress, setBdsProgress] = useState(0);
   const [bdsCount, setBdsCount] = useState(0);
-  
+  const [alonhadatLoading, setAlonhadatLoading] = useState(false);
   const [expandedPhoto, setExpandedPhoto] = useState(null);
   const [sortBy, setSortBy] = useState('score');
   const [selectedProperty, setSelectedProperty] = useState(null);
@@ -924,6 +924,13 @@ const formatPrice = (price) => {
           )}
 
           {/* Source Stats */}
+{alonhadatLoading && (
+              <div style={{padding: '12px 20px', background: 'rgba(0,212,255,0.1)', border: '1px solid rgba(0,212,255,0.3)', borderRadius: 12, margin: '8px 0', textAlign: 'center'}}>
+                <span style={{color: '#00d4ff', fontSize: 14}}>
+                  ⏳ {language === 'vn' ? 'Đang tìm thêm kết quả từ Alonhadat...' : language === 'fr' ? 'Recherche Alonhadat en cours...' : 'Searching Alonhadat...'}
+                </span>
+              </div>
+            )}
           {Object.keys(sourceStats).length > 0 && (
             <div className="bg-gray-900 rounded-xl border border-gray-800 p-4 mb-4">
               <p className="text-sm font-bold text-gray-300 mb-3">🌐 {t.sourceResults}</p>
