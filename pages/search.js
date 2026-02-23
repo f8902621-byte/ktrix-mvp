@@ -1260,13 +1260,13 @@ title={language === 'vn' ? '📊 Phân tích giá' : language === 'fr' ? '📊 A
             <div style={{background: 'rgba(0,212,255,0.06)', borderRadius: 10, padding: '10px 12px', border: '1px solid rgba(0,212,255,0.1)'}}>
               <span style={{color: '#888', fontSize: 11}}>📜 {language === 'vn' ? 'Pháp lý' : language === 'fr' ? 'Statut légal' : 'Legal Status'}</span>
               <p style={{color: (() => {
-                const legalText = (selectedProperty.legalStatus || '').toLowerCase();
-                const allText = legalText + ' ' + ((selectedProperty.title || '') + ' ' + (selectedProperty.description || '') + ' ' + JSON.stringify(selectedProperty.nlpAnalysis || {})).toLowerCase();
-const nlp = selectedProperty.nlpAnalysis || {};
+                  const nlp = selectedProperty.nlpAnalysis || {};
                   const colorMap = { 'so_hong_rieng': NEON.green, 'so_hong': NEON.green, 'hop_dong': NEON.orange, 'gpxd': NEON.orange, 'giay_tay': NEON.red, 'cho_so': NEON.orange, 'vi_bang': NEON.red };
                   if (nlp.extractedLegalStatus && colorMap[nlp.extractedLegalStatus]) return colorMap[nlp.extractedLegalStatus];
                   return '#888';
-                 const nlp = selectedProperty.nlpAnalysis || {};
+                })(), fontSize: 14, fontWeight: 600, margin: '4px 0 0'}}>
+                {(() => {
+                  const nlp = selectedProperty.nlpAnalysis || {};
                   const legalMap = {
                     'so_hong_rieng': '✅ Sổ hồng riêng', 'so_hong': '✅ Sổ hồng / Sổ đỏ',
                     'hop_dong': '📄 Hợp đồng mua bán', 'gpxd': '📄 Giấy phép XD',
