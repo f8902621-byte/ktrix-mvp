@@ -1075,22 +1075,7 @@ const formatPrice = (price) => {
                   if (prop.bedrooms) return `${prop.bedrooms} ch.`;
                   if (prop.nlpAnalysis && prop.nlpAnalysis.extractedBedrooms) return `${prop.nlpAnalysis.extractedBedrooms} ch.`;
                   return '? ch.';
-                })()}</div>
-                  const text = (prop.title || '') + ' ' + (prop.description || '');
-                  const dimMatch = text.match(/(\d+[.,]?\d*)\s*x\s*(\d+[.,]?\d*)/i);
-                  if (dimMatch) return `${Math.round(parseFloat(dimMatch[1].replace(',', '.')) * parseFloat(dimMatch[2].replace(',', '.')))}m²`;
-                  const areaMatch = text.match(/(\d+[.,]?\d*)\s*m2/i);
-                  if (areaMatch) return `${parseFloat(areaMatch[1].replace(',', '.'))}m²`;
-                  return '?m²';
-                })()}</div>
-                <div>🛏️ {(() => {
-                  if (prop.bedrooms) return `${prop.bedrooms} ch.`;
-                  const text = (prop.title || '') + ' ' + (prop.description || '');
-                  const m = text.match(/(\d+)\s*(?:phòng ngủ|phong ngu|pn|PN|PHÒNG|phòng)/i);
-                  if (m) return `${m[1]} ch.`;
-                  return '? ch.';
-                })()}</div>
-                      </div>
+                                   </div>
                       <div 
                         className="flex items-start gap-2 text-sm text-gray-400 mb-3 cursor-pointer hover:text-blue-400 bg-gray-800 p-2 rounded-lg border border-gray-700" 
                         onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(prop.address || prop.district + ' ' + prop.city)}`, '_blank')}
