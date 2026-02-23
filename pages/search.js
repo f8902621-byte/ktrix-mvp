@@ -1282,7 +1282,7 @@ title={language === 'vn' ? '📊 Phân tích giá' : language === 'fr' ? '📊 A
             <div style={{background: 'rgba(0,212,255,0.06)', borderRadius: 10, padding: '10px 12px', border: '1px solid rgba(0,212,255,0.1)'}}>
               <span style={{color: '#888', fontSize: 11}}>🏢 {language === 'vn' ? 'Kết cấu' : language === 'fr' ? 'Structure' : 'Structure'}</span>
               <p style={{color: NEON.white, fontSize: 14, fontWeight: 600, margin: '4px 0 0'}}>
-                
+                 {(() => {
                   const nlp = selectedProperty.nlpAnalysis || {};
                   const parts = [];
                   const floors = selectedProperty.floors || nlp.extractedFloors;
@@ -1293,6 +1293,7 @@ title={language === 'vn' ? '📊 Phân tích giá' : language === 'fr' ? '📊 A
                   if (facade && facade > 0) parts.push(`Ngang ${facade}m`);
                   return parts.length > 0 ? parts.join(' • ') : '—';
                 })()}
+                  </p>
         </div>
                   </div>
           {/* Negotiation Signals */}
