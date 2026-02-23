@@ -2449,7 +2449,16 @@ export default async function handler(req, res) {
       ] : []),
       ...(sources?.includes('alonhadat') ? [
         fetchAlonhadat({ city, district, ward, propertyType, priceMax, maxResults })
-          .then(results => ({ source: 'alonhadat', results }))
+.then(results => ({ source: 'alonhadat', results: results.map(r => {
+              const nlpAnalysis = analyzeListingText(r.title || '', r.body || r.description || '');
+              return {
+                ...r,
+                nlpAnalysis,
+                floors: r.floors || nlpAnalysis.extractedFloors,
+                streetWidth: r.streetWidth || nlpAnalysis.extractedStreetWidth,
+                facadeWidth: r.facadeWidth || nlpAnalysis.extractedFacade,
+              };
+            }) }))
           .catch(e => { console.log(`Alonhadat erreur: ${e.message}`); return { source: 'alonhadat', results: [] }; })
       ] : [])
     ]);
