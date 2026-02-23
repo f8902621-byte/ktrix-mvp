@@ -924,13 +924,13 @@ const formatPrice = (price) => {
           )}
 
           {/* Source Stats */}
-{alonhadatLoading && (
-              <div style={{padding: '12px 20px', background: 'rgba(0,212,255,0.1)', border: '1px solid rgba(0,212,255,0.3)', borderRadius: 12, margin: '8px 0', textAlign: 'center'}}>
-                <span style={{color: '#00d4ff', fontSize: 14}}>
-                  ⏳ {language === 'vn' ? 'Đang tìm thêm kết quả từ Alonhadat...' : language === 'fr' ? 'Recherche Alonhadat en cours...' : 'Searching Alonhadat...'}
-                </span>
-              </div>
-            )}
+          {alonhadatLoading && (
+            <div style={{padding: '12px 20px', background: 'rgba(0,212,255,0.1)', border: '1px solid rgba(0,212,255,0.3)', borderRadius: 12, margin: '8px 0', textAlign: 'center'}}>
+              <span style={{color: '#00d4ff', fontSize: 14}}>
+                ⏳ {language === 'vn' ? 'Đang tìm thêm kết quả từ Alonhadat...' : language === 'fr' ? 'Recherche Alonhadat en cours...' : 'Searching Alonhadat...'}
+              </span>
+            </div>
+          )}
           {Object.keys(sourceStats).length > 0 && (
             <div className="bg-gray-900 rounded-xl border border-gray-800 p-4 mb-4">
               <p className="text-sm font-bold text-gray-300 mb-3">🌐 {t.sourceResults}</p>
@@ -1066,17 +1066,17 @@ const formatPrice = (price) => {
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-2 text-sm text-gray-400 mb-3">
-<div>📐 {(() => {
-                  if (prop.area || prop.floorArea) return `${Math.round((prop.area || prop.floorArea) * 10) / 10}m²`;
-                  if (prop.nlpAnalysis && prop.nlpAnalysis.extractedArea) return `${prop.nlpAnalysis.extractedArea}m²`;
-                  return '?m²';
-                })()}</div>
-                <div>🛏️ {(() => {
-                  if (prop.bedrooms) return `${prop.bedrooms} ch.`;
-                  if (prop.nlpAnalysis && prop.nlpAnalysis.extractedBedrooms) return `${prop.nlpAnalysis.extractedBedrooms} ch.`;
-                  return '? ch.';
+                        <div>📐 {(() => {
+                          if (prop.area || prop.floorArea) return `${Math.round((prop.area || prop.floorArea) * 10) / 10}m²`;
+                          if (prop.nlpAnalysis && prop.nlpAnalysis.extractedArea) return `${prop.nlpAnalysis.extractedArea}m²`;
+                          return '?m²';
                         })()}</div>
-                                   </div>
+                        <div>🛏️ {(() => {
+                          if (prop.bedrooms) return `${prop.bedrooms} ch.`;
+                          if (prop.nlpAnalysis && prop.nlpAnalysis.extractedBedrooms) return `${prop.nlpAnalysis.extractedBedrooms} ch.`;
+                          return '? ch.';
+                        })()}</div>
+                      </div>
                       <div 
                         className="flex items-start gap-2 text-sm text-gray-400 mb-3 cursor-pointer hover:text-blue-400 bg-gray-800 p-2 rounded-lg border border-gray-700" 
                         onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(prop.address || prop.district + ' ' + prop.city)}`, '_blank')}
@@ -1162,266 +1162,277 @@ const formatPrice = (price) => {
                 </div>
               </div>
 
-          {/* === HOLOGRAPHIC AI REPORT === */}
-          <style dangerouslySetInnerHTML={{__html: NEON_CSS}} />
+              {/* === HOLOGRAPHIC AI REPORT === */}
+              <style dangerouslySetInnerHTML={{__html: NEON_CSS}} />
 
-          {/* Negotiation Score Gauge */}
-          <div style={{margin: '12px 0'}}>
-            <NeedleGauge
-              score={selectedProperty.score || 0}
-              label={language === 'vn' ? '🎯 Điểm đàm phán' : language === 'fr' ? '🎯 Score de négociation' : '🎯 Negotiation Score'}
-            />
-          </div>
-
-          {/* Price vs Market */}
-          {selectedProperty.pricePosition && (
-            <div style={{margin: '12px 0'}}>
-              <PriceDistribution
-                propertyPrice={Math.round(selectedProperty.pricePosition.itemPricePerM2 / 1000000)}
-                min={Math.round(selectedProperty.pricePosition.districtMin / 1000000)}
-                median={Math.round(selectedProperty.pricePosition.districtMedian / 1000000)}
-                max={Math.round(selectedProperty.pricePosition.districtMax / 1000000)}
-                count={selectedProperty.pricePosition.districtCount}
-title={language === 'vn' ? '📊 Phân tích giá' : language === 'fr' ? '📊 Analyse Prix vs Marché' : '📊 Price vs Market'}
-              />
-            </div>
-          )}
-{!selectedProperty.pricePosition && (() => {
-          let area = selectedProperty.area;
-          if (!area) {
-            const text = (selectedProperty.title || '') + ' ' + (selectedProperty.description || '');
-            const dimMatch = text.match(/(\d+[.,]?\d*)\s*x\s*(\d+[.,]?\d*)/i);
-            if (dimMatch) area = parseFloat(dimMatch[1].replace(',', '.')) * parseFloat(dimMatch[2].replace(',', '.'));
-            const areaMatch = text.match(/(\d+[.,]?\d*)\s*m2/i);
-            if (!area && areaMatch) area = parseFloat(areaMatch[1].replace(',', '.'));
-          }
-          return area && selectedProperty.price ? (
-            <div style={{background: `linear-gradient(135deg, ${NEON.card} 0%, rgba(0,212,255,0.03) 100%)`, border: `1px solid rgba(0,212,255,0.15)`, borderRadius: 16, padding: 16, margin: '12px 0', textAlign: 'center'}}>
-              <p style={{color: '#f0f8ff', fontSize: 14, fontWeight: 700, margin: '0 0 8px', letterSpacing: 1, textTransform: 'uppercase', textShadow: `0 0 10px rgba(0,212,255,0.4)`}}>📊 Price vs Market</p>
-              <p style={{color: NEON.cyan, fontSize: 20, fontWeight: 800, margin: '8px 0', fontFamily: 'Orbitron, monospace'}}>
-                {Math.round(selectedProperty.price / 1000000 / area)} tr/m²
-              </p>
-              <p style={{color: 'rgba(240,248,255,0.5)', fontSize: 13, margin: 0}}>
-                {language === 'vn' ? 'Giá tính từ diện tích đất' : language === 'fr' ? 'Prix calculé depuis la surface' : 'Price calculated from land area'}
-              </p>
-            </div>
-          ) : (
-            <div style={{background: `linear-gradient(135deg, ${NEON.card} 0%, rgba(0,212,255,0.03) 100%)`, border: `1px solid rgba(0,212,255,0.15)`, borderRadius: 16, padding: 16, margin: '12px 0', textAlign: 'center'}}>
-              <p style={{color: '#f0f8ff', fontSize: 14, fontWeight: 700, margin: '0 0 8px', letterSpacing: 1, textTransform: 'uppercase', textShadow: `0 0 10px rgba(0,212,255,0.4)`}}>📊 Price vs Market</p>
-              <p style={{color: 'rgba(240,248,255,0.5)', fontSize: 13, margin: 0}}>
-                {language === 'vn' ? '⚠️ Diện tích không có – không thể phân tích giá/m²' : language === 'fr' ? '⚠️ Surface non renseignée – analyse prix/m² indisponible' : '⚠️ Area not provided — price/m² analysis unavailable'}
-              </p>
-            </div>
-          );
-        })()}
-{/* Score Bars */}
-          <div style={{margin: '12px 0'}}>
-<div style={{background: `linear-gradient(135deg, ${NEON.card} 0%, rgba(0,212,255,0.03) 100%)`, border: `1px solid ${NEON.border}`, borderRadius: 16, padding: 16, margin: '12px 0', position: 'relative', overflow: 'hidden'}}>
-          <div style={{position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundImage: `linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px)`, backgroundSize: '20px 20px', pointerEvents: 'none'}} />
-          <p style={{color: NEON.white, fontSize: 14, fontWeight: 700, textAlign: 'center', margin: '0 0 14px', letterSpacing: 1, textTransform: 'uppercase', textShadow: `0 0 10px ${NEON.blueGlow}`}}>
-            📋 {language === 'vn' ? 'Hồ sơ bất động sản' : language === 'fr' ? 'Profil du bien' : 'Property Profile'}
-          </p>
-          <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8}}>
-            {/* Street Access */}
-            <div style={{background: 'rgba(0,212,255,0.06)', borderRadius: 10, padding: '10px 12px', border: '1px solid rgba(0,212,255,0.1)'}}>
-              <span style={{color: '#888', fontSize: 11}}>🛣️ {language === 'vn' ? 'Mặt bằng' : language === 'fr' ? 'Accès rue' : 'Street Access'}</span>
-              <p style={{color: NEON.white, fontSize: 14, fontWeight: 600, margin: '4px 0 0'}}>
-{(() => {
-                  const nlp = selectedProperty.nlpAnalysis || {};
-                  const accessMap = {
-                    'goc_mt': 'Góc MT', 'nhieu_mt': '2+ MT', 'mat_tien': 'Mặt tiền',
-                    'goc': 'Góc', 'hxh': 'Hẻm xe hơi', 'hem': 'Hẻm',
-                    'kiet': 'Kiệt', 'ngo': 'Ngõ'
-                  };
-                  const parts = [];
-                  if (nlp.extractedStreetAccess) parts.push(accessMap[nlp.extractedStreetAccess] || nlp.extractedStreetAccess);
-                  if (nlp.extractedStreetWidth || selectedProperty.streetWidth) parts.push(`Đường ${nlp.extractedStreetWidth || selectedProperty.streetWidth}m`);
-                  if (nlp.extractedFacade || selectedProperty.facadeWidth) parts.push(`Ngang ${nlp.extractedFacade || selectedProperty.facadeWidth}m`);
-                  return parts.length > 0 ? parts.join(' • ') : '—';
-                })()}
-              </p>
-            </div>
-            {/* Dimensions */}
-            <div style={{background: 'rgba(0,212,255,0.06)', borderRadius: 10, padding: '10px 12px', border: '1px solid rgba(0,212,255,0.1)'}}>
-              <span style={{color: '#888', fontSize: 11}}>📐 {language === 'vn' ? 'Kích thước' : language === 'fr' ? 'Dimensions' : 'Dimensions'}</span>
-              <p style={{color: NEON.white, fontSize: 14, fontWeight: 600, margin: '4px 0 0'}}>
-{(() => {
-                  const nlp = selectedProperty.nlpAnalysis || {};
-                  if (nlp.extractedWidth && nlp.extractedDepth) {
-                    return `${nlp.extractedWidth}×${nlp.extractedDepth}m (${nlp.extractedArea}m²)`;
-                  }
-                  if (nlp.extractedArea) return `${nlp.extractedArea} m²`;
-                  if (selectedProperty.area) return `${Math.round(selectedProperty.area * 10) / 10} m²`;
-                  return '—';
-                })()}
-              </p>
-            </div>
-            {/* Legal Status */}
-            <div style={{background: 'rgba(0,212,255,0.06)', borderRadius: 10, padding: '10px 12px', border: '1px solid rgba(0,212,255,0.1)'}}>
-              <span style={{color: '#888', fontSize: 11}}>📜 {language === 'vn' ? 'Pháp lý' : language === 'fr' ? 'Statut légal' : 'Legal Status'}</span>
-              <p style={{color: (() => {
-                  const nlp = selectedProperty.nlpAnalysis || {};
-                  const colorMap = { 'so_hong_rieng': NEON.green, 'so_hong': NEON.green, 'hop_dong': NEON.orange, 'gpxd': NEON.orange, 'giay_tay': NEON.red, 'cho_so': NEON.orange, 'vi_bang': NEON.red };
-                  if (nlp.extractedLegalStatus && colorMap[nlp.extractedLegalStatus]) return colorMap[nlp.extractedLegalStatus];
-                  return '#888';
-                })(), fontSize: 14, fontWeight: 600, margin: '4px 0 0'}}>
-                {(() => {
-                  const nlp = selectedProperty.nlpAnalysis || {};
-                  const legalMap = {
-                    'so_hong_rieng': '✅ Sổ hồng riêng', 'so_hong': '✅ Sổ hồng / Sổ đỏ',
-                    'hop_dong': '📄 Hợp đồng mua bán', 'gpxd': '📄 Giấy phép XD',
-                    'giay_tay': '⚠️ Giấy tay', 'cho_so': '⏳ Đang chờ sổ', 'vi_bang': '⚠️ Vi bằng',
-                  };
-                  if (nlp.extractedLegalStatus && legalMap[nlp.extractedLegalStatus]) return legalMap[nlp.extractedLegalStatus];
-                  if (selectedProperty.legalStatus) return selectedProperty.legalStatus;
-                  return '—';
-                })()}
-              </p>
-            </div>
-            {/* Structure */}
-            <div style={{background: 'rgba(0,212,255,0.06)', borderRadius: 10, padding: '10px 12px', border: '1px solid rgba(0,212,255,0.1)'}}>
-              <span style={{color: '#888', fontSize: 11}}>🏢 {language === 'vn' ? 'Kết cấu' : language === 'fr' ? 'Structure' : 'Structure'}</span>
-              <p style={{color: NEON.white, fontSize: 14, fontWeight: 600, margin: '4px 0 0'}}>
-                 {(() => {
-                  const nlp = selectedProperty.nlpAnalysis || {};
-                  const parts = [];
-                  const floors = selectedProperty.floors || nlp.extractedFloors;
-                  if (floors && floors > 0) parts.push(`${floors} tầng`);
-                  const beds = selectedProperty.bedrooms || nlp.extractedBedrooms;
-                  if (beds && beds > 0) parts.push(`${beds} PN`);
-                  const facade = selectedProperty.facadeWidth || nlp.extractedFacade;
-                  if (facade && facade > 0) parts.push(`Ngang ${facade}m`);
-                  return parts.length > 0 ? parts.join(' • ') : '—';
-                })()}
-                  </p>
-        </div>
-                  </div>
-          {/* Negotiation Signals */}
-          {selectedProperty.scoreDetails && (
-            <div style={{background: 'linear-gradient(135deg, #0d1225 0%, rgba(0,212,255,0.03) 100%)', border: '1px solid rgba(0,212,255,0.15)', borderRadius: 16, padding: 16, margin: '12px 0', position: 'relative', overflow: 'hidden'}}>
-              <div style={{position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundImage: 'linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px)', backgroundSize: '20px 20px', pointerEvents: 'none'}} />
-              <p style={{color: '#f0f8ff', fontSize: 14, fontWeight: 700, margin: '0 0 12px', letterSpacing: 1, textTransform: 'uppercase', textShadow: '0 0 10px rgba(0,212,255,0.4)'}}>
-                ⚡ {language === 'vn' ? 'Tín hiệu đàm phán' : language === 'fr' ? 'Signaux de Négociation' : 'Negotiation Signals'}
-              </p>
-
-              {selectedProperty.scoreDetails.urgentKeywords && selectedProperty.scoreDetails.urgentKeywords.length > 0 && (
-                <SignalItem icon="🔥" label={language === 'vn' ? 'Từ khóa gấp' : language === 'fr' ? 'Mots-clés urgents' : 'Urgent keywords'} value={selectedProperty.scoreDetails.urgentKeywords.join(', ')} isPositive={true} />
-              )}
-
-              {selectedProperty.scoreDetails.listingAge && selectedProperty.scoreDetails.listingAge.days > 0 && (
-                <SignalItem icon="📅" label={language === 'vn' ? 'Tuổi tin đăng' : language === 'fr' ? 'Ancienneté' : 'Listing age'} value={`${selectedProperty.scoreDetails.listingAge.days} ${language === 'vn' ? 'ngày' : language === 'fr' ? 'jours' : 'days'}`} isPositive={selectedProperty.scoreDetails.listingAge.verdict === 'old' || selectedProperty.scoreDetails.listingAge.verdict === 'very_old'} />
-              )}
-
-              {selectedProperty.scoreDetails.priceAnalysis && (
-                <SignalItem icon="💰" label={language === 'vn' ? 'Phân tích giá' : language === 'fr' ? 'Position prix' : 'Price analysis'} value={`${selectedProperty.scoreDetails.priceAnalysis.diffPercent}%`} isPositive={selectedProperty.scoreDetails.priceAnalysis.verdict === 'excellent' || selectedProperty.scoreDetails.priceAnalysis.verdict === 'good'} />
-              )}
-
-              {selectedProperty.scoreDetails.priceType === 'round' && (
-                <SignalItem icon="🎯" label={language === 'vn' ? 'Giá tròn' : language === 'fr' ? 'Prix rond' : 'Round price'} value={language === 'vn' ? 'Có' : language === 'fr' ? 'Oui' : 'Yes'} isPositive={true} />
-              )}
-
-              {selectedProperty.scoreDetails.legalStatus && selectedProperty.scoreDetails.legalStatus.status && (
-                <SignalItem icon="📜" label={language === 'vn' ? 'Pháp lý' : language === 'fr' ? 'Statut légal' : 'Legal status'} value={selectedProperty.scoreDetails.legalStatus.status} isPositive={selectedProperty.scoreDetails.legalStatus.verdict === 'excellent' || selectedProperty.scoreDetails.legalStatus.verdict === 'good'} />
-              )}
-            </div>
-          )}
-
-          {/* NLP Alerts & Opportunities */}
-          {selectedProperty.scoreDetails && selectedProperty.scoreDetails.nlpFactors && selectedProperty.scoreDetails.nlpFactors.length > 0 && (
-            <div style={{background: 'linear-gradient(135deg, #0d1225 0%, rgba(255,140,0,0.03) 100%)', border: '1px solid rgba(255,140,0,0.15)', borderRadius: 16, padding: 16, margin: '12px 0', position: 'relative', overflow: 'hidden'}}>
-              <div style={{position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundImage: 'linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px)', backgroundSize: '20px 20px', pointerEvents: 'none'}} />
-              <p style={{color: '#f0f8ff', fontSize: 14, fontWeight: 700, margin: '0 0 12px', letterSpacing: 1, textTransform: 'uppercase', textShadow: '0 0 10px rgba(255,140,0,0.5)'}}>
-                🚨 {language === 'vn' ? 'Cảnh báo & Cơ hội' : language === 'fr' ? 'Alertes & Opportunités' : 'Alerts & Opportunities'}
-              </p>
-              <div style={{display: 'flex', flexWrap: 'wrap', gap: 8}}>
-                {selectedProperty.scoreDetails.nlpFactors.map((factor, i) => (
-                  <AlertBadge key={i} text={factor.label || factor.text || factor} type={factor.type === 'positive' || factor.type === 'opportunity' ? 'good' : factor.type === 'risk' || factor.type === 'warning' ? 'risk' : 'alert'} />
-                ))}
+              {/* Negotiation Score Gauge */}
+              <div style={{margin: '12px 0'}}>
+                <NeedleGauge
+                  score={selectedProperty.score || 0}
+                  label={language === 'vn' ? '🎯 Điểm đàm phán' : language === 'fr' ? '🎯 Score de négociation' : '🎯 Negotiation Score'}
+                />
               </div>
-            </div>
-          )}
 
-          {/* AI Verdict */}
-          <div style={{background: 'linear-gradient(135deg, rgba(0,212,255,0.08) 0%, rgba(0,255,136,0.05) 100%)', border: '1px solid rgba(0,212,255,0.25)', borderRadius: 16, padding: 16, margin: '12px 0', boxShadow: '0 0 20px rgba(0,212,255,0.15), inset 0 0 30px rgba(0,212,255,0.03)', position: 'relative', overflow: 'hidden'}}>
-            <div style={{position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundImage: 'linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px)', backgroundSize: '20px 20px', pointerEvents: 'none'}} />
-            <p style={{color: '#00d4ff', fontSize: 14, fontWeight: 700, margin: '0 0 10px', letterSpacing: 1, textTransform: 'uppercase', textShadow: '0 0 10px rgba(0,212,255,0.4)'}}>
-              🤖 {language === 'vn' ? 'Nhận xét AI' : language === 'fr' ? 'Verdict IA' : 'AI Verdict'}
-            </p>
-            <p style={{color: '#f0f8ff', fontSize: 14, lineHeight: 1.7, margin: 0, opacity: 0.9}}>
-              {(() => {
-                const p = selectedProperty;
-                const sd = p.scoreDetails || {};
-                const pp = p.pricePosition;
-                const parts = [];
-                if (p.score >= 70) parts.push(language === 'fr' ? '🔥 Opportunité très intéressante.' : language === 'vn' ? '🔥 Cơ hội rất tốt.' : '🔥 Very interesting opportunity.');
-                else if (p.score >= 50) parts.push(language === 'fr' ? '👍 Annonce intéressante à considérer.' : language === 'vn' ? '👍 Tin đáng chú ý.' : '👍 Interesting listing to consider.');
-                else if (p.score >= 30) parts.push(language === 'fr' ? '📊 Annonce dans la moyenne.' : language === 'vn' ? '📊 Tin trung bình.' : '📊 Average listing.');
-                else parts.push(language === 'fr' ? '📉 Peu de signaux de négociation.' : language === 'vn' ? '📉 Ít tín hiệu đàm phán.' : '📉 Few negotiation signals.');
-                if (pp && pp.position === 'below') parts.push(language === 'fr' ? `Prix ${Math.abs(pp.percentFromMedian)}% en dessous de la médiane du quartier.` : language === 'vn' ? `Giá thấp hơn ${Math.abs(pp.percentFromMedian)}% so với trung vị quận.` : `Price ${Math.abs(pp.percentFromMedian)}% below district median.`);
-                else if (pp && pp.position === 'above') parts.push(language === 'fr' ? `Attention : prix ${Math.abs(pp.percentFromMedian)}% au dessus de la médiane.` : language === 'vn' ? `Chú ý: giá cao hơn ${Math.abs(pp.percentFromMedian)}% so với trung vị.` : `Note: price ${Math.abs(pp.percentFromMedian)}% above median.`);
-                if (sd.urgentKeywords && sd.urgentKeywords.length > 0) parts.push(language === 'fr' ? `Signaux d'urgence détectés (${sd.urgentKeywords.join(', ')}) → marge de négociation probable.` : language === 'vn' ? `Phát hiện từ khóa gấp (${sd.urgentKeywords.join(', ')}) → có thể đàm phán.` : `Urgent signals detected (${sd.urgentKeywords.join(', ')}) → likely negotiation margin.`);
-                if (sd.nlpFactors) {
-                  const risks = sd.nlpFactors.filter(f => f.type === 'risk' || f.type === 'warning');
-                  if (risks.length > 0) parts.push(language === 'fr' ? `⚠️ Risque(s) détecté(s): ${risks.map(r => r.label || r.text || r).join(', ')}.` : language === 'vn' ? `⚠️ Rủi ro: ${risks.map(r => r.label || r.text || r).join(', ')}.` : `⚠️ Risk(s) detected: ${risks.map(r => r.label || r.text || r).join(', ')}.`);
-                }
-                if (p.score >= 50 && pp && pp.position !== 'above') {
-                  const estimMin = pp.position === 'below' ? 5 : 10;
-                  const estimMax = pp.position === 'below' ? 15 : 20;
-                  parts.push(language === 'fr' ? `💡 Potentiel de négociation estimé : ${estimMin}-${estimMax}%.` : language === 'vn' ? `💡 Tiềm năng đàm phán: ${estimMin}-${estimMax}%.` : `💡 Estimated negotiation potential: ${estimMin}-${estimMax}%.`);
-                }
-                if (!p.legalStatus) parts.push(language === 'fr' ? '📋 Statut légal non confirmé — à vérifier avant visite.' : language === 'vn' ? '📋 Chưa xác nhận pháp lý — cần kiểm tra.' : '📋 Legal status unconfirmed — verify before visiting.');
-                return parts.join(' ');
-              })()}
-            </p>
-          </div>
-
-
-<div className="p-3 bg-gray-800 rounded-lg border border-gray-700">
-              <p className="text-xs text-gray-500">📐 {language === 'vn' ? 'Diện tích' : language === 'fr' ? 'Surface' : 'Area'}</p>
-              <p className="text-lg font-semibold text-white">{(() => {
-                if (selectedProperty.area) return `${Math.round(selectedProperty.area * 10) / 10} m²`;
-                const nlp = selectedProperty.nlpAnalysis || {};
-                if (nlp.extractedArea) return `${nlp.extractedArea} m²`;
-                return '?';
-              })()}</p>
-            </div>
-            <div className="p-3 bg-gray-800 rounded-lg border border-gray-700">
-              <p className="text-xs text-gray-500">🛏️ {t.rooms}</p>
-              <p className="text-lg font-semibold text-white">{(() => {
-                if (selectedProperty.bedrooms) return selectedProperty.bedrooms;
-                const nlp = selectedProperty.nlpAnalysis || {};
-                if (nlp.extractedBedrooms) return nlp.extractedBedrooms;
-                return '?';
-              })()}</p>
-            </div>
-            <div className="p-3 bg-gray-800 rounded-lg border border-gray-700">
-              <p className="text-xs text-gray-500">🚿 {t.bathrooms}</p>
-              <p className="text-lg font-semibold text-white">{(() => {
-                if (selectedProperty.bathrooms) return selectedProperty.bathrooms;
-                const nlp = selectedProperty.nlpAnalysis || {};
-                if (nlp.extractedBathrooms) return nlp.extractedBathrooms;
-                return '?';
-              })()}</p>
-            </div>
-            {(() => {
-              let floors = selectedProperty.floors;
-              if (!floors || floors <= 0) {
-                const nlp = selectedProperty.nlpAnalysis || {};
-                if (nlp.extractedFloors) floors = nlp.extractedFloors;
-              }
-              return floors && floors > 0 ? (
-                <div className="p-3 bg-gray-800 rounded-lg border border-gray-700">
-                  <p className="text-xs text-gray-500">🏢 {language === 'vn' ? 'Số tầng' : language === 'fr' ? 'Étages' : 'Floors'}</p>
-                  <p className="text-lg font-semibold text-white">{floors}</p>
+              {/* Price vs Market */}
+              {selectedProperty.pricePosition && (
+                <div style={{margin: '12px 0'}}>
+                  <PriceDistribution
+                    propertyPrice={Math.round(selectedProperty.pricePosition.itemPricePerM2 / 1000000)}
+                    min={Math.round(selectedProperty.pricePosition.districtMin / 1000000)}
+                    median={Math.round(selectedProperty.pricePosition.districtMedian / 1000000)}
+                    max={Math.round(selectedProperty.pricePosition.districtMax / 1000000)}
+                    count={selectedProperty.pricePosition.districtCount}
+                    title={language === 'vn' ? '📊 Phân tích giá' : language === 'fr' ? '📊 Analyse Prix vs Marché' : '📊 Price vs Market'}
+                  />
                 </div>
-              ) : null;
-            })()}
-            {selectedProperty.legalStatus && (
-              <div className="p-3 bg-gray-800 rounded-lg border border-gray-700">
-                <p className="text-xs text-gray-500">📜 {language === 'vn' ? 'Pháp lý' : language === 'fr' ? 'Statut légal' : 'Legal'}</p>
-                <p className="text-lg font-semibold text-white">{selectedProperty.legalStatus}</p>
+              )}
+
+              {!selectedProperty.pricePosition && (() => {
+                let area = selectedProperty.area;
+                if (!area) {
+                  const nlp = selectedProperty.nlpAnalysis || {};
+                  if (nlp.extractedArea) {
+                    area = nlp.extractedArea;
+                  } else {
+                    const text = (selectedProperty.title || '') + ' ' + (selectedProperty.description || '');
+                    const dimMatch = text.match(/(\d+[.,]?\d*)\s*x\s*(\d+[.,]?\d*)/i);
+                    if (dimMatch) area = parseFloat(dimMatch[1].replace(',', '.')) * parseFloat(dimMatch[2].replace(',', '.'));
+                    const areaMatch = text.match(/(\d+[.,]?\d*)\s*m2/i);
+                    if (!area && areaMatch) area = parseFloat(areaMatch[1].replace(',', '.'));
+                  }
+                }
+                return area && selectedProperty.price ? (
+                  <div style={{background: `linear-gradient(135deg, ${NEON.card} 0%, rgba(0,212,255,0.03) 100%)`, border: `1px solid rgba(0,212,255,0.15)`, borderRadius: 16, padding: 16, margin: '12px 0', textAlign: 'center'}}>
+                    <p style={{color: '#f0f8ff', fontSize: 14, fontWeight: 700, margin: '0 0 8px', letterSpacing: 1, textTransform: 'uppercase', textShadow: `0 0 10px rgba(0,212,255,0.4)`}}>📊 Price vs Market</p>
+                    <p style={{color: NEON.cyan, fontSize: 20, fontWeight: 800, margin: '8px 0', fontFamily: 'Orbitron, monospace'}}>
+                      {Math.round(selectedProperty.price / 1000000 / area)} tr/m²
+                    </p>
+                    <p style={{color: 'rgba(240,248,255,0.5)', fontSize: 13, margin: 0}}>
+                      {language === 'vn' ? 'Giá tính từ diện tích đất' : language === 'fr' ? 'Prix calculé depuis la surface' : 'Price calculated from land area'}
+                    </p>
+                  </div>
+                ) : (
+                  <div style={{background: `linear-gradient(135deg, ${NEON.card} 0%, rgba(0,212,255,0.03) 100%)`, border: `1px solid rgba(0,212,255,0.15)`, borderRadius: 16, padding: 16, margin: '12px 0', textAlign: 'center'}}>
+                    <p style={{color: '#f0f8ff', fontSize: 14, fontWeight: 700, margin: '0 0 8px', letterSpacing: 1, textTransform: 'uppercase', textShadow: `0 0 10px rgba(0,212,255,0.4)`}}>📊 Price vs Market</p>
+                    <p style={{color: 'rgba(240,248,255,0.5)', fontSize: 13, margin: 0}}>
+                      {language === 'vn' ? '⚠️ Diện tích không có – không thể phân tích giá/m²' : language === 'fr' ? '⚠️ Surface non renseignée – analyse prix/m² indisponible' : '⚠️ Area not provided — price/m² analysis unavailable'}
+                    </p>
+                  </div>
+                );
+              })()}
+
+              {/* Property Profile */}
+              <div style={{margin: '12px 0'}}>
+                <div style={{background: `linear-gradient(135deg, ${NEON.card} 0%, rgba(0,212,255,0.03) 100%)`, border: `1px solid ${NEON.border}`, borderRadius: 16, padding: 16, position: 'relative', overflow: 'hidden'}}>
+                  <div style={{position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundImage: `linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px)`, backgroundSize: '20px 20px', pointerEvents: 'none'}} />
+                  <p style={{color: NEON.white, fontSize: 14, fontWeight: 700, textAlign: 'center', margin: '0 0 14px', letterSpacing: 1, textTransform: 'uppercase', textShadow: `0 0 10px ${NEON.blueGlow}`}}>
+                    📋 {language === 'vn' ? 'Hồ sơ bất động sản' : language === 'fr' ? 'Profil du bien' : 'Property Profile'}
+                  </p>
+                  <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8}}>
+                    {/* Street Access */}
+                    <div style={{background: 'rgba(0,212,255,0.06)', borderRadius: 10, padding: '10px 12px', border: '1px solid rgba(0,212,255,0.1)'}}>
+                      <span style={{color: '#888', fontSize: 11}}>🛣️ {language === 'vn' ? 'Mặt bằng' : language === 'fr' ? 'Accès rue' : 'Street Access'}</span>
+                      <p style={{color: NEON.white, fontSize: 14, fontWeight: 600, margin: '4px 0 0'}}>
+                        {(() => {
+                          const nlp = selectedProperty.nlpAnalysis || {};
+                          const accessMap = {
+                            'goc_mt': 'Góc MT', 'nhieu_mt': '2+ MT', 'mat_tien': 'Mặt tiền',
+                            'goc': 'Góc', 'hxh': 'Hẻm xe hơi', 'hem': 'Hẻm',
+                            'kiet': 'Kiệt', 'ngo': 'Ngõ'
+                          };
+                          const parts = [];
+                          if (nlp.extractedStreetAccess) parts.push(accessMap[nlp.extractedStreetAccess] || nlp.extractedStreetAccess);
+                          if (nlp.extractedStreetWidth || selectedProperty.streetWidth) parts.push(`Đường ${nlp.extractedStreetWidth || selectedProperty.streetWidth}m`);
+                          if (nlp.extractedFacade || selectedProperty.facadeWidth) parts.push(`Ngang ${nlp.extractedFacade || selectedProperty.facadeWidth}m`);
+                          return parts.length > 0 ? parts.join(' • ') : '—';
+                        })()}
+                      </p>
+                    </div>
+                    {/* Dimensions */}
+                    <div style={{background: 'rgba(0,212,255,0.06)', borderRadius: 10, padding: '10px 12px', border: '1px solid rgba(0,212,255,0.1)'}}>
+                      <span style={{color: '#888', fontSize: 11}}>📐 {language === 'vn' ? 'Kích thước' : language === 'fr' ? 'Dimensions' : 'Dimensions'}</span>
+                      <p style={{color: NEON.white, fontSize: 14, fontWeight: 600, margin: '4px 0 0'}}>
+                        {(() => {
+                          const nlp = selectedProperty.nlpAnalysis || {};
+                          if (nlp.extractedWidth && nlp.extractedDepth) {
+                            return `${nlp.extractedWidth}×${nlp.extractedDepth}m (${nlp.extractedArea}m²)`;
+                          }
+                          if (nlp.extractedArea) return `${nlp.extractedArea} m²`;
+                          if (selectedProperty.area) return `${Math.round(selectedProperty.area * 10) / 10} m²`;
+                          return '—';
+                        })()}
+                      </p>
+                    </div>
+                    {/* Legal Status */}
+                    <div style={{background: 'rgba(0,212,255,0.06)', borderRadius: 10, padding: '10px 12px', border: '1px solid rgba(0,212,255,0.1)'}}>
+                      <span style={{color: '#888', fontSize: 11}}>📜 {language === 'vn' ? 'Pháp lý' : language === 'fr' ? 'Statut légal' : 'Legal Status'}</span>
+                      <p style={{color: (() => {
+                        const nlp = selectedProperty.nlpAnalysis || {};
+                        const colorMap = { 'so_hong_rieng': NEON.green, 'so_hong': NEON.green, 'hop_dong': NEON.orange, 'gpxd': NEON.orange, 'giay_tay': NEON.red, 'cho_so': NEON.orange, 'vi_bang': NEON.red };
+                        if (nlp.extractedLegalStatus && colorMap[nlp.extractedLegalStatus]) return colorMap[nlp.extractedLegalStatus];
+                        return '#888';
+                      })(), fontSize: 14, fontWeight: 600, margin: '4px 0 0'}}>
+                        {(() => {
+                          const nlp = selectedProperty.nlpAnalysis || {};
+                          const legalMap = {
+                            'so_hong_rieng': '✅ Sổ hồng riêng', 'so_hong': '✅ Sổ hồng / Sổ đỏ',
+                            'hop_dong': '📄 Hợp đồng mua bán', 'gpxd': '📄 Giấy phép XD',
+                            'giay_tay': '⚠️ Giấy tay', 'cho_so': '⏳ Đang chờ sổ', 'vi_bang': '⚠️ Vi bằng',
+                          };
+                          if (nlp.extractedLegalStatus && legalMap[nlp.extractedLegalStatus]) return legalMap[nlp.extractedLegalStatus];
+                          if (selectedProperty.legalStatus) return selectedProperty.legalStatus;
+                          return '—';
+                        })()}
+                      </p>
+                    </div>
+                    {/* Structure */}
+                    <div style={{background: 'rgba(0,212,255,0.06)', borderRadius: 10, padding: '10px 12px', border: '1px solid rgba(0,212,255,0.1)'}}>
+                      <span style={{color: '#888', fontSize: 11}}>🏢 {language === 'vn' ? 'Kết cấu' : language === 'fr' ? 'Structure' : 'Structure'}</span>
+                      <p style={{color: NEON.white, fontSize: 14, fontWeight: 600, margin: '4px 0 0'}}>
+                        {(() => {
+                          const nlp = selectedProperty.nlpAnalysis || {};
+                          const parts = [];
+                          const floors = selectedProperty.floors || nlp.extractedFloors;
+                          if (floors && floors > 0) parts.push(`${floors} tầng`);
+                          const beds = selectedProperty.bedrooms || nlp.extractedBedrooms;
+                          if (beds && beds > 0) parts.push(`${beds} PN`);
+                          const facade = selectedProperty.facadeWidth || nlp.extractedFacade;
+                          if (facade && facade > 0) parts.push(`Ngang ${facade}m`);
+                          return parts.length > 0 ? parts.join(' • ') : '—';
+                        })()}
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
-            )}
+
+              {/* Negotiation Signals */}
+              {selectedProperty.scoreDetails && (
+                <div style={{background: 'linear-gradient(135deg, #0d1225 0%, rgba(0,212,255,0.03) 100%)', border: '1px solid rgba(0,212,255,0.15)', borderRadius: 16, padding: 16, margin: '12px 0', position: 'relative', overflow: 'hidden'}}>
+                  <div style={{position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundImage: 'linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px)', backgroundSize: '20px 20px', pointerEvents: 'none'}} />
+                  <p style={{color: '#f0f8ff', fontSize: 14, fontWeight: 700, margin: '0 0 12px', letterSpacing: 1, textTransform: 'uppercase', textShadow: '0 0 10px rgba(0,212,255,0.4)'}}>
+                    ⚡ {language === 'vn' ? 'Tín hiệu đàm phán' : language === 'fr' ? 'Signaux de Négociation' : 'Negotiation Signals'}
+                  </p>
+
+                  {selectedProperty.scoreDetails.urgentKeywords && selectedProperty.scoreDetails.urgentKeywords.length > 0 && (
+                    <SignalItem icon="🔥" label={language === 'vn' ? 'Từ khóa gấp' : language === 'fr' ? 'Mots-clés urgents' : 'Urgent keywords'} value={selectedProperty.scoreDetails.urgentKeywords.join(', ')} isPositive={true} />
+                  )}
+
+                  {selectedProperty.scoreDetails.listingAge && selectedProperty.scoreDetails.listingAge.days > 0 && (
+                    <SignalItem icon="📅" label={language === 'vn' ? 'Tuổi tin đăng' : language === 'fr' ? 'Ancienneté' : 'Listing age'} value={`${selectedProperty.scoreDetails.listingAge.days} ${language === 'vn' ? 'ngày' : language === 'fr' ? 'jours' : 'days'}`} isPositive={selectedProperty.scoreDetails.listingAge.verdict === 'old' || selectedProperty.scoreDetails.listingAge.verdict === 'very_old'} />
+                  )}
+
+                  {selectedProperty.scoreDetails.priceAnalysis && (
+                    <SignalItem icon="💰" label={language === 'vn' ? 'Phân tích giá' : language === 'fr' ? 'Position prix' : 'Price analysis'} value={`${selectedProperty.scoreDetails.priceAnalysis.diffPercent}%`} isPositive={selectedProperty.scoreDetails.priceAnalysis.verdict === 'excellent' || selectedProperty.scoreDetails.priceAnalysis.verdict === 'good'} />
+                  )}
+
+                  {selectedProperty.scoreDetails.priceType === 'round' && (
+                    <SignalItem icon="🎯" label={language === 'vn' ? 'Giá tròn' : language === 'fr' ? 'Prix rond' : 'Round price'} value={language === 'vn' ? 'Có' : language === 'fr' ? 'Oui' : 'Yes'} isPositive={true} />
+                  )}
+
+                  {selectedProperty.scoreDetails.legalStatus && selectedProperty.scoreDetails.legalStatus.status && (
+                    <SignalItem icon="📜" label={language === 'vn' ? 'Pháp lý' : language === 'fr' ? 'Statut légal' : 'Legal status'} value={selectedProperty.scoreDetails.legalStatus.status} isPositive={selectedProperty.scoreDetails.legalStatus.verdict === 'excellent' || selectedProperty.scoreDetails.legalStatus.verdict === 'good'} />
+                  )}
+                </div>
+              )}
+
+              {/* NLP Alerts & Opportunities */}
+              {selectedProperty.scoreDetails && selectedProperty.scoreDetails.nlpFactors && selectedProperty.scoreDetails.nlpFactors.length > 0 && (
+                <div style={{background: 'linear-gradient(135deg, #0d1225 0%, rgba(255,140,0,0.03) 100%)', border: '1px solid rgba(255,140,0,0.15)', borderRadius: 16, padding: 16, margin: '12px 0', position: 'relative', overflow: 'hidden'}}>
+                  <div style={{position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundImage: 'linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px)', backgroundSize: '20px 20px', pointerEvents: 'none'}} />
+                  <p style={{color: '#f0f8ff', fontSize: 14, fontWeight: 700, margin: '0 0 12px', letterSpacing: 1, textTransform: 'uppercase', textShadow: '0 0 10px rgba(255,140,0,0.5)'}}>
+                    🚨 {language === 'vn' ? 'Cảnh báo & Cơ hội' : language === 'fr' ? 'Alertes & Opportunités' : 'Alerts & Opportunities'}
+                  </p>
+                  <div style={{display: 'flex', flexWrap: 'wrap', gap: 8}}>
+                    {selectedProperty.scoreDetails.nlpFactors.map((factor, i) => (
+                      <AlertBadge key={i} text={factor.label || factor.text || factor} type={factor.type === 'positive' || factor.type === 'opportunity' ? 'good' : factor.type === 'risk' || factor.type === 'warning' ? 'risk' : 'alert'} />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* AI Verdict */}
+              <div style={{background: 'linear-gradient(135deg, rgba(0,212,255,0.08) 0%, rgba(0,255,136,0.05) 100%)', border: '1px solid rgba(0,212,255,0.25)', borderRadius: 16, padding: 16, margin: '12px 0', boxShadow: '0 0 20px rgba(0,212,255,0.15), inset 0 0 30px rgba(0,212,255,0.03)', position: 'relative', overflow: 'hidden'}}>
+                <div style={{position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundImage: 'linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px)', backgroundSize: '20px 20px', pointerEvents: 'none'}} />
+                <p style={{color: '#00d4ff', fontSize: 14, fontWeight: 700, margin: '0 0 10px', letterSpacing: 1, textTransform: 'uppercase', textShadow: '0 0 10px rgba(0,212,255,0.4)'}}>
+                  🤖 {language === 'vn' ? 'Nhận xét AI' : language === 'fr' ? 'Verdict IA' : 'AI Verdict'}
+                </p>
+                <p style={{color: '#f0f8ff', fontSize: 14, lineHeight: 1.7, margin: 0, opacity: 0.9}}>
+                  {(() => {
+                    const p = selectedProperty;
+                    const sd = p.scoreDetails || {};
+                    const pp = p.pricePosition;
+                    const parts = [];
+                    if (p.score >= 70) parts.push(language === 'fr' ? '🔥 Opportunité très intéressante.' : language === 'vn' ? '🔥 Cơ hội rất tốt.' : '🔥 Very interesting opportunity.');
+                    else if (p.score >= 50) parts.push(language === 'fr' ? '👍 Annonce intéressante à considérer.' : language === 'vn' ? '👍 Tin đáng chú ý.' : '👍 Interesting listing to consider.');
+                    else if (p.score >= 30) parts.push(language === 'fr' ? '📊 Annonce dans la moyenne.' : language === 'vn' ? '📊 Tin trung bình.' : '📊 Average listing.');
+                    else parts.push(language === 'fr' ? '📉 Peu de signaux de négociation.' : language === 'vn' ? '📉 Ít tín hiệu đàm phán.' : '📉 Few negotiation signals.');
+                    if (pp && pp.position === 'below') parts.push(language === 'fr' ? `Prix ${Math.abs(pp.percentFromMedian)}% en dessous de la médiane du quartier.` : language === 'vn' ? `Giá thấp hơn ${Math.abs(pp.percentFromMedian)}% so với trung vị quận.` : `Price ${Math.abs(pp.percentFromMedian)}% below district median.`);
+                    else if (pp && pp.position === 'above') parts.push(language === 'fr' ? `Attention : prix ${Math.abs(pp.percentFromMedian)}% au dessus de la médiane.` : language === 'vn' ? `Chú ý: giá cao hơn ${Math.abs(pp.percentFromMedian)}% so với trung vị.` : `Note: price ${Math.abs(pp.percentFromMedian)}% above median.`);
+                    if (sd.urgentKeywords && sd.urgentKeywords.length > 0) parts.push(language === 'fr' ? `Signaux d'urgence détectés (${sd.urgentKeywords.join(', ')}) → marge de négociation probable.` : language === 'vn' ? `Phát hiện từ khóa gấp (${sd.urgentKeywords.join(', ')}) → có thể đàm phán.` : `Urgent signals detected (${sd.urgentKeywords.join(', ')}) → likely negotiation margin.`);
+                    if (sd.nlpFactors) {
+                      const risks = sd.nlpFactors.filter(f => f.type === 'risk' || f.type === 'warning');
+                      if (risks.length > 0) parts.push(language === 'fr' ? `⚠️ Risque(s) détecté(s): ${risks.map(r => r.label || r.text || r).join(', ')}.` : language === 'vn' ? `⚠️ Rủi ro: ${risks.map(r => r.label || r.text || r).join(', ')}.` : `⚠️ Risk(s) detected: ${risks.map(r => r.label || r.text || r).join(', ')}.`);
+                    }
+                    if (p.score >= 50 && pp && pp.position !== 'above') {
+                      const estimMin = pp.position === 'below' ? 5 : 10;
+                      const estimMax = pp.position === 'below' ? 15 : 20;
+                      parts.push(language === 'fr' ? `💡 Potentiel de négociation estimé : ${estimMin}-${estimMax}%.` : language === 'vn' ? `💡 Tiềm năng đàm phán: ${estimMin}-${estimMax}%.` : `💡 Estimated negotiation potential: ${estimMin}-${estimMax}%.`);
+                    }
+                    if (!p.legalStatus) parts.push(language === 'fr' ? '📋 Statut légal non confirmé — à vérifier avant visite.' : language === 'vn' ? '📋 Chưa xác nhận pháp lý — cần kiểm tra.' : '📋 Legal status unconfirmed — verify before visiting.');
+                    return parts.join(' ');
+                  })()}
+                </p>
+              </div>
+
+              {/* Property Details Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <div className="p-3 bg-gray-800 rounded-lg border border-gray-700">
+                  <p className="text-xs text-gray-500">📐 {language === 'vn' ? 'Diện tích' : language === 'fr' ? 'Surface' : 'Area'}</p>
+                  <p className="text-lg font-semibold text-white">{(() => {
+                    if (selectedProperty.area) return `${Math.round(selectedProperty.area * 10) / 10} m²`;
+                    const nlp = selectedProperty.nlpAnalysis || {};
+                    if (nlp.extractedArea) return `${nlp.extractedArea} m²`;
+                    return '?';
+                  })()}</p>
+                </div>
+                <div className="p-3 bg-gray-800 rounded-lg border border-gray-700">
+                  <p className="text-xs text-gray-500">🛏️ {t.rooms}</p>
+                  <p className="text-lg font-semibold text-white">{(() => {
+                    if (selectedProperty.bedrooms) return selectedProperty.bedrooms;
+                    const nlp = selectedProperty.nlpAnalysis || {};
+                    if (nlp.extractedBedrooms) return nlp.extractedBedrooms;
+                    return '?';
+                  })()}</p>
+                </div>
+                <div className="p-3 bg-gray-800 rounded-lg border border-gray-700">
+                  <p className="text-xs text-gray-500">🚿 {t.bathrooms}</p>
+                  <p className="text-lg font-semibold text-white">{(() => {
+                    if (selectedProperty.bathrooms) return selectedProperty.bathrooms;
+                    const nlp = selectedProperty.nlpAnalysis || {};
+                    if (nlp.extractedBathrooms) return nlp.extractedBathrooms;
+                    return '?';
+                  })()}</p>
+                </div>
+                {(() => {
+                  let floors = selectedProperty.floors;
+                  if (!floors || floors <= 0) {
+                    const nlp = selectedProperty.nlpAnalysis || {};
+                    if (nlp.extractedFloors) floors = nlp.extractedFloors;
+                  }
+                  return floors && floors > 0 ? (
+                    <div className="p-3 bg-gray-800 rounded-lg border border-gray-700">
+                      <p className="text-xs text-gray-500">🏢 {language === 'vn' ? 'Số tầng' : language === 'fr' ? 'Étages' : 'Floors'}</p>
+                      <p className="text-lg font-semibold text-white">{floors}</p>
+                    </div>
+                  ) : null;
+                })()}
+                {selectedProperty.legalStatus && (
+                  <div className="p-3 bg-gray-800 rounded-lg border border-gray-700">
+                    <p className="text-xs text-gray-500">📜 {language === 'vn' ? 'Pháp lý' : language === 'fr' ? 'Statut légal' : 'Legal'}</p>
+                    <p className="text-lg font-semibold text-white">{selectedProperty.legalStatus}</p>
+                  </div>
+                )}
               </div>
 
               {/* Address */}
