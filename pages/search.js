@@ -1179,13 +1179,25 @@ title={language === 'vn' ? '📊 Phân tích giá' : language === 'fr' ? '📊 A
             </div>
           )}
 {!selectedProperty.pricePosition && (
-            <div style={{background: 'linear-gradient(135deg, #0d1225 0%, rgba(0,212,255,0.03) 100%)', border: '1px solid rgba(0,212,255,0.15)', borderRadius: 16, padding: 16, margin: '12px 0', textAlign: 'center'}}>
-              <p style={{color: '#f0f8ff', fontSize: 14, fontWeight: 700, margin: '0 0 8px', letterSpacing: 1, textTransform: 'uppercase', textShadow: '0 0 10px rgba(0,212,255,0.4)'}}>📊 Price vs Market</p>
+          selectedProperty.area && selectedProperty.price ? (
+            <div style={{background: `linear-gradient(135deg, ${NEON.card} 0%, rgba(0,212,255,0.03) 100%)`, border: `1px solid rgba(0,212,255,0.15)`, borderRadius: 16, padding: 16, margin: '12px 0', textAlign: 'center'}}>
+              <p style={{color: '#f0f8ff', fontSize: 14, fontWeight: 700, margin: '0 0 8px', letterSpacing: 1, textTransform: 'uppercase', textShadow: `0 0 10px rgba(0,212,255,0.4)`}}>📊 Price vs Market</p>
+              <p style={{color: NEON.cyan, fontSize: 20, fontWeight: 800, margin: '8px 0', fontFamily: 'Orbitron, monospace'}}>
+                {Math.round(selectedProperty.price / 1000000000 / selectedProperty.area * 1000000)} tr/m²
+              </p>
               <p style={{color: 'rgba(240,248,255,0.5)', fontSize: 13, margin: 0}}>
-                {language === 'vn' ? '⚠️ Diện tích không có — không thể phân tích giá/m²' : language === 'fr' ? '⚠️ Surface non renseignée — analyse prix/m² indisponible' : '⚠️ Area not provided — price/m² analysis unavailable'}
+                {language === 'vn' ? 'Giá tính từ diện tích đất' : language === 'fr' ? 'Prix calculé depuis la surface' : 'Price calculated from land area'}
               </p>
             </div>
-          )}
+          ) : (
+            <div style={{background: `linear-gradient(135deg, ${NEON.card} 0%, rgba(0,212,255,0.03) 100%)`, border: `1px solid rgba(0,212,255,0.15)`, borderRadius: 16, padding: 16, margin: '12px 0', textAlign: 'center'}}>
+              <p style={{color: '#f0f8ff', fontSize: 14, fontWeight: 700, margin: '0 0 8px', letterSpacing: 1, textTransform: 'uppercase', textShadow: `0 0 10px rgba(0,212,255,0.4)`}}>📊 Price vs Market</p>
+              <p style={{color: 'rgba(240,248,255,0.5)', fontSize: 13, margin: 0}}>
+                {language === 'vn' ? '⚠️ Diện tích không có – không thể phân tích giá/m²' : language === 'fr' ? '⚠️ Surface non renseignée – analyse prix/m² indisponible' : '⚠️ Area not provided — price/m² analysis unavailable'}
+              </p>
+            </div>
+          )
+        )}
 {/* Score Bars */}
           <div style={{margin: '12px 0'}}>
 <div style={{background: `linear-gradient(135deg, ${NEON.card} 0%, rgba(0,212,255,0.03) 100%)`, border: `1px solid ${NEON.border}`, borderRadius: 16, padding: 16, margin: '12px 0', position: 'relative', overflow: 'hidden'}}>
@@ -1211,7 +1223,7 @@ title={language === 'vn' ? '📊 Phân tích giá' : language === 'fr' ? '📊 A
                   if (text.includes('ngõ') || text.includes('ngo ')) parts.push('Ngõ');
                   if (selectedProperty.streetWidth) parts.push(`Đường ${selectedProperty.streetWidth}m`);
                   else if (selectedProperty.facadeWidth && parts.length === 0) parts.push(`Ngang ${selectedProperty.facadeWidth}m`);
-                  return parts.length > 0 ? parts.join(' • ') : '—';
+                 return parts.length > 0 ? parts.join(' • ') : `[${selectedProperty.propertyType || '?'}|${selectedProperty.category || '?'}]`;
                 })()}
               </p>
             </div>
