@@ -1198,17 +1198,19 @@ title={language === 'vn' ? '📊 Phân tích giá' : language === 'fr' ? '📊 A
             <div style={{background: 'rgba(0,212,255,0.06)', borderRadius: 10, padding: '10px 12px', border: '1px solid rgba(0,212,255,0.1)'}}>
               <span style={{color: '#888', fontSize: 11}}>🛣️ {language === 'vn' ? 'Mặt bằng' : language === 'fr' ? 'Accès rue' : 'Street Access'}</span>
               <p style={{color: NEON.white, fontSize: 14, fontWeight: 600, margin: '4px 0 0'}}>
-                {(() => {
-                  const text = ((selectedProperty.title || '') + ' ' + (selectedProperty.description || '')).toLowerCase();
+{(() => {
+                  const text = ((selectedProperty.title || '') + ' ' + (selectedProperty.description || '') + ' ' + (selectedProperty.propertyType || '') + ' ' + JSON.stringify(selectedProperty.nlpAnalysis || {})).toLowerCase();
                   const parts = [];
                   if (text.includes('góc') || text.includes('goc')) parts.push('Góc');
                   if (text.includes('2mt') || text.includes('2 mặt') || text.includes('2 mat')) parts.push('2 MT');
                   else if (text.includes('3mt') || text.includes('3 mặt')) parts.push('3 MT');
                   else if (text.includes('mặt tiền') || text.includes('mat tien') || text.includes(' mt ')) parts.push('Mặt tiền');
-                  if (text.includes('hẻm') || text.includes('hem ') || text.includes('hxh')) parts.push('Hẻm');
+                  if (text.includes('hẻm xe hơi') || text.includes('hxh') || text.includes('hem xe hoi')) parts.push('Hẻm xe hơi');
+                  else if (text.includes('hẻm') || text.includes('hem ') || text.includes('nhà ngõ') || text.includes('nha ngo')) parts.push('Hẻm');
                   if (text.includes('kiệt') || text.includes('kiet')) parts.push('Kiệt');
-                  if (text.includes('ngõ') || text.includes('ngo')) parts.push('Ngõ');
+                  if (text.includes('ngõ') || text.includes('ngo ')) parts.push('Ngõ');
                   if (selectedProperty.streetWidth) parts.push(`Đường ${selectedProperty.streetWidth}m`);
+                  else if (selectedProperty.facadeWidth && parts.length === 0) parts.push(`Ngang ${selectedProperty.facadeWidth}m`);
                   return parts.length > 0 ? parts.join(' • ') : '—';
                 })()}
               </p>
@@ -1223,9 +1225,9 @@ title={language === 'vn' ? '📊 Phân tích giá' : language === 'fr' ? '📊 A
                   if (dimMatch) {
                     const w = parseFloat(dimMatch[1].replace(',', '.'));
                     const l = parseFloat(dimMatch[2].replace(',', '.'));
-                    return `${dimMatch[1]}×${dimMatch[2]}m (${Math.round(w * l)}m²)`;
+                  return `${dimMatch[1]}×${dimMatch[2]}m (${Math.round(w * l * 10) / 10}m²)`;
                   }
-                  if (selectedProperty.area) return `${selectedProperty.area} m²`;
+                 if (selectedProperty.area) return `${Math.round(selectedProperty.area * 10) / 10} m²`;
                   return '—';
                 })()}
               </p>
