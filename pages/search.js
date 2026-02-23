@@ -1178,12 +1178,20 @@ title={language === 'vn' ? '📊 Phân tích giá' : language === 'fr' ? '📊 A
               />
             </div>
           )}
-{!selectedProperty.pricePosition && (
-          selectedProperty.area && selectedProperty.price ? (
+{!selectedProperty.pricePosition && (() => {
+          let area = selectedProperty.area;
+          if (!area) {
+            const text = (selectedProperty.title || '') + ' ' + (selectedProperty.description || '');
+            const dimMatch = text.match(/(\d+[.,]?\d*)\s*x\s*(\d+[.,]?\d*)/i);
+            if (dimMatch) area = parseFloat(dimMatch[1].replace(',', '.')) * parseFloat(dimMatch[2].replace(',', '.'));
+            const areaMatch = text.match(/(\d+[.,]?\d*)\s*m2/i);
+            if (!area && areaMatch) area = parseFloat(areaMatch[1].replace(',', '.'));
+          }
+          return area && selectedProperty.price ? (
             <div style={{background: `linear-gradient(135deg, ${NEON.card} 0%, rgba(0,212,255,0.03) 100%)`, border: `1px solid rgba(0,212,255,0.15)`, borderRadius: 16, padding: 16, margin: '12px 0', textAlign: 'center'}}>
               <p style={{color: '#f0f8ff', fontSize: 14, fontWeight: 700, margin: '0 0 8px', letterSpacing: 1, textTransform: 'uppercase', textShadow: `0 0 10px rgba(0,212,255,0.4)`}}>📊 Price vs Market</p>
               <p style={{color: NEON.cyan, fontSize: 20, fontWeight: 800, margin: '8px 0', fontFamily: 'Orbitron, monospace'}}>
-                {Math.round(selectedProperty.price / 1000000000 / selectedProperty.area * 1000000)} tr/m²
+                {Math.round(selectedProperty.price / 1000000 / area)} tr/m²
               </p>
               <p style={{color: 'rgba(240,248,255,0.5)', fontSize: 13, margin: 0}}>
                 {language === 'vn' ? 'Giá tính từ diện tích đất' : language === 'fr' ? 'Prix calculé depuis la surface' : 'Price calculated from land area'}
@@ -1196,8 +1204,8 @@ title={language === 'vn' ? '📊 Phân tích giá' : language === 'fr' ? '📊 A
                 {language === 'vn' ? '⚠️ Diện tích không có – không thể phân tích giá/m²' : language === 'fr' ? '⚠️ Surface non renseignée – analyse prix/m² indisponible' : '⚠️ Area not provided — price/m² analysis unavailable'}
               </p>
             </div>
-          )
-        )}
+          );
+        })()}
 {/* Score Bars */}
           <div style={{margin: '12px 0'}}>
 <div style={{background: `linear-gradient(135deg, ${NEON.card} 0%, rgba(0,212,255,0.03) 100%)`, border: `1px solid ${NEON.border}`, borderRadius: 16, padding: 16, margin: '12px 0', position: 'relative', overflow: 'hidden'}}>
