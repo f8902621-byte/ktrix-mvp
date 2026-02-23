@@ -1760,9 +1760,9 @@ if (!listing.facadeWidth) {
 if (!listing.bathrooms) {
   const bathMatch = html.match(/[Ss]ố\s*(?:phòng\s*tắm|toilet|WC|wc)[^<]*<[^>]*>(\d+)/i) ||
                     html.match(/(?:phòng\s*tắm|toilet|wc)[^:]*:\s*(\d+)/i);
-  if (bathMatch) {
+if (bathMatch) {
     listing.bathrooms = parseInt(bathMatch[1]);
-const toEnrich = alonhadatIncomplete.slice(0, maxEnrich);
+  }
 }
 
 // Extraire street access type
@@ -1797,7 +1797,7 @@ const alonhadatIncomplete = listings.filter(l =>
   l.source === 'alonhadat.com.vn' && (!l.legalStatus || !l.area || !l.bedrooms)
   );
   
-  const toEnrich = alonhadatWithoutLegal.slice(0, maxEnrich);
+ const toEnrich = alonhadatIncomplete.slice(0, maxEnrich);
   
   if (toEnrich.length === 0) return listings;
   
