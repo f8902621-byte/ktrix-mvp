@@ -1747,7 +1747,42 @@ async function fetchAlonhadatDetails(listing) {
         listing.area = parseFloat(areaMatch[1].replace(',', '.'));
       }
     }
-    
+    // Extraire dimensions (chiều ngang × chiều dài)
+if (!listing.facadeWidth) {
+  const widthMatch = html.match(/[Cc]hiều\s*ngang[^<]*<[^>]*>(\d+[,.]?\d*)\s*m/i) ||
+                     html.match(/chiều\s*ngang[^:]*:\s*(\d+[,.]?\d*)/i);
+  if (widthMatch) {
+    listing.facadeWidth = parseFloat(widthMatch[1].replace(',', '.'));
+  }
+}
+
+// Extraire bathrooms
+if (!listing.bathrooms) {
+  const bathMatch = html.match(/[Ss]ố\s*(?:phòng\s*tắm|toilet|WC|wc)[^<]*<[^>]*>(\d+)/i) ||
+                    html.match(/(?:phòng\s*tắm|toilet|wc)[^:]*:\s*(\d+)/i);
+  if (bathMatch) {
+    listing.bathrooms = parseInt(bathMatch[1]);
+const toEnrich = alonhadatIncomplete.slice(0, maxEnrich);
+}
+
+// Extraire street access type
+if (!listing.streetAccess) {
+  const typeMatch = html.match(/[Ll]oại\s*BDS[^<]*<[^>]*>([^<]+)/i) ||
+                    html.match(/loại\s*bds[^:]*:\s*([^<,]+)/i);
+  if (typeMatch) {
+    const typeText = typeMatch[1].trim().toLowerCase();
+    if (typeText.includes('mặt tiền')) listing.streetAccess = 'mat_tien';
+    else if (typeText.includes('hẻm')) listing.streetAccess = 'hem';
+  }
+}
+
+// Extraire direction
+if (!listing.direction) {
+  const dirMatch = html.match(/[Hh]ướng[^<]*<[^>]*>([^<]+)/i);
+  if (dirMatch && dirMatch[1].trim() !== '—' && dirMatch[1].trim() !== '_' && dirMatch[1].trim() !== '---') {
+    listing.direction = dirMatch[1].trim();
+  }
+}
     console.log(`[ALONHADAT DETAIL] ${listing.title?.substring(0, 30)} → Legal: ${listing.legalStatus || '?'}`);
     
   } catch (e) {
@@ -1757,9 +1792,9 @@ async function fetchAlonhadatDetails(listing) {
   return listing;
 }
 
-async function enrichTopAlonhadatListings(listings, maxEnrich = 10) {
-  const alonhadatWithoutLegal = listings.filter(l => 
-    l.source === 'alonhadat' && !l.legalStatus
+async function enrichTopAlonhadatListings(listings, maxEnrich = 20) {
+const alonhadatIncomplete = listings.filter(l => 
+  l.source === 'alonhadat.com.vn' && (!l.legalStatus || !l.area || !l.bedrooms)
   );
   
   const toEnrich = alonhadatWithoutLegal.slice(0, maxEnrich);
