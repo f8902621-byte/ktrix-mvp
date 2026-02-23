@@ -1282,10 +1282,7 @@ const nlp = selectedProperty.nlpAnalysis || {};
             <div style={{background: 'rgba(0,212,255,0.06)', borderRadius: 10, padding: '10px 12px', border: '1px solid rgba(0,212,255,0.1)'}}>
               <span style={{color: '#888', fontSize: 11}}>🏢 {language === 'vn' ? 'Kết cấu' : language === 'fr' ? 'Structure' : 'Structure'}</span>
               <p style={{color: NEON.white, fontSize: 14, fontWeight: 600, margin: '4px 0 0'}}>
-                {(() => {
-                  const parts = [];
-                  const text = (selectedProperty.title || '') + ' ' + (selectedProperty.description || '');
-{(() => {
+                
                   const nlp = selectedProperty.nlpAnalysis || {};
                   const parts = [];
                   const floors = selectedProperty.floors || nlp.extractedFloors;
