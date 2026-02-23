@@ -139,7 +139,7 @@ const titleText = title || '📊 Price vs Market';
           <Tooltip content={<CustomTooltip />} />
           <Area type="monotone" dataKey="density" stroke={NEON.blue} strokeWidth={3} fill="url(#neonGradient)" style={{ filter: `drop-shadow(0 0 6px ${NEON.blueGlow})` }} />
           <ReferenceLine x={data.reduce((prev, curr) => Math.abs(curr.price - propertyPrice) < Math.abs(prev.price - propertyPrice) ? curr : prev).price} stroke={NEON.orange} strokeWidth={3} strokeDasharray="5 3" style={{ filter: `drop-shadow(0 0 8px ${NEON.orangeGlow})` }} />
-          <ReferenceLine x={data.reduce((prev, curr) => Math.abs(curr.price - median) < Math.abs(prev.price - median) ? curr : prev).price} stroke="rgba(0,212,255,0.4)" strokeWidth={1} strokeDasharray="3 3" />
+          <ReferenceLine x={data.reduce((prev, curr) => Math.abs(curr.price - median) < Math.abs(prev.price - median) ? curr : prev).price} stroke="rgba(0,212,255,0.4)" strokeWidth={2} strokeDasharray="8 4" />
         </AreaChart>
       </ResponsiveContainer>
       <div style={{ display: 'flex', justifyContent: 'center', gap: 20, marginTop: 4, fontSize: 11 }}>
