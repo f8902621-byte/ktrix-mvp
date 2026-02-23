@@ -491,6 +491,19 @@ function analyzeListingText(title, body) {
     hasInvestmentPotential: false,
     hasLegalIssue: false,
     hasPlanningRisk: false,
+    // Nouveaux champs NLP enrichis
+      extractedArea: null,
+      extractedWidth: null,
+      extractedDepth: null,
+      extractedBedrooms: null,
+      extractedBathrooms: null,
+      extractedLegalStatus: null,   // 'so_hong', 'hop_dong', 'giay_tay', 'cho_so', null
+      extractedStreetAccess: null,  // 'mat_tien', 'hem', 'hxh', 'goc', 'kiet', 'ngo', null
+      extractedPropertyType: null,  // 'CHDV', 'shophouse', 'biet_thu', 'chung_cu', etc.
+      hasUrgency: false,
+      urgencyKeywords: [],
+      investmentKeywords: [],
+      hasRentalIncome: false,
   };
 
   const bodyText = (body || '').toLowerCase();
@@ -622,7 +635,186 @@ function analyzeListingText(title, body) {
   if (/giải\s*tỏa|quy\s*hoạch\s*(treo|đỏ)|tranh\s*chấp/i.test(text)) {
     analysis.hasPlanningRisk = true;
   }
+// ===========================================
+    // DIMENSIONS : largeur x profondeur → surface
+    // ===========================================
+    const dimPatterns = [
+      /(\d+[.,]?\d*)\s*[xX×]\s*(\d+[.,]?\d*)\s*m/i,
+      /(\d+[.,]?\d*)\s*[xX×]\s*(\d+[.,]?\d*)/i,
+      /dt[:\s]*(\d+[.,]?\d*)\s*[xX×]\s*(\d+[.,]?\d*)/i,
+    ];
+    for (const pattern of dimPatterns) {
+      const match = text.match(pattern);
+      if (match) {
+        const w = parseFloat(match[1].replace(',', '.'));
+        const d = parseFloat(match[2].replace(',', '.'));
+        if (w >= 1 && w <= 100 && d >= 1 && d <= 200) {
+          analysis.extractedWidth = w;
+          analysis.extractedDepth = d;
+          analysis.extractedArea = Math.round(w * d * 10) / 10;
+          break;
+        }
+      }
+    }
 
+    // Surface directe si pas de dimensions
+    if (!analysis.extractedArea) {
+      const areaPatterns = [
+        /(\d+[.,]?\d*)\s*m²/i,
+        /(\d+[.,]?\d*)\s*m2/i,
+        /diện\s*tích[:\s]*(\d+[.,]?\d*)/i,
+        /dt[:\s]*(\d+[.,]?\d*)\s*m/i,
+      ];
+      for (const pattern of areaPatterns) {
+        const match = text.match(pattern);
+        if (match) {
+          const area = parseFloat(match[1].replace(',', '.'));
+          if (area >= 5 && area <= 10000) {
+            analysis.extractedArea = area;
+            break;
+          }
+        }
+      }
+    }
+
+    // ===========================================
+    // CHAMBRES & SALLES DE BAIN
+    // ===========================================
+    const bedroomPatterns = [
+      /(\d+)\s*(?:phòng\s*ngủ|phòng\s*ngũ|pn\b)/i,
+      /(\d+)\s*(?:pn)\b/i,
+      /(\d+)\s*(?:phòng)\b(?!\s*(?:tắm|wc|khách|ăn|bếp))/i,
+      /(\d+)p\s*(\d+)(?:wc|toilet)/i,
+    ];
+    for (const pattern of bedroomPatterns) {
+      const match = text.match(pattern);
+      if (match) {
+        const beds = parseInt(match[1]);
+        if (beds >= 1 && beds <= 50) {
+          analysis.extractedBedrooms = beds;
+          break;
+        }
+      }
+    }
+
+    const bathroomPatterns = [
+      /(\d+)\s*(?:phòng\s*tắm|phòng\s*vệ\s*sinh|toilet|wc|nhà\s*vệ\s*sinh)/i,
+      /(\d+)\s*(?:wc|vs)\b/i,
+      /(\d+)p\s*(\d+)(?:wc|toilet)/i,
+    ];
+    for (const pattern of bathroomPatterns) {
+      const match = text.match(pattern);
+      if (match) {
+        // Pour le pattern "4p2wc", les bains sont dans match[2] si disponible
+        const baths = parseInt(match[2] || match[1]);
+        if (baths >= 1 && baths <= 20) {
+          analysis.extractedBathrooms = baths;
+          break;
+        }
+      }
+    }
+
+    // ===========================================
+    // STATUT LÉGAL
+    // ===========================================
+    if (/sổ\s*hồng\s*riêng|shr\b/i.test(text)) {
+      analysis.extractedLegalStatus = 'so_hong_rieng';
+    } else if (/sổ\s*hồng|sổ\s*đỏ|so\s*hong|so\s*do|đã\s*có\s*sổ/i.test(text)) {
+      analysis.extractedLegalStatus = 'so_hong';
+    } else if (/công\s*nhận\s*đủ|cndd/i.test(text)) {
+      analysis.extractedLegalStatus = 'so_hong';
+    } else if (/hợp\s*đồng\s*mua\s*bán|hđmb|hdmb/i.test(text)) {
+      analysis.extractedLegalStatus = 'hop_dong';
+    } else if (/giấy\s*phép\s*xây\s*dựng|gpxd/i.test(text)) {
+      analysis.extractedLegalStatus = 'gpxd';
+    } else if (/giấy\s*tay/i.test(text)) {
+      analysis.extractedLegalStatus = 'giay_tay';
+    } else if (/chưa\s*(?:có\s*)?sổ|đang\s*chờ\s*sổ|chờ\s*sổ/i.test(text)) {
+      analysis.extractedLegalStatus = 'cho_so';
+    } else if (/vi\s*bằng/i.test(text)) {
+      analysis.extractedLegalStatus = 'vi_bang';
+    }
+
+    // ===========================================
+    // TYPE D'ACCÈS RUE
+    // ===========================================
+    if (/góc\s*\d*\s*m[ặa]t\s*ti[eề]n|góc\s*\d*\s*mt\b/i.test(text)) {
+      analysis.extractedStreetAccess = 'goc_mt';
+    } else if (/\d\s*m[ặa]t\s*ti[eề]n|\dmt\b/i.test(text)) {
+      analysis.extractedStreetAccess = 'nhieu_mt';
+    } else if (/m[ặa]t\s*ti[eề]n|^mt\b|\bmt\b/i.test(text)) {
+      analysis.extractedStreetAccess = 'mat_tien';
+    } else if (/góc|goc\b/i.test(text)) {
+      analysis.extractedStreetAccess = 'goc';
+    } else if (/h[eẻ]m\s*xe\s*h[oơ]i|hxh\b/i.test(text)) {
+      analysis.extractedStreetAccess = 'hxh';
+    } else if (/h[eẻ]m|nhà\s*trong\s*h[eẻ]m/i.test(text)) {
+      analysis.extractedStreetAccess = 'hem';
+    } else if (/ki[eệ]t/i.test(text)) {
+      analysis.extractedStreetAccess = 'kiet';
+    } else if (/ng[oõ](?:\s|$)/i.test(text)) {
+      analysis.extractedStreetAccess = 'ngo';
+    }
+
+    // ===========================================
+    // TYPE DE BIEN
+    // ===========================================
+    if (/chdv|căn\s*hộ\s*dịch\s*vụ/i.test(text)) {
+      analysis.extractedPropertyType = 'chdv';
+    } else if (/shophouse|shop\s*house/i.test(text)) {
+      analysis.extractedPropertyType = 'shophouse';
+    } else if (/bi[eệ]t\s*th[uự]/i.test(text)) {
+      analysis.extractedPropertyType = 'biet_thu';
+    } else if (/chung\s*c[uư]|căn\s*hộ/i.test(text)) {
+      analysis.extractedPropertyType = 'chung_cu';
+    } else if (/nhà\s*ph[oố]/i.test(text)) {
+      analysis.extractedPropertyType = 'nha_pho';
+    } else if (/đ[aấ]t\s*n[eề]n|đ[aấ]t\b/i.test(text)) {
+      analysis.extractedPropertyType = 'dat';
+    }
+
+    // ===========================================
+    // SIGNAUX D'URGENCE
+    // ===========================================
+    const urgencyTerms = [
+      { pattern: /bán\s*gấp/i, keyword: 'Bán gấp' },
+      { pattern: /cần\s*bán\s*gấp/i, keyword: 'Cần bán gấp' },
+      { pattern: /giá\s*tốt/i, keyword: 'Giá tốt' },
+      { pattern: /giá\s*rẻ/i, keyword: 'Giá rẻ' },
+      { pattern: /bán\s*lỗ/i, keyword: 'Bán lỗ' },
+      { pattern: /chính\s*chủ/i, keyword: 'Chính chủ' },
+      { pattern: /cần\s*tiền/i, keyword: 'Cần tiền' },
+      { pattern: /giảm\s*giá|giảm\s*sâu/i, keyword: 'Giảm giá' },
+      { pattern: /hạ\s*giá/i, keyword: 'Hạ giá' },
+      { pattern: /bán\s*nhanh/i, keyword: 'Bán nhanh' },
+    ];
+    for (const term of urgencyTerms) {
+      if (term.pattern.test(text)) {
+        analysis.hasUrgency = true;
+        analysis.urgencyKeywords.push(term.keyword);
+      }
+    }
+
+    // ===========================================
+    // SIGNAUX INVESTISSEMENT
+    // ===========================================
+    const investTerms = [
+      { pattern: /dòng\s*tiền/i, keyword: 'Dòng tiền' },
+      { pattern: /thu\s*nhập/i, keyword: 'Thu nhập' },
+      { pattern: /cho\s*thuê/i, keyword: 'Cho thuê' },
+      { pattern: /sinh\s*lời/i, keyword: 'Sinh lời' },
+      { pattern: /đầu\s*tư/i, keyword: 'Đầu tư' },
+      { pattern: /tiềm\s*năng/i, keyword: 'Tiềm năng' },
+      { pattern: /tăng\s*giá/i, keyword: 'Tăng giá' },
+    ];
+    for (const term of investTerms) {
+      if (term.pattern.test(text)) {
+        analysis.investmentKeywords.push(term.keyword);
+      }
+    }
+    if (analysis.extractedRentalIncome || analysis.investmentKeywords.length > 0) {
+      analysis.hasRentalIncome = true;
+    }
   return analysis;
 }
 
