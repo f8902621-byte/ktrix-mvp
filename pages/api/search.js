@@ -2592,7 +2592,14 @@ hasPlanningRisk: nlpAnalysis.hasPlanningRisk,
       sourceCountAfterFilter[src] = (sourceCountAfterFilter[src] || 0) + 1;
     });
     console.log('SOURCES APRÈS FILTRAGE:', sourceCountAfterFilter);
-
+// Enrichir les annonces Alonhadat incomplètes (scrape page détail)
+    const alonhadatToEnrich = unique.filter(l => 
+      l.source === 'alonhadat.com.vn' && (!l.legalStatus || !l.area || !l.bedrooms)
+    );
+    if (alonhadatToEnrich.length > 0) {
+      console.log(`[ENRICH] ${alonhadatToEnrich.length} annonces Alonhadat incomplètes → scraping détails...`);
+      await enrichTopAlonhadatListings(unique, 20);
+    }
     const districtStats = calculateDistrictStats(unique);
     console.log(`Stats districts calculées: ${Object.keys(districtStats).length} districts`);
     
