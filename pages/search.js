@@ -1371,24 +1371,50 @@ title={language === 'vn' ? '📊 Phân tích giá' : language === 'fr' ? '📊 A
 
               {/* Property Details Grid */}
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+<div className="p-3 bg-gray-800 rounded-lg border border-gray-700">
+              <p className="text-xs text-gray-500">📐 {language === 'vn' ? 'Diện tích' : language === 'fr' ? 'Surface' : 'Area'}</p>
+              <p className="text-lg font-semibold text-white">{(() => {
+                if (selectedProperty.area) return `${Math.round(selectedProperty.area * 10) / 10} m²`;
+                const text = (selectedProperty.title || '') + ' ' + (selectedProperty.description || '');
+                const dimMatch = text.match(/(\d+[.,]?\d*)\s*x\s*(\d+[.,]?\d*)/i);
+                if (dimMatch) {
+                  const w = parseFloat(dimMatch[1].replace(',', '.'));
+                  const l = parseFloat(dimMatch[2].replace(',', '.'));
+                  return `${Math.round(w * l * 10) / 10} m²`;
+                }
+                const areaMatch = text.match(/(\d+[.,]?\d*)\s*m2/i);
+                if (areaMatch) return `${parseFloat(areaMatch[1].replace(',', '.'))} m²`;
+                return '?';
+              })()}</p>
+            </div>
+            <div className="p-3 bg-gray-800 rounded-lg border border-gray-700">
+              <p className="text-xs text-gray-500">🛏️ {t.rooms}</p>
+              <p className="text-lg font-semibold text-white">{(() => {
+                if (selectedProperty.bedrooms) return selectedProperty.bedrooms;
+                const text = (selectedProperty.title || '') + ' ' + (selectedProperty.description || '');
+                const m = text.match(/(\d+)\s*(?:phòng ngủ|phong ngu|pn|PN|PHÒNG)/i);
+                if (m) return m[1];
+                return '?';
+              })()}</p>
+            </div>
+            <div className="p-3 bg-gray-800 rounded-lg border border-gray-700">
+              <p className="text-xs text-gray-500">🚿 {t.bathrooms}</p>
+              <p className="text-lg font-semibold text-white">{selectedProperty.bathrooms || '?'}</p>
+            </div>
+            {(() => {
+              let floors = selectedProperty.floors;
+              if (!floors || floors <= 0) {
+                const text = (selectedProperty.title || '') + ' ' + (selectedProperty.description || '');
+                const m = text.match(/(\d+)\s*(?:tầng|tang|lầu|lau)/i);
+                if (m) floors = parseInt(m[1]);
+              }
+              return floors && floors > 0 ? (
                 <div className="p-3 bg-gray-800 rounded-lg border border-gray-700">
-                  <p className="text-xs text-gray-500">📐 {language === 'vn' ? 'Diện tích' : language === 'fr' ? 'Surface' : 'Area'}</p>
-                  <p className="text-lg font-semibold text-white">{selectedProperty.area || '?'} m²</p>
+                  <p className="text-xs text-gray-500">🏢 {language === 'vn' ? 'Số tầng' : language === 'fr' ? 'Étages' : 'Floors'}</p>
+                  <p className="text-lg font-semibold text-white">{floors}</p>
                 </div>
-                <div className="p-3 bg-gray-800 rounded-lg border border-gray-700">
-                  <p className="text-xs text-gray-500">🛏️ {t.rooms}</p>
-                  <p className="text-lg font-semibold text-white">{selectedProperty.bedrooms || '?'}</p>
-                </div>
-                <div className="p-3 bg-gray-800 rounded-lg border border-gray-700">
-                  <p className="text-xs text-gray-500">🚿 {t.bathrooms}</p>
-                  <p className="text-lg font-semibold text-white">{selectedProperty.bathrooms || '?'}</p>
-                </div>
-                {selectedProperty.floors && (
-                  <div className="p-3 bg-gray-800 rounded-lg border border-gray-700">
-                    <p className="text-xs text-gray-500">🏢 {language === 'vn' ? 'Số tầng' : language === 'fr' ? 'Étages' : 'Floors'}</p>
-                    <p className="text-lg font-semibold text-white">{selectedProperty.floors}</p>
-                  </div>
-                )}
+              ) : null;
+            })()}
                 {selectedProperty.direction && (
                   <div className="p-3 bg-gray-800 rounded-lg border border-gray-700">
                     <p className="text-xs text-gray-500">🧭 {language === 'vn' ? 'Hướng' : language === 'fr' ? 'Orientation' : 'Direction'}</p>
