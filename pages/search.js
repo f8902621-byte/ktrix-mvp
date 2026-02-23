@@ -1188,82 +1188,92 @@ title={language === 'vn' ? '📊 Phân tích giá' : language === 'fr' ? '📊 A
           )}
 {/* Score Bars */}
           <div style={{margin: '12px 0'}}>
-            {console.log('DEBUG:', JSON.stringify({title: selectedProperty.title, legalStatus: selectedProperty.legalStatus, area: selectedProperty.area, floors: selectedProperty.floors, streetWidth: selectedProperty.streetWidth, facadeWidth: selectedProperty.facadeWidth, description: (selectedProperty.description || '').substring(0, 200)}))}
-            <p style={{color: 'red', fontSize: 12, wordBreak: 'break-all'}}>DEBUG: legal=[{selectedProperty.legalStatus || 'NULL'}] area=[{selectedProperty.area || 'NULL'}] floors=[{selectedProperty.floors || 'NULL'}] desc=[{(selectedProperty.description || 'NULL').substring(0,150)}]</p>
-<ScoreBars scores={{
-            location: (() => {
-              let loc = 40;
-              const title = (selectedProperty.title || '').toLowerCase();
-              const desc = (selectedProperty.description || '').toLowerCase();
-              const text = title + ' ' + desc;
-              if (text.includes('mặt tiền') || text.includes('mat tien') || text.includes(' mt ') || text.includes('2mt') || text.includes('3mt') || text.includes('2 mặt') || text.includes('3 mặt')) loc += 25;
-              if (text.includes('góc') || text.includes('goc')) loc += 10;
-              if (selectedProperty.streetWidth && selectedProperty.streetWidth >= 20) loc += 15;
-              else if (selectedProperty.streetWidth && selectedProperty.streetWidth >= 10) loc += 10;
-              else if (selectedProperty.streetWidth && selectedProperty.streetWidth >= 6) loc += 5;
-              if (text.includes('hẻm') || text.includes('hem ') || text.includes('kiệt') || text.includes('ngõ')) loc -= 10;
-              if (selectedProperty.facadeWidth && selectedProperty.facadeWidth >= 8) loc += 5;
-              else if (selectedProperty.facadeWidth && selectedProperty.facadeWidth >= 5) loc += 3;
-              return Math.min(95, Math.max(15, loc));
-            })(),
-            price: selectedProperty.scoreDetails && selectedProperty.scoreDetails.priceAnalysis
-              ? (selectedProperty.scoreDetails.priceAnalysis.verdict === 'excellent' ? 90
-                : selectedProperty.scoreDetails.priceAnalysis.verdict === 'good' ? 75
-                : selectedProperty.scoreDetails.priceAnalysis.verdict === 'fair' ? 55
-                : 35)
-              : 50,
-            size: (() => {
-              let area = selectedProperty.area || 0;
-              let floors = selectedProperty.floors || 1;
-              // Parser les dimensions depuis le titre si pas de surface
-              if (area === 0) {
-                const text = (selectedProperty.title || '') + ' ' + (selectedProperty.description || '');
-                const dimMatch = text.match(/(\d+[.,]?\d*)\s*x\s*(\d+[.,]?\d*)/i);
-                if (dimMatch) {
-                  area = parseFloat(dimMatch[1].replace(',', '.')) * parseFloat(dimMatch[2].replace(',', '.'));
-                }
-                const areaMatch = text.match(/(\d+)\s*m[²2]/i);
-                if (!dimMatch && areaMatch) {
-                  area = parseInt(areaMatch[1]);
-                }
-              }
-              // Parser les étages depuis le titre si pas renseigné
-              if (floors <= 1) {
-                const text = (selectedProperty.title || '') + ' ' + (selectedProperty.description || '');
-                const floorMatch = text.match(/(\d+)\s*(?:tầng|tang|lầu|lau)/i);
-                if (floorMatch && parseInt(floorMatch[1]) > 1) floors = parseInt(floorMatch[1]);
-              }
-              const totalArea = area * floors;
-              if (totalArea >= 300) return 90;
-              if (totalArea >= 150) return 75;
-              if (totalArea >= 80) return 60;
-              if (totalArea >= 50) return 45;
-              if (area > 0) return 35;
-              return null; // Pas d'info surface disponible
-            })(),
-            legal: (() => {
-              const legalText = (selectedProperty.legalStatus || '').toLowerCase();
-              const title = (selectedProperty.title || '').toLowerCase();
-              const desc = (selectedProperty.description || '').toLowerCase();
-              const allText = legalText + ' ' + title + ' ' + desc;
-              // Aussi vérifier les données brutes du scraper
-              const rawData = JSON.stringify(selectedProperty.nlpAnalysis || {}).toLowerCase();
-              const fullText = allText + ' ' + rawData;
-              if (fullText.includes('sổ hồng') || fullText.includes('sổ đỏ') || fullText.includes('so hong') || fullText.includes('so do') || fullText.includes('shr') || fullText.includes('công nhận đủ') || fullText.includes('cong nhan du')) return 90;
-              if (fullText.includes('hợp đồng') || fullText.includes('hop dong') || fullText.includes('gpxd') || fullText.includes('giấy phép')) return 65;
-              if (fullText.includes('chờ sổ') || fullText.includes('cho so') || fullText.includes('giấy tay') || fullText.includes('giay tay') || fullText.includes('vi bằng')) return 35;
-              if (selectedProperty.scoreDetails && selectedProperty.scoreDetails.legalStatus) {
-                if (selectedProperty.scoreDetails.legalStatus.verdict === 'excellent') return 90;
-                if (selectedProperty.scoreDetails.legalStatus.verdict === 'good') return 70;
-                return 45;
-              }
-              return null; // Pas d'info légale disponible
-            })(),
-            urgency: selectedProperty.scoreDetails && selectedProperty.scoreDetails.urgentKeywords && selectedProperty.scoreDetails.urgentKeywords.length > 0
-              ? 85
-              : selectedProperty.scoreDetails && selectedProperty.scoreDetails.listingAge && selectedProperty.scoreDetails.listingAge.verdict === 'old'
-              ? 70 : 40,
-        }} title={language === 'vn' ? '🎯 Điểm đánh giá' : language === 'fr' ? '🎯 Score du bien' : '🎯 Property Score'} />
+<div style={{background: `linear-gradient(135deg, ${NEON.card} 0%, rgba(0,212,255,0.03) 100%)`, border: `1px solid ${NEON.border}`, borderRadius: 16, padding: 16, margin: '12px 0', position: 'relative', overflow: 'hidden'}}>
+          <div style={{position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundImage: `linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px)`, backgroundSize: '20px 20px', pointerEvents: 'none'}} />
+          <p style={{color: NEON.white, fontSize: 14, fontWeight: 700, textAlign: 'center', margin: '0 0 14px', letterSpacing: 1, textTransform: 'uppercase', textShadow: `0 0 10px ${NEON.blueGlow}`}}>
+            📋 {language === 'vn' ? 'Hồ sơ bất động sản' : language === 'fr' ? 'Profil du bien' : 'Property Profile'}
+          </p>
+          <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8}}>
+            {/* Street Access */}
+            <div style={{background: 'rgba(0,212,255,0.06)', borderRadius: 10, padding: '10px 12px', border: '1px solid rgba(0,212,255,0.1)'}}>
+              <span style={{color: '#888', fontSize: 11}}>🛣️ {language === 'vn' ? 'Mặt bằng' : language === 'fr' ? 'Accès rue' : 'Street Access'}</span>
+              <p style={{color: NEON.white, fontSize: 14, fontWeight: 600, margin: '4px 0 0'}}>
+                {(() => {
+                  const text = ((selectedProperty.title || '') + ' ' + (selectedProperty.description || '')).toLowerCase();
+                  const parts = [];
+                  if (text.includes('góc') || text.includes('goc')) parts.push('Góc');
+                  if (text.includes('2mt') || text.includes('2 mặt') || text.includes('2 mat')) parts.push('2 MT');
+                  else if (text.includes('3mt') || text.includes('3 mặt')) parts.push('3 MT');
+                  else if (text.includes('mặt tiền') || text.includes('mat tien') || text.includes(' mt ')) parts.push('Mặt tiền');
+                  if (text.includes('hẻm') || text.includes('hem ') || text.includes('hxh')) parts.push('Hẻm');
+                  if (text.includes('kiệt') || text.includes('kiet')) parts.push('Kiệt');
+                  if (text.includes('ngõ') || text.includes('ngo')) parts.push('Ngõ');
+                  if (selectedProperty.streetWidth) parts.push(`Đường ${selectedProperty.streetWidth}m`);
+                  return parts.length > 0 ? parts.join(' • ') : '—';
+                })()}
+              </p>
+            </div>
+            {/* Dimensions */}
+            <div style={{background: 'rgba(0,212,255,0.06)', borderRadius: 10, padding: '10px 12px', border: '1px solid rgba(0,212,255,0.1)'}}>
+              <span style={{color: '#888', fontSize: 11}}>📐 {language === 'vn' ? 'Kích thước' : language === 'fr' ? 'Dimensions' : 'Dimensions'}</span>
+              <p style={{color: NEON.white, fontSize: 14, fontWeight: 600, margin: '4px 0 0'}}>
+                {(() => {
+                  const text = (selectedProperty.title || '') + ' ' + (selectedProperty.description || '');
+                  const dimMatch = text.match(/(\d+[.,]?\d*)\s*x\s*(\d+[.,]?\d*)/i);
+                  if (dimMatch) {
+                    const w = parseFloat(dimMatch[1].replace(',', '.'));
+                    const l = parseFloat(dimMatch[2].replace(',', '.'));
+                    return `${dimMatch[1]}×${dimMatch[2]}m (${Math.round(w * l)}m²)`;
+                  }
+                  if (selectedProperty.area) return `${selectedProperty.area} m²`;
+                  return '—';
+                })()}
+              </p>
+            </div>
+            {/* Legal Status */}
+            <div style={{background: 'rgba(0,212,255,0.06)', borderRadius: 10, padding: '10px 12px', border: '1px solid rgba(0,212,255,0.1)'}}>
+              <span style={{color: '#888', fontSize: 11}}>📜 {language === 'vn' ? 'Pháp lý' : language === 'fr' ? 'Statut légal' : 'Legal Status'}</span>
+              <p style={{color: (() => {
+                const legalText = (selectedProperty.legalStatus || '').toLowerCase();
+                const allText = legalText + ' ' + ((selectedProperty.title || '') + ' ' + (selectedProperty.description || '') + ' ' + JSON.stringify(selectedProperty.nlpAnalysis || {})).toLowerCase();
+                if (allText.includes('sổ hồng') || allText.includes('sổ đỏ') || allText.includes('so hong') || allText.includes('so do') || allText.includes('shr')) return NEON.green;
+                if (allText.includes('hợp đồng') || allText.includes('hop dong')) return NEON.orange;
+                if (allText.includes('giấy tay') || allText.includes('chờ sổ')) return NEON.red;
+                return '#888';
+              })(), fontSize: 14, fontWeight: 600, margin: '4px 0 0'}}>
+                {(() => {
+                  const legalText = (selectedProperty.legalStatus || '').toLowerCase();
+                  const allText = legalText + ' ' + ((selectedProperty.title || '') + ' ' + (selectedProperty.description || '') + ' ' + JSON.stringify(selectedProperty.nlpAnalysis || {})).toLowerCase();
+                  if (allText.includes('sổ hồng') || allText.includes('sổ đỏ') || allText.includes('so hong') || allText.includes('so do') || allText.includes('shr')) return '✅ Sổ hồng / Sổ đỏ';
+                  if (allText.includes('hợp đồng') || allText.includes('hop dong')) return '📄 Hợp đồng mua bán';
+                  if (allText.includes('giấy tay') || allText.includes('giay tay')) return '⚠️ Giấy tay';
+                  if (allText.includes('chờ sổ') || allText.includes('cho so')) return '⏳ Đang chờ sổ';
+                  if (selectedProperty.legalStatus) return selectedProperty.legalStatus;
+                  return '—';
+                })()}
+              </p>
+            </div>
+            {/* Structure */}
+            <div style={{background: 'rgba(0,212,255,0.06)', borderRadius: 10, padding: '10px 12px', border: '1px solid rgba(0,212,255,0.1)'}}>
+              <span style={{color: '#888', fontSize: 11}}>🏢 {language === 'vn' ? 'Kết cấu' : language === 'fr' ? 'Structure' : 'Structure'}</span>
+              <p style={{color: NEON.white, fontSize: 14, fontWeight: 600, margin: '4px 0 0'}}>
+                {(() => {
+                  const parts = [];
+                  const text = (selectedProperty.title || '') + ' ' + (selectedProperty.description || '');
+                  let floors = selectedProperty.floors;
+                  if (!floors || floors <= 0) {
+                    const m = text.match(/(\d+)\s*(?:tầng|tang|lầu|lau)/i);
+                    if (m) floors = parseInt(m[1]);
+                  }
+                  if (floors && floors > 0) parts.push(`${floors} tầng`);
+                  if (selectedProperty.bedrooms && selectedProperty.bedrooms > 0) parts.push(`${selectedProperty.bedrooms} PN`);
+                  if (selectedProperty.facadeWidth && selectedProperty.facadeWidth > 0) parts.push(`Ngang ${selectedProperty.facadeWidth}m`);
+                  return parts.length > 0 ? parts.join(' • ') : '—';
+                })()}
+              </p>
+            </div>
+          </div>
+        </div>
                   </div>
           {/* Negotiation Signals */}
           {selectedProperty.scoreDetails && (
