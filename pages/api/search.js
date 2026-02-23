@@ -2598,7 +2598,7 @@ hasPlanningRisk: nlpAnalysis.hasPlanningRisk,
     );
     if (alonhadatToEnrich.length > 0) {
       console.log(`[ENRICH] ${alonhadatToEnrich.length} annonces Alonhadat incomplètes → scraping détails...`);
-      await enrichTopAlonhadatListings(unique, 20);
+      await enrichTopAlonhadatListings(unique, 5);
     }
     const districtStats = calculateDistrictStats(unique);
     console.log(`Stats districts calculées: ${Object.keys(districtStats).length} districts`);
