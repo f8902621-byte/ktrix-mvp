@@ -2454,9 +2454,19 @@ export default async function handler(req, res) {
               return {
                 ...r,
                 nlpAnalysis,
-                floors: r.floors || nlpAnalysis.extractedFloors,
-                streetWidth: r.streetWidth || nlpAnalysis.extractedStreetWidth,
-                facadeWidth: r.facadeWidth || nlpAnalysis.extractedFacade,
+floors: r.floors || nlpAnalysis.extractedFloors,
+streetWidth: r.streetWidth || nlpAnalysis.extractedStreetWidth,
+facadeWidth: r.facadeWidth || nlpAnalysis.extractedFacade,
+area: r.area || nlpAnalysis.extractedArea,
+bedrooms: r.bedrooms || nlpAnalysis.extractedBedrooms,
+bathrooms: r.bathrooms || nlpAnalysis.extractedBathrooms,
+direction: r.direction || nlpAnalysis.extractedDirection,
+legalStatus: r.legalStatus || (nlpAnalysis.extractedLegalStatus === 'so_hong_rieng' ? 'Sổ hồng riêng' : nlpAnalysis.extractedLegalStatus === 'so_hong' ? 'Sổ hồng/Sổ đỏ' : nlpAnalysis.extractedLegalStatus === 'hop_dong' ? 'Hợp đồng mua bán' : nlpAnalysis.extractedLegalStatus === 'gpxd' ? 'GPXD' : nlpAnalysis.extractedLegalStatus === 'giay_tay' ? 'Giấy tay' : nlpAnalysis.extractedLegalStatus === 'cho_so' ? 'Đang chờ sổ' : null),
+hasMetroNearby: nlpAnalysis.hasMetroNearby,
+hasNewRoad: nlpAnalysis.hasNewRoad,
+hasInvestmentPotential: nlpAnalysis.hasInvestmentPotential,
+hasLegalIssue: nlpAnalysis.hasLegalIssue,
+hasPlanningRisk: nlpAnalysis.hasPlanningRisk,
               };
             }) }))
           .catch(e => { console.log(`Alonhadat erreur: ${e.message}`); return { source: 'alonhadat', results: [] }; })
