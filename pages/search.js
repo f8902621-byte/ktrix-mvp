@@ -1075,6 +1075,7 @@ const formatPrice = (price) => {
                   if (prop.bedrooms) return `${prop.bedrooms} ch.`;
                   if (prop.nlpAnalysis && prop.nlpAnalysis.extractedBedrooms) return `${prop.nlpAnalysis.extractedBedrooms} ch.`;
                   return '? ch.';
+                        })()}</div>
                                    </div>
                       <div 
                         className="flex items-start gap-2 text-sm text-gray-400 mb-3 cursor-pointer hover:text-blue-400 bg-gray-800 p-2 rounded-lg border border-gray-700" 
