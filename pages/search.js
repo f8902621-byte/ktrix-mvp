@@ -1066,8 +1066,22 @@ const formatPrice = (price) => {
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-2 text-sm text-gray-400 mb-3">
-                        <div>📐 {prop.area || prop.floorArea || '?'}m²</div>
-                        <div>🛏️ {prop.bedrooms || '?'} ch.</div>
+                        <div>📐 {(() => {
+                  if (prop.area || prop.floorArea) return `${Math.round((prop.area || prop.floorArea) * 10) / 10}m²`;
+                  const text = (prop.title || '') + ' ' + (prop.description || '');
+                  const dimMatch = text.match(/(\d+[.,]?\d*)\s*x\s*(\d+[.,]?\d*)/i);
+                  if (dimMatch) return `${Math.round(parseFloat(dimMatch[1].replace(',', '.')) * parseFloat(dimMatch[2].replace(',', '.')))}m²`;
+                  const areaMatch = text.match(/(\d+[.,]?\d*)\s*m2/i);
+                  if (areaMatch) return `${parseFloat(areaMatch[1].replace(',', '.'))}m²`;
+                  return '?m²';
+                })()}</div>
+                <div>🛏️ {(() => {
+                  if (prop.bedrooms) return `${prop.bedrooms} ch.`;
+                  const text = (prop.title || '') + ' ' + (prop.description || '');
+                  const m = text.match(/(\d+)\s*(?:phòng ngủ|phong ngu|pn|PN|PHÒNG|phòng)/i);
+                  if (m) return `${m[1]} ch.`;
+                  return '? ch.';
+                })()}</div>
                       </div>
                       <div 
                         className="flex items-start gap-2 text-sm text-gray-400 mb-3 cursor-pointer hover:text-blue-400 bg-gray-800 p-2 rounded-lg border border-gray-700" 
