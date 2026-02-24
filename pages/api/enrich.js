@@ -3,9 +3,45 @@
 // Endpoint: /api/enrich
 // Called when user clicks "View Details" on an Alonhadat listing
 // Returns real data from detail page (replaces NLP guesses)
+// V2 — Fixed regex for Alonhadat table HTML format
 // ============================================
 
 const SCRAPER_API_KEY = process.env.SCRAPER_API_KEY;
+
+// Helper: extract value from Alonhadat detail page
+// Handles both formats:
+//   <td>Label</td><td>Value</td>        (table format)
+//   <td>Label</td>\n<td>Value</td>      (table with newlines)
+//   Label</...><...>Value                (generic tag pairs)
+function extractField(html, labelPattern) {
+  // Format 1: <td>Label</td> ... <td>Value</td> (table rows)
+  const tableRegex = new RegExp(
+    labelPattern + '[^<]*</(?:td|th|span|div)>\\s*<(?:td|th|span|div)[^>]*>\\s*([^<]+)',
+    'i'
+  );
+  const tableMatch = html.match(tableRegex);
+  if (tableMatch) {
+    const val = tableMatch[1].trim();
+    if (val && val !== '---' && val !== '—' && val !== '_' && val !== '' && !val.includes('Xem chi')) {
+      return val;
+    }
+  }
+
+  // Format 2: Label</tag> whitespace/tags <tag>Value (more flexible)
+  const flexRegex = new RegExp(
+    labelPattern + '[^<]*<\\/[^>]+>\\s*(?:<[^>]+>\\s*)*([^<]{1,100})',
+    'i'
+  );
+  const flexMatch = html.match(flexRegex);
+  if (flexMatch) {
+    const val = flexMatch[1].trim();
+    if (val && val !== '---' && val !== '—' && val !== '_' && val !== '' && !val.includes('Xem chi')) {
+      return val;
+    }
+  }
+
+  return null;
+}
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -41,120 +77,135 @@ export default async function handler(req, res) {
 
     const enriched = {};
 
-    // === AREA (Diện tích) ===
-    const areaMatch = html.match(/[Dd]iện\s*tích[^<]*<[^>]*>\s*(\d+(?:[,\.]\d+)?)\s*m/i) ||
-                      html.match(/dien\s*tich[^:]*:\s*(\d+(?:[,\.]\d+)?)\s*m/i) ||
-                      html.match(/<span[^>]*class="[^"]*square[^"]*"[^>]*>(\d+(?:[,\.]\d+)?)\s*m/i);
-    if (areaMatch) {
-      enriched.area = parseFloat(areaMatch[1].replace(',', '.'));
-      console.log(`[ENRICH] Area: ${enriched.area} m²`);
+    // === AREA (Diện tích) — PRIORITÉ : lire le chiffre affiché ===
+    // Format header: "Diện tích: 100 m²" ou "Diện tích</span><span>100 m²"
+    const areaHeaderMatch = html.match(/[Dd]iện\s*tích[:\s]*(\d+(?:[,\.]\d+)?)\s*m/i);
+    if (areaHeaderMatch) {
+      enriched.area = parseFloat(areaHeaderMatch[1].replace(',', '.'));
+      console.log(`[ENRICH] Area (header): ${enriched.area} m²`);
+    }
+    // Format table: <td>Diện tích</td><td>100 m²</td>
+    if (!enriched.area) {
+      const areaVal = extractField(html, '[Dd]iện\\s*tích');
+      if (areaVal) {
+        const num = areaVal.match(/(\d+(?:[,\.]\d+)?)/);
+        if (num) {
+          enriched.area = parseFloat(num[1].replace(',', '.'));
+          console.log(`[ENRICH] Area (table): ${enriched.area} m²`);
+        }
+      }
     }
 
     // === BEDROOMS (Số phòng ngủ) ===
-    const bedroomMatch = html.match(/[Ss]ố\s*phòng\s*ngủ[^<]*<[^>]*>\s*(\d+)/i) ||
-                         html.match(/phòng\s*ngủ[^:]*:\s*(\d+)/i) ||
-                         html.match(/[Ss]o\s*phong\s*ngu[^<]*<[^>]*>\s*(\d+)/i);
-    if (bedroomMatch) {
-      enriched.bedrooms = parseInt(bedroomMatch[1]);
-      console.log(`[ENRICH] Bedrooms: ${enriched.bedrooms}`);
+    const bedsVal = extractField(html, '[Ss]ố\\s*phòng\\s*ngủ');
+    if (bedsVal) {
+      const num = bedsVal.match(/(\d+)/);
+      if (num) {
+        enriched.bedrooms = parseInt(num[1]);
+        console.log(`[ENRICH] Bedrooms: ${enriched.bedrooms}`);
+      }
     }
 
     // === BATHROOMS (Số phòng tắm / toilet / WC) ===
-    const bathMatch = html.match(/[Ss]ố\s*(?:phòng\s*tắm|toilet|WC|wc)[^<]*<[^>]*>\s*(\d+)/i) ||
-                      html.match(/(?:phòng\s*tắm|toilet|wc)[^:]*:\s*(\d+)/i);
-    if (bathMatch) {
-      enriched.bathrooms = parseInt(bathMatch[1]);
-      console.log(`[ENRICH] Bathrooms: ${enriched.bathrooms}`);
+    const bathVal = extractField(html, '[Ss]ố\\s*(?:phòng\\s*tắm|toilet|WC|wc)');
+    if (bathVal) {
+      const num = bathVal.match(/(\d+)/);
+      if (num) {
+        enriched.bathrooms = parseInt(num[1]);
+        console.log(`[ENRICH] Bathrooms: ${enriched.bathrooms}`);
+      }
     }
 
     // === LEGAL STATUS (Pháp lý) ===
-    const legalMatch = html.match(/[Pp]háp\s*lý[^<]*<[^>]*>\s*([^<]+)/i) ||
-                       html.match(/phap\s*ly[^:]*:\s*([^<,\n]+)/i);
-    if (legalMatch) {
-      const legalText = legalMatch[1].trim();
-      if (legalText !== '---' && legalText !== '—' && legalText !== '_' && legalText.length > 1) {
-        const lt = legalText.toLowerCase();
-        if (lt.includes('hồng') || lt.includes('đỏ')) {
-          enriched.legalStatus = 'Sổ hồng/Sổ đỏ';
-        } else if (lt.includes('chung')) {
-          enriched.legalStatus = 'Sổ chung';
-        } else if (lt.includes('gpxd') || lt.includes('giấy phép')) {
-          enriched.legalStatus = 'GPXD';
-        } else if (lt.includes('giấy tay')) {
-          enriched.legalStatus = 'Giấy tay';
-        } else if (lt.includes('vi bằng')) {
-          enriched.legalStatus = 'Vi bằng';
-        } else {
-          enriched.legalStatus = legalText;
-        }
-        console.log(`[ENRICH] Legal: ${enriched.legalStatus}`);
+    const legalVal = extractField(html, '[Pp]háp\\s*l[yý]');
+    if (legalVal) {
+      const lt = legalVal.toLowerCase();
+      if (lt.includes('hồng') || lt.includes('đỏ')) {
+        enriched.legalStatus = 'Sổ hồng/Sổ đỏ';
+      } else if (lt.includes('chung')) {
+        enriched.legalStatus = 'Sổ chung';
+      } else if (lt.includes('gpxd') || lt.includes('giấy phép')) {
+        enriched.legalStatus = 'GPXD';
+      } else if (lt.includes('giấy tay')) {
+        enriched.legalStatus = 'Giấy tay';
+      } else if (lt.includes('vi bằng')) {
+        enriched.legalStatus = 'Vi bằng';
+      } else if (lt.includes('hợp đồng')) {
+        enriched.legalStatus = 'Hợp đồng mua bán';
+      } else {
+        enriched.legalStatus = legalVal;
       }
+      console.log(`[ENRICH] Legal: ${enriched.legalStatus}`);
     }
 
     // === FACADE WIDTH (Chiều ngang) ===
-    const widthMatch = html.match(/[Cc]hiều\s*ngang[^<]*<[^>]*>\s*(\d+[,.]?\d*)\s*m/i) ||
-                       html.match(/chieu\s*ngang[^:]*:\s*(\d+[,.]?\d*)/i);
-    if (widthMatch) {
-      enriched.facadeWidth = parseFloat(widthMatch[1].replace(',', '.'));
-      console.log(`[ENRICH] Facade width: ${enriched.facadeWidth}m`);
+    const widthVal = extractField(html, '[Cc]hiều\\s*ngang');
+    if (widthVal) {
+      const num = widthVal.match(/(\d+(?:[,\.]\d+)?)/);
+      if (num) {
+        enriched.facadeWidth = parseFloat(num[1].replace(',', '.'));
+        console.log(`[ENRICH] Facade width: ${enriched.facadeWidth}m`);
+      }
     }
 
     // === DEPTH (Chiều dài) ===
-    const depthMatch = html.match(/[Cc]hiều\s*dài[^<]*<[^>]*>\s*(\d+[,.]?\d*)\s*m/i) ||
-                       html.match(/chieu\s*dai[^:]*:\s*(\d+[,.]?\d*)/i);
-    if (depthMatch) {
-      enriched.depth = parseFloat(depthMatch[1].replace(',', '.'));
-      console.log(`[ENRICH] Depth: ${enriched.depth}m`);
+    const depthVal = extractField(html, '[Cc]hiều\\s*dài');
+    if (depthVal) {
+      const num = depthVal.match(/(\d+(?:[,\.]\d+)?)/);
+      if (num) {
+        enriched.depth = parseFloat(num[1].replace(',', '.'));
+        console.log(`[ENRICH] Depth: ${enriched.depth}m`);
+      }
     }
 
-    // === FLOORS (Số lầu) ===
-    const floorMatch = html.match(/[Ss]ố\s*lầu[^<]*<[^>]*>\s*(\d+)/i) ||
-                       html.match(/số\s*tầng[^<]*<[^>]*>\s*(\d+)/i) ||
-                       html.match(/so\s*lau[^:]*:\s*(\d+)/i);
-    if (floorMatch) {
-      enriched.floors = parseInt(floorMatch[1]);
-      console.log(`[ENRICH] Floors: ${enriched.floors}`);
+    // === FLOORS (Số lầu / Số tầng) ===
+    const floorVal = extractField(html, '[Ss]ố\\s*(?:lầu|tầng)');
+    if (floorVal) {
+      const num = floorVal.match(/(\d+)/);
+      if (num) {
+        enriched.floors = parseInt(num[1]);
+        console.log(`[ENRICH] Floors: ${enriched.floors}`);
+      }
     }
 
     // === DIRECTION (Hướng) ===
-    const dirMatch = html.match(/[Hh]ướng[^<]*<[^>]*>\s*([^<]+)/i);
-    if (dirMatch) {
-      const dirText = dirMatch[1].trim();
-      if (dirText !== '—' && dirText !== '_' && dirText !== '---' && dirText.length > 0) {
-        enriched.direction = dirText;
-        console.log(`[ENRICH] Direction: ${enriched.direction}`);
-      }
+    const dirVal = extractField(html, '[Hh]ướng');
+    if (dirVal && dirVal.length < 20) {
+      enriched.direction = dirVal;
+      console.log(`[ENRICH] Direction: ${enriched.direction}`);
     }
 
     // === STREET WIDTH (Đường trước nhà) ===
-    const streetMatch = html.match(/[Đđ]ường\s*trước\s*nhà[^<]*<[^>]*>\s*(\d+[,.]?\d*)\s*m/i) ||
-                        html.match(/duong\s*truoc\s*nha[^:]*:\s*(\d+[,.]?\d*)/i);
-    if (streetMatch) {
-      enriched.streetWidth = parseFloat(streetMatch[1].replace(',', '.'));
-      console.log(`[ENRICH] Street width: ${enriched.streetWidth}m`);
+    const streetVal = extractField(html, '[Đđ]ường\\s*trước\\s*nhà');
+    if (streetVal) {
+      const num = streetVal.match(/(\d+(?:[,\.]\d+)?)/);
+      if (num) {
+        enriched.streetWidth = parseFloat(num[1].replace(',', '.'));
+        console.log(`[ENRICH] Street width: ${enriched.streetWidth}m`);
+      }
     }
 
-    // === PROPERTY TYPE (Loại BDS) ===
-    const typeMatch = html.match(/[Ll]oại\s*BDS[^<]*<[^>]*>\s*([^<]+)/i) ||
-                      html.match(/loai\s*bds[^:]*:\s*([^<,\n]+)/i);
-    if (typeMatch) {
-      const typeText = typeMatch[1].trim().toLowerCase();
-      if (typeText.includes('mặt tiền') || typeText.includes('mat tien')) {
+    // === PROPERTY TYPE / STREET ACCESS (Loại BDS) ===
+    const typeVal = extractField(html, '[Ll]oại\\s*BDS');
+    if (typeVal) {
+      const tt = typeVal.toLowerCase();
+      if (tt.includes('mặt tiền') || tt.includes('mat tien')) {
         enriched.streetAccess = 'mat_tien';
-      } else if (typeText.includes('hẻm') || typeText.includes('hem')) {
+      } else if (tt.includes('trong hẻm') || tt.includes('hẻm') || tt.includes('hem')) {
         enriched.streetAccess = 'hem';
       }
-      console.log(`[ENRICH] Street access: ${enriched.streetAccess || typeText}`);
+      console.log(`[ENRICH] Street access: ${enriched.streetAccess || typeVal}`);
     }
 
-    // === DIMENSIONS (build from facadeWidth × depth if area not found) ===
+    // === DIMENSIONS → fallback area ONLY if area not already found ===
     if (!enriched.area && enriched.facadeWidth && enriched.depth) {
       enriched.area = Math.round(enriched.facadeWidth * enriched.depth * 10) / 10;
-      console.log(`[ENRICH] Area calculated: ${enriched.facadeWidth} × ${enriched.depth} = ${enriched.area} m²`);
+      enriched.areaCalculated = true;
+      console.log(`[ENRICH] Area CALCULATED: ${enriched.facadeWidth} × ${enriched.depth} = ${enriched.area} m²`);
     }
 
     const fieldCount = Object.keys(enriched).length;
-    console.log(`[ENRICH] Done: ${fieldCount} fields extracted`);
+    console.log(`[ENRICH] Done: ${fieldCount} fields extracted from ${url}`);
 
     return res.status(200).json({
       success: true,
