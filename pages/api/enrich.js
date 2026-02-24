@@ -77,9 +77,9 @@ export default async function handler(req, res) {
 
     const enriched = {};
 
-    // === AREA (Diện tích) — PRIORITÉ : lire le chiffre affiché ===
-    // Format header: "Diện tích: 100 m²" ou "Diện tích</span><span>100 m²"
-    const areaHeaderMatch = html.match(/[Dd]iện\s*tích[:\s]*(\d+(?:[,\.]\d+)?)\s*m/i);
+// === AREA (Diện tích) — PRIORITÉ : lire le chiffre affiché ===
+    // Handles: "Diện tích: 75 m²", "Diện tích: <span>75</span> m²", "Diện tích</td><td>75 m²"
+    const areaHeaderMatch = html.match(/[Dd]iện\s*tích[:\s]*(?:<[^>]*>\s*)*(\d+(?:[,\.]\d+)?)\s*(?:<[^>]*>\s*)*m/i);
     if (areaHeaderMatch) {
       enriched.area = parseFloat(areaHeaderMatch[1].replace(',', '.'));
       console.log(`[ENRICH] Area (header): ${enriched.area} m²`);
