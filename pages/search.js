@@ -1285,10 +1285,11 @@ const formatPrice = (price) => {
                     )}
 
 {/* Enrichment Loading Banner */}
-              {enriching && (
-                <div style={{padding: '12px 20px', background: 'rgba(0,212,255,0.1)', border: '1px solid rgba(0,212,255,0.3)', borderRadius: 12, textAlign: 'center'}}>
-                  <span style={{color: '#00d4ff', fontSize: 14}}>
-                    ⏳ {language === 'vn' ? 'Đang lấy thông tin chi tiết từ Alonhadat...' : language === 'fr' ? 'Récupération des détails depuis Alonhadat...' : 'Fetching details from Alonhadat...'}
+{enriching && (
+                <div style={{padding: '12px 20px', background: 'rgba(255,140,0,0.15)', border: '1px solid rgba(255,140,0,0.4)', borderRadius: 12, textAlign: 'center', animation: 'enrichPulse 1.5s ease-in-out infinite'}}>
+                  <style>{`@keyframes enrichPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }`}</style>
+                  <span style={{color: '#ff8c00', fontSize: 14, fontWeight: 600}}>
+                    🔍 {language === 'vn' ? 'Đang xác minh dữ liệu từ Alonhadat...' : language === 'fr' ? 'Vérification des données Alonhadat...' : 'Verifying data from Alonhadat...'}
                   </span>
                 </div>
               )}
