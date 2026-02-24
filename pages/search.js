@@ -27,6 +27,7 @@ export default function SearchPage() {
   const [expandedPhoto, setExpandedPhoto] = useState(null);
   const [sortBy, setSortBy] = useState('score');
   const [selectedProperty, setSelectedProperty] = useState(null);
+  const [enriching, setEnriching] = useState(false);
   const [savedSearches, setSavedSearches] = useState([]);
   const [showSavedSearches, setShowSavedSearches] = useState(false);
   useEffect(() => {
@@ -72,7 +73,57 @@ export default function SearchPage() {
       setLanguage(router.query.lang);
     }
   }, [router.query.lang]);
+// === ENRICHISSEMENT ALONHADAT AU CLIC VIEW DETAILS ===
+  useEffect(() => {
+    if (!selectedProperty) return;
+    if (selectedProperty.source !== 'alonhadat.com.vn') return;
+    if (selectedProperty._enriched) return;
 
+    const enrichListing = async () => {
+      setEnriching(true);
+      try {
+        const response = await fetch('/api/enrich', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: selectedProperty.url })
+        });
+        const data = await response.json();
+        
+        if (data.success && data.enriched) {
+          console.log('[ENRICH] Données reçues:', data.enriched);
+          setSelectedProperty(prev => {
+            if (!prev) return prev;
+            const updated = { ...prev, _enriched: true };
+            if (data.enriched.area) updated.area = data.enriched.area;
+            if (data.enriched.bedrooms) updated.bedrooms = data.enriched.bedrooms;
+            if (data.enriched.bathrooms) updated.bathrooms = data.enriched.bathrooms;
+            if (data.enriched.legalStatus) updated.legalStatus = data.enriched.legalStatus;
+            if (data.enriched.floors) updated.floors = data.enriched.floors;
+            if (data.enriched.facadeWidth) updated.facadeWidth = data.enriched.facadeWidth;
+            if (data.enriched.direction) updated.direction = data.enriched.direction;
+            if (data.enriched.streetWidth) updated.streetWidth = data.enriched.streetWidth;
+            if (data.enriched.streetAccess) {
+              if (!updated.nlpAnalysis) updated.nlpAnalysis = {};
+              updated.nlpAnalysis.extractedStreetAccess = data.enriched.streetAccess;
+            }
+            if (data.enriched.depth && data.enriched.facadeWidth) {
+              if (!updated.nlpAnalysis) updated.nlpAnalysis = {};
+              updated.nlpAnalysis.extractedWidth = data.enriched.facadeWidth;
+              updated.nlpAnalysis.extractedDepth = data.enriched.depth;
+              updated.nlpAnalysis.extractedArea = data.enriched.area || (data.enriched.facadeWidth * data.enriched.depth);
+            }
+            return updated;
+          });
+        }
+      } catch (err) {
+        console.error('[ENRICH] Error:', err);
+      } finally {
+        setEnriching(false);
+      }
+    };
+
+    enrichListing();
+  }, [selectedProperty?.url]);
   useEffect(() => {
     const handleEscape = (e) => {
       if (e.key === 'Escape') {
@@ -1226,7 +1277,29 @@ const formatPrice = (price) => {
                 <div style={{background: `linear-gradient(135deg, ${NEON.card} 0%, rgba(0,212,255,0.03) 100%)`, border: `1px solid ${NEON.border}`, borderRadius: 16, padding: 16, position: 'relative', overflow: 'hidden'}}>
                   <div style={{position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundImage: `linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px)`, backgroundSize: '20px 20px', pointerEvents: 'none'}} />
                   <p style={{color: NEON.white, fontSize: 14, fontWeight: 700, textAlign: 'center', margin: '0 0 14px', letterSpacing: 1, textTransform: 'uppercase', textShadow: `0 0 10px ${NEON.blueGlow}`}}>
-                    📋 {language === 'vn' ? 'Hồ sơ bất động sản' : language === 'fr' ? 'Profil du bien' : 'Property Profile'}
+                   📋 {language === 'vn' ? 'Hồ sơ bất động sản' : language === 'fr' ? 'Profil du bien' : 'Property Profile'}
+                    {enriching && (
+                      <span style={{fontSize: 12, color: '#00d4ff', marginLeft: 8, fontWeight: 400}}>
+                        ⏳ {language === 'vn' ? 'Đang tải chi tiết...' : language === 'fr' ? 'Chargement détails...' : 'Loading details...'}
+                      </span>
+                    )}
+
+{/* Enrichment Loading Banner */}
+              {enriching && (
+                <div style={{padding: '12px 20px', background: 'rgba(0,212,255,0.1)', border: '1px solid rgba(0,212,255,0.3)', borderRadius: 12, textAlign: 'center'}}>
+                  <span style={{color: '#00d4ff', fontSize: 14}}>
+                    ⏳ {language === 'vn' ? 'Đang lấy thông tin chi tiết từ Alonhadat...' : language === 'fr' ? 'Récupération des détails depuis Alonhadat...' : 'Fetching details from Alonhadat...'}
+                  </span>
+                </div>
+              )}
+              {selectedProperty._enriched && !enriching && (
+                <div style={{padding: '8px 16px', background: 'rgba(0,255,136,0.1)', border: '1px solid rgba(0,255,136,0.3)', borderRadius: 10, textAlign: 'center'}}>
+                  <span style={{color: '#00ff88', fontSize: 13}}>
+                    ✅ {language === 'vn' ? 'Dữ liệu đã được xác minh từ trang chi tiết' : language === 'fr' ? 'Données vérifiées depuis la page détail' : 'Data verified from detail page'}
+                  </span>
+                </div>
+              )}
+{/* Image */}
                   </p>
                   <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8}}>
                     {/* Street Access */}
