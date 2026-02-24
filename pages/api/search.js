@@ -2592,7 +2592,6 @@ hasPlanningRisk: nlpAnalysis.hasPlanningRisk,
       sourceCountAfterFilter[src] = (sourceCountAfterFilter[src] || 0) + 1;
     });
     console.log('SOURCES APRÈS FILTRAGE:', sourceCountAfterFilter);
-// Enrichir les annonces Alonhadat incomplètes (scrape page détail)
     const districtStats = calculateDistrictStats(unique);
     console.log(`Stats districts calculées: ${Object.keys(districtStats).length} districts`);
     
