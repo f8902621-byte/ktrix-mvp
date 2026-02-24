@@ -1303,9 +1303,9 @@ const formatPrice = (price) => {
 {/* Image */}
                   </p>
                   <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8}}>
-                    {/* Street Access */}
+                    {/* Road Type */}
                     <div style={{background: 'rgba(0,212,255,0.06)', borderRadius: 10, padding: '10px 12px', border: '1px solid rgba(0,212,255,0.1)'}}>
-                      <span style={{color: '#888', fontSize: 11}}>🛣️ {language === 'vn' ? 'Mặt bằng' : language === 'fr' ? 'Accès rue' : 'Street Access'}</span>
+                      <span style={{color: '#888', fontSize: 11}}>🛣️ {language === 'vn' ? 'Loại đường phố' : language === 'fr' ? 'Type de rue' : 'Road Type'}</span>
                       <p style={{color: NEON.white, fontSize: 14, fontWeight: 600, margin: '4px 0 0'}}>
                         {(() => {
                           const nlp = selectedProperty.nlpAnalysis || {};
