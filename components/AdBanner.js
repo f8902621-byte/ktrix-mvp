@@ -112,7 +112,7 @@ export default function AdBanner({ language = 'en' }) {
           cursor: 'pointer',
           position: 'relative',
           width: '100%',
-          maxWidth: 728,
+          maxWidth: 1280,
           height: 90,
           display: 'flex',
           alignItems: 'center',
