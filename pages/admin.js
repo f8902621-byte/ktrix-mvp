@@ -8,7 +8,15 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [noteEdit, setNoteEdit] = useState({ code: null, text: '' });
+  const [noteEdit, setNoteEdit] = useState({ code: null, text: '' });
+  const [savedSearches, setSavedSearches] = useState([]);
+  const [loadingSearches, setLoadingSearches] = useState(false);
   useEffect(() => {
+    if (savedPwd) {
+  setPassword(savedPwd);
+  fetchTesters(savedPwd);
+  fetchSavedSearches(savedPwd);  // ← ajouter
+}
     const savedPwd = localStorage.getItem('ktrix_admin_pwd');
     if (savedPwd) {
       setPassword(savedPwd);
@@ -31,11 +39,25 @@ export default function AdminPage() {
       } else if (data.testers) {
         setTesters(data.testers);
         setAuthenticated(true);
+        fetchSavedSearches(pwd);
       }
     } catch (err) {
       setError('Connection error');
     }
     setLoading(false);
+    const fetchSavedSearches = async (pwd) => {
+    setLoadingSearches(true);
+    try {
+      const res = await fetch('/api/saved-searches?all=true', {
+        headers: { 'x-admin-pwd': pwd || password }
+      });
+      const data = await res.json();
+      if (Array.isArray(data)) setSavedSearches(data);
+    } catch (err) {
+      console.error('Error fetching saved searches:', err);
+    }
+    setLoadingSearches(false);
+  };
   };
 
   const handleLogin = () => {
@@ -261,7 +283,54 @@ const handleNote = async (code) => {
             </table>
           </div>
         </div>
-
+{/* Saved Searches */}
+        <div className="mt-8 bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+          <div className="p-4 border-b border-gray-800 flex items-center justify-between">
+            <h2 className="text-white font-bold">Saved Searches ({savedSearches.length})</h2>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-800 text-gray-400">
+                  <th className="text-left p-3 font-medium">Beta Code</th>
+                  <th className="text-left p-3 font-medium">Nom recherche</th>
+                  <th className="text-left p-3 font-medium">Paramètres</th>
+                  <th className="text-left p-3 font-medium">Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loadingSearches ? (
+                  <tr><td colSpan={4} className="p-6 text-center text-gray-500">Chargement...</td></tr>
+                ) : savedSearches.length === 0 ? (
+                  <tr><td colSpan={4} className="p-6 text-center text-gray-500">Aucune recherche sauvegardée</td></tr>
+                ) : (
+                  savedSearches.map((s) => (
+                    <tr key={s.id} className="border-b border-gray-800/50 hover:bg-gray-800/30">
+                      <td className="p-3 font-mono text-xs text-cyan-400">{s.beta_code}</td>
+                      <td className="p-3 text-white">{s.name || '—'}</td>
+                      <td className="p-3 text-gray-400 text-xs max-w-xs truncate">
+                        {s.params ? (
+                          <span title={JSON.stringify(s.params, null, 2)}>
+                            {Object.entries(s.params)
+                              .filter(([, v]) => v && v !== '' && v !== 'all')
+                              .map(([k, v]) => `${k}: ${v}`)
+                              .join(' · ') || '—'}
+                          </span>
+                        ) : '—'}
+                      </td>
+                      <td className="p-3 text-gray-500 text-xs whitespace-nowrap">
+                        {new Date(s.created_at).toLocaleDateString('fr-FR', {
+                          day: '2-digit', month: '2-digit', year: 'numeric',
+                          hour: '2-digit', minute: '2-digit'
+                        })}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
         {/* Note Editor Modal */}
         {noteEdit.code && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
