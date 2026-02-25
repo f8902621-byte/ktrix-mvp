@@ -8,7 +8,6 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [noteEdit, setNoteEdit] = useState({ code: null, text: '' });
-  const [noteEdit, setNoteEdit] = useState({ code: null, text: '' });
   const [savedSearches, setSavedSearches] = useState([]);
   const [loadingSearches, setLoadingSearches] = useState(false);
   useEffect(() => {
