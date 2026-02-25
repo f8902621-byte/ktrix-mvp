@@ -1388,45 +1388,38 @@ async function fetchAlonhadat(params) {
       // Track URLs for dedup (some pagination formats return duplicates)
       const seenUrls = new Set(allListings.map(l => l.url));
       
-      // Pagination: format différent selon .htm ou path-based
-      for (let page = 2; page <= tier.maxPages; page++) {
-        try {
-          // .htm pages: /trang-N.htm format (tested: ?page=N returns duplicates!)
-          const pageUrl = tier.isHtm 
+// Pagination: PARALLEL fetch for speed
+      if (tier.maxPages > 1) {
+        const pagePromises = [];
+        for (let page = 2; page <= tier.maxPages; page++) {
+          const pageUrl = tier.isHtm
             ? `${tier.base.replace('.htm', '')}/trang-${page}.htm`
-            : `${tier.base}/trang-${page}`; // path-based pagination
-          const pageScraperUrl = `https://api.scraperapi.com/?api_key=${SCRAPER_API_KEY}&url=${encodeURIComponent(pageUrl)}&render=true`;
+            : `${tier.base}/trang-${page}`;
+          const pageScraperUrl = `https://api.scraperapi.com/?api_key=${SCRAPER_API_KEY}&url=${encodeURIComponent(pageUrl)}`;
           console.log(`Alonhadat page ${page}: ${pageUrl}`);
-          
-          const pageResponse = await fetch(pageScraperUrl);
-          if (!pageResponse.ok) {
-            console.log(`Alonhadat page ${page}: HTTP ${pageResponse.status}`);
-            break;
-          }
-          
-          const pageHtml = await pageResponse.text();
-          const pageListings = parseAlonhadatHtml(pageHtml, city, typeLabelVn);
+          pagePromises.push(
+            fetch(pageScraperUrl)
+              .then(r => r.ok ? r.text() : null)
+              .then(html => html ? parseAlonhadatHtml(html, city, typeLabelVn) : [])
+              .catch(err => {
+                console.log(`Alonhadat page ${page} erreur: ${err.message}`);
+                return [];
+              })
+          );
+        }
+        
+        const pageResults = await Promise.all(pagePromises);
+        const seenUrls = new Set(allListings.map(l => l.url));
+        
+        for (let i = 0; i < pageResults.length; i++) {
+          const pageListings = pageResults[i];
+          const page = i + 2;
           console.log(`Alonhadat page ${page}: ${pageListings.length} annonces`);
-          
-          if (pageListings.length === 0) break;
-          
-          // Dedup: vérifier combien sont nouvelles
+          if (pageListings.length === 0) continue;
           const newListings = pageListings.filter(l => !seenUrls.has(l.url));
           console.log(`Alonhadat page ${page}: ${newListings.length} nouvelles (${pageListings.length - newListings.length} doublons)`);
-          
-          if (newListings.length === 0) {
-            console.log(`Alonhadat: pagination retourne des doublons → arrêt`);
-            break;
-          }
-          
           newListings.forEach(l => seenUrls.add(l.url));
           allListings.push(...newListings);
-          
-          await new Promise(r => setTimeout(r, 500));
-          
-        } catch (error) {
-          console.log(`Alonhadat page ${page} erreur: ${error.message}`);
-          break;
         }
       }
       
