@@ -61,11 +61,19 @@ export default function SearchPage() {
     maxResults: 200
   });
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('ktrix_searches');
-      if (saved) setSavedSearches(JSON.parse(saved));
-    }
+useEffect(() => {
+    const loadSavedSearches = async () => {
+      const code = localStorage.getItem('ktrix_beta_code');
+      if (!code) return;
+      try {
+        const res = await fetch(`/api/saved-searches?code=${encodeURIComponent(code)}`);
+        const data = await res.json();
+        if (data.searches) setSavedSearches(data.searches);
+      } catch (err) {
+        console.error('[SAVED] Load error:', err);
+      }
+    };
+    loadSavedSearches();
   }, []);
 
   useEffect(() => {
@@ -558,13 +566,24 @@ const formatPrice = (price) => {
     a.click();
   };
 
-  const saveCurrentSearch = () => {
+const saveCurrentSearch = async () => {
+    const code = localStorage.getItem('ktrix_beta_code');
+    if (!code) return alert('No beta code found');
     const searchName = `${searchParams.city} - ${searchParams.propertyType}`;
-    const newSearch = { id: Date.now(), name: searchName, params: { ...searchParams }, date: new Date().toLocaleDateString() };
-    const updated = [...savedSearches, newSearch];
-    setSavedSearches(updated);
-    if (typeof window !== 'undefined') localStorage.setItem('ktrix_searches', JSON.stringify(updated));
-    alert(t.searchSaved);
+    try {
+      const res = await fetch('/api/saved-searches', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, name: searchName, params: searchParams })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSavedSearches(prev => [data.search, ...prev]);
+        alert(t.searchSaved);
+      }
+    } catch (err) {
+      console.error('[SAVED] Save error:', err);
+    }
   };
 
   const sortResults = (res) => {
@@ -708,17 +727,33 @@ const formatPrice = (price) => {
               <p className="text-gray-500">{t.noSavedSearches}</p>
             ) : (
               <div className="space-y-3">
-                {savedSearches.map((search) => (
-                  <div key={search.id} className="flex items-center justify-between p-4 bg-gray-800 rounded-lg border border-gray-700">
-                    <div>
-                      <p className="font-medium text-white">{search.name}</p>
-                      <p className="text-sm text-gray-500">{search.date}</p>
-                    </div>
+{savedSearches.map((search) => (
+                <div key={search.id} className="flex items-center justify-between p-4 bg-gray-800 rounded-lg border border-gray-700">
+                  <div>
+                    <p className="font-medium text-white">{search.name}</p>
+                    <p className="text-sm text-gray-500">{search.created_at ? new Date(search.created_at).toLocaleDateString() : search.date}</p>
+                  </div>
+                  <div className="flex gap-2">
                     <button onClick={() => { setSearchParams(search.params); setShowSavedSearches(false); }} className="px-4 py-2 bg-blue-500/10 text-blue-400 rounded-lg border border-blue-500/20">
                       {t.loadSearch}
                     </button>
+                    <button onClick={async () => {
+                      const code = localStorage.getItem('ktrix_beta_code');
+                      if (!code) return;
+                      try {
+                        await fetch('/api/saved-searches', {
+                          method: 'DELETE',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ id: search.id, code })
+                        });
+                        setSavedSearches(prev => prev.filter(s => s.id !== search.id));
+                      } catch (err) { console.error('[SAVED] Delete error:', err); }
+                    }} className="px-3 py-2 bg-red-500/10 text-red-400 rounded-lg border border-red-500/20 hover:bg-red-500/20">
+                      ✕
+                    </button>
                   </div>
-                ))}
+                </div>
+              ))}
               </div>
             )}
           </div>
