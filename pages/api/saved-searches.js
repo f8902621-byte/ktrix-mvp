@@ -21,13 +21,30 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   // === GET: List saved searches for a beta code ===
-  if (req.method === 'GET') {
-    const { code } = req.query;
+if (req.method === 'GET') {
+    const { code, all } = req.query;
+
+    // Admin: fetch ALL saved searches
+    if (all === 'true') {
+      const adminPwd = req.headers['x-admin-pwd'];
+      if (adminPwd !== process.env.ADMIN_PASSWORD) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+      try {
+        const { data, error } = await supabase
+          .from('saved_searches')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (error) return res.status(500).json({ error: error.message });
+        return res.status(200).json(data || []);
+      } catch (err) {
+        return res.status(500).json({ error: err.message });
+      }
+    }
 
     if (!code) {
       return res.status(400).json({ error: 'No beta code provided' });
     }
-
     try {
       const { data, error } = await supabase
         .from('saved_searches')
