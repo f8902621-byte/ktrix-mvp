@@ -1363,7 +1363,7 @@ async function fetchAlonhadat(params) {
     
     try {
       const testUrl = tier.base;
-      const scraperUrl = `https://api.scraperapi.com/?api_key=${SCRAPER_API_KEY}&url=${encodeURIComponent(testUrl)}&render=true`;
+      const scraperUrl = `https://api.scraperapi.com/?api_key=${SCRAPER_API_KEY}&url=${encodeURIComponent(testUrl)}`;
       console.log(`Alonhadat page 1: ${testUrl}`);
       
       const response = await fetch(scraperUrl);
