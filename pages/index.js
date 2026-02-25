@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import { Search, TrendingUp, Clock, Shield, ChevronRight, Globe, CheckCircle, Zap, Users, BarChart3, LogIn, AlertTriangle, Lightbulb, Trophy, Mail, ChevronDown } from 'lucide-react';
-
+import AdBanner from '../components/AdBanner';
 function RevealOnScroll({ children, className = '' }) {
   const ref = useRef(null);
   const [visible, setVisible] = useState(false);
@@ -324,7 +324,9 @@ useEffect(() => {
           </div>
         </div>
       </header>
-
+<div style={{paddingTop: 70}}>
+          <AdBanner language={language} />
+        </div>
       {/* Hero Section */}
       <section className="relative pt-28 sm:pt-32 pb-20 px-4 sm:px-6 overflow-hidden">
         {/* Background effects */}
