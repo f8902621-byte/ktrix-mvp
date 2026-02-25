@@ -3,6 +3,7 @@ import { Search, Menu, Download, MapPin, AlertCircle, Loader, Home, Info, Trendi
 import { useRouter } from 'next/router';
 import { wardsByDistrict, premiumWards } from '../lib/wards-data';
 import { NeedleGauge, PriceDistribution, ScoreBars, AlertBadge, SignalItem, NEON_CSS, NEON } from '../components/HolographicCharts';
+import AdBanner from '../components/AdBanner';
 export default function SearchPage() {
   const router = useRouter();
   const [language, setLanguage] = useState('vn');
@@ -759,7 +760,7 @@ const saveCurrentSearch = async () => {
           </div>
         </div>
       )}
-
+  <AdBanner language={language} />
       {/* Search Form - Dark */}
       {showSearch && (
         <div className="max-w-6xl mx-auto px-4 py-6">
