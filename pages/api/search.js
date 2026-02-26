@@ -1233,8 +1233,6 @@ baseParams.append('cg', typeMapping.chotot.toString());
         city: ad.region_name || '',
         latitude: ad.latitude || null,
 longitude: ad.longitude || null,
-        latitude: ad.latitude || ad.lat || null,
-longitude: ad.longitude || ad.lng || null,
         bedrooms: ad.rooms || null,
         bathrooms: ad.toilets || null,
         thumbnail: ad.image || ad.images?.[0] || '',
