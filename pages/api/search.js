@@ -1231,6 +1231,8 @@ if (allAds.length > 0) { const ad = allAds[0]; const keys = Object.keys(ad); con
         ward: ad.ward_name || '',
         district: ad.area_name || '',
         city: ad.region_name || '',
+        latitude: ad.latitude || null,
+longitude: ad.longitude || null,
         latitude: ad.latitude || ad.lat || null,
 longitude: ad.longitude || ad.lng || null,
         bedrooms: ad.rooms || null,
