@@ -1166,7 +1166,7 @@ const saveCurrentSearch = async () => {
                       </div>
                       <div 
                         className="flex items-start gap-2 text-sm text-gray-400 mb-3 cursor-pointer hover:text-blue-400 bg-gray-800 p-2 rounded-lg border border-gray-700" 
-                      onClick={() => { alert(JSON.stringify(Object.keys(prop))); }}
+                     onClick={() => { const lat = prop.latitude; const lng = prop.longitude; if (lat && lng) { window.open(`https://www.google.com/maps?q=${lat},${lng}&z=17`, '_blank'); } else { const parts = [prop.address, prop.ward, prop.district, prop.city].filter(Boolean); window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(parts.join(', '))}&zoom=17`, '_blank'); }}}
                       >
                         <MapPin className="w-4 h-4 mt-0.5 text-blue-400 flex-shrink-0" />
                         <span className="line-clamp-2">{prop.address || `${prop.district}${prop.district ? ', ' : ''}${prop.city}`}</span>
@@ -1548,7 +1548,6 @@ const saveCurrentSearch = async () => {
 {/* Address */}
 <div className="p-4 bg-gray-800 rounded-xl cursor-pointer hover:bg-gray-700 transition border border-gray-700"
 onClick={() => {
-  console.log('GPS DEBUG:', selectedProperty.latitude, selectedProperty.longitude, selectedProperty.source);
   const lat = selectedProperty.latitude;
   const lng = selectedProperty.longitude;
   if (lat && lng) {
