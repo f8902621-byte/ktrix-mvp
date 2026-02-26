@@ -1545,13 +1545,22 @@ const saveCurrentSearch = async () => {
                 )}
               </div>
 
-              {/* Address */}
-              <div className="p-4 bg-gray-800 rounded-xl cursor-pointer hover:bg-gray-700 transition border border-gray-700"
-                onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedProperty.address || selectedProperty.district + ' ' + selectedProperty.city)}`, '_blank')}
-              >
-                <p className="text-xs text-gray-500 mb-1">📍 {language === 'fr' ? 'Adresse (cliquer pour Google Maps)' : 'Address (click for Google Maps)'}</p>
-                <p className="font-medium text-gray-200">{selectedProperty.address || `${selectedProperty.district || ''}, ${selectedProperty.ward || ''}, ${selectedProperty.city || ''}`}</p>
-              </div>
+{/* Address */}
+<div className="p-4 bg-gray-800 rounded-xl cursor-pointer hover:bg-gray-700 transition border border-gray-700"
+  onClick={() => {
+    const addr = selectedProperty.address || '';
+    const district = selectedProperty.district || '';
+    const ward = selectedProperty.ward || '';
+    const city = selectedProperty.city || '';
+    // Build precise query: address + ward + district + city
+    const parts = [addr, ward, district, city].filter(Boolean);
+    const query = parts.join(', ');
+    window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}&zoom=17`);
+  }}
+>
+  <p className="text-xs text-gray-500 mb-1">📍 {language === 'fr' ? 'Adresse (cliquer pour Google Maps)' : 'Address (click for Google Maps)'}</p>
+  <p className="font-medium text-gray-200">{selectedProperty.address || `${selectedProperty.district || ''}, ${selectedProperty.ward || ''}, ${selectedProperty.city || ''}`}</p>
+</div>
 
               <div className="flex items-center justify-between text-sm text-gray-500">
                 <span>🌐 {selectedProperty.source}</span>
