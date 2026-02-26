@@ -1213,7 +1213,7 @@ baseParams.append('cg', typeMapping.chotot.toString());
     }
     console.log(`Chotot FALLBACK TOTAL brut: ${allAds.length} annonces`);
   }
-  if (allAds.length > 0) console.log('Chotot raw ad sample:', JSON.stringify(allAds[0]).substring(0, 2000));
+if (allAds.length > 0) { const ad = allAds[0]; const keys = Object.keys(ad); console.log('Chotot ALL KEYS:', keys.join(', ')); const geoKeys = keys.filter(k => /lat|lng|lon|geo|coord|location|map|position/i.test(k)); console.log('Chotot GEO KEYS:', geoKeys.length > 0 ? JSON.stringify(geoKeys.map(k => ({[k]: ad[k]}))) : 'AUCUN'); }
   let results = allAds
     .filter(ad => ad.price && ad.price > 0)
     .map(ad => {
