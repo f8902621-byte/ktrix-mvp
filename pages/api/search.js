@@ -1213,7 +1213,7 @@ baseParams.append('cg', typeMapping.chotot.toString());
     }
     console.log(`Chotot FALLBACK TOTAL brut: ${allAds.length} annonces`);
   }
-  
+  if (allAds.length > 0) console.log('Chotot raw ad sample:', JSON.stringify(allAds[0]).substring(0, 2000));
   let results = allAds
     .filter(ad => ad.price && ad.price > 0)
     .map(ad => {
@@ -1231,6 +1231,8 @@ baseParams.append('cg', typeMapping.chotot.toString());
         ward: ad.ward_name || '',
         district: ad.area_name || '',
         city: ad.region_name || '',
+        latitude: ad.latitude || ad.lat || null,
+longitude: ad.longitude || ad.lng || null,
         bedrooms: ad.rooms || null,
         bathrooms: ad.toilets || null,
         thumbnail: ad.image || ad.images?.[0] || '',
