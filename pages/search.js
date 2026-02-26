@@ -1548,6 +1548,7 @@ const saveCurrentSearch = async () => {
 {/* Address */}
 <div className="p-4 bg-gray-800 rounded-xl cursor-pointer hover:bg-gray-700 transition border border-gray-700"
 onClick={() => {
+  console.log('GPS DEBUG:', selectedProperty.latitude, selectedProperty.longitude, selectedProperty.source);
   const lat = selectedProperty.latitude;
   const lng = selectedProperty.longitude;
   if (lat && lng) {
