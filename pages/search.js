@@ -1166,7 +1166,7 @@ const saveCurrentSearch = async () => {
                       </div>
                       <div 
                         className="flex items-start gap-2 text-sm text-gray-400 mb-3 cursor-pointer hover:text-blue-400 bg-gray-800 p-2 rounded-lg border border-gray-700" 
-                      onClick={() => { alert('lat=' + prop.latitude + ' lng=' + prop.longitude); }}
+                      onClick={() => { alert(JSON.stringify(Object.keys(prop))); }}
                       >
                         <MapPin className="w-4 h-4 mt-0.5 text-blue-400 flex-shrink-0" />
                         <span className="line-clamp-2">{prop.address || `${prop.district}${prop.district ? ', ' : ''}${prop.city}`}</span>
