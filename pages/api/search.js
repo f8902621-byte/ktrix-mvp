@@ -1356,29 +1356,7 @@ longitude: ad.longitude || null,
     results = filterByKeywords(results, typeMapping.include, typeMapping.exclude);
     console.log(`Chotot filtre type: ${beforeFilter} → ${results.length}`);
   }
-// *** FIX: Pour Hà Nội, résoudre le Quận depuis le Phường ***
-  // Alonhadat au niveau ville ne retourne que le Phường, pas le Quận
-  if (citySlug === 'ha-noi') {
-    let resolved = 0;
-    allListings.forEach(item => {
-      if (!item.district || item.district === '' ||
-          removeVietnameseAccents(item.district.toLowerCase()).includes('ha noi')) {
-        const districtResolved = resolveHanoiDistrict(item.ward);
-        if (districtResolved) {
-          const districtName = districtResolved
-            .split(' ')
-            .map(w => w.charAt(0).toUpperCase() + w.slice(1))
-            .join(' ');
-          item.district = 'Quận ' + districtName;
-          item.address = [item.street, item.ward, item.district].filter(Boolean).join(', ');
-          resolved++;
-        }
-      }
-    });
-    if (resolved > 0) {
-      console.log(`Alonhadat: Hà Nội ward→district résolu pour ${resolved}/${allListings.length} annonces`);
-    }
-  }
+
   // *** DIAGNOSTIC: Afficher les districts uniques de Chotot ***
   const districtCounts = {};
   results.forEach(r => {
@@ -1577,6 +1555,29 @@ async function fetchAlonhadat(params) {
         item.district = districtName;
       }
     });
+  }
+  // *** FIX: Pour Hà Nội, résoudre le Quận depuis le Phường ***
+  // Alonhadat au niveau ville ne retourne que le Phường, pas le Quận
+  if (citySlug === 'ha-noi') {
+    let resolved = 0;
+    allListings.forEach(item => {
+      if (!item.district || item.district === '' ||
+          removeVietnameseAccents(item.district.toLowerCase()).includes('ha noi')) {
+        const districtResolved = resolveHanoiDistrict(item.ward);
+        if (districtResolved) {
+          const districtName = districtResolved
+            .split(' ')
+            .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+            .join(' ');
+          item.district = 'Quận ' + districtName;
+          item.address = [item.street, item.ward, item.district].filter(Boolean).join(', ');
+          resolved++;
+        }
+      }
+    });
+    if (resolved > 0) {
+      console.log(`Alonhadat: Hà Nội ward→district résolu pour ${resolved}/${allListings.length} annonces`);
+    }
   }
   // *** DIAGNOSTIC: Afficher les districts/wards uniques de Alonhadat ***
   const alonDistrictCounts = {};
