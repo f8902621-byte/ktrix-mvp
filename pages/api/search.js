@@ -327,7 +327,97 @@ const ALONHADAT_PROPERTY_TYPE = {
   'warehouse': 'kho-nha-xuong-dat-cong-nghiep',
   'shophouse': 'shophouse-nha-pho-thuong-mai',
 };
+// ============================================
+// WARD → DISTRICT MAPPING (Hà Nội)
+// Alonhadat retourne "Phường X" sans Quận au niveau ville
+// Ce mapping résout le Quận depuis le nom du Phường
+// ============================================
+const HANOI_WARD_TO_DISTRICT = {
+  // HOÀN KIẾM
+  'hang bac': 'hoan kiem', 'hang bo': 'hoan kiem', 'hang bong': 'hoan kiem',
+  'hang buom': 'hoan kiem', 'hang dao': 'hoan kiem', 'hang gai': 'hoan kiem',
+  'hang ma': 'hoan kiem', 'hang trong': 'hoan kiem', 'hoan kiem': 'hoan kiem',
+  'cua dong': 'hoan kiem', 'cua nam': 'hoan kiem', 'dong xuan': 'hoan kiem',
+  'ly thai to': 'hoan kiem', 'phan chu trinh': 'hoan kiem', 'phuc tan': 'hoan kiem',
+  'trang tien': 'hoan kiem', 'tran hung dao': 'hoan kiem', 'hong ha': 'hoan kiem',
+  'chau long': 'hoan kiem',
+  // BA ĐÌNH
+  'phuc xa': 'ba dinh', 'truc bach': 'ba dinh', 'vinh phuc': 'ba dinh',
+  'cong vi': 'ba dinh', 'doi can': 'ba dinh', 'ngoc khanh': 'ba dinh',
+  'kim ma': 'ba dinh', 'giang vo': 'ba dinh', 'thanh cong': 'ba dinh',
+  'nguyen trung truc': 'ba dinh', 'quan thanh': 'ba dinh', 'ngoc ha': 'ba dinh',
+  'dien bien': 'ba dinh', 'lieu giai': 'ba dinh',
+  // ĐỐNG ĐA
+  'cat linh': 'dong da', 'van chuong': 'dong da', 'hang bot': 'dong da',
+  'kham thien': 'dong da', 'trung phung': 'dong da', 'trung tu': 'dong da',
+  'nam dong': 'dong da', 'kim lien': 'dong da', 'phuong lien': 'dong da',
+  'phuong mai': 'dong da', 'thinh quang': 'dong da', 'trung liet': 'dong da',
+  'lang ha': 'dong da', 'lang thuong': 'dong da', 'o cho dua': 'dong da',
+  'quang trung': 'dong da', 'nga tu so': 'dong da', 'van mieu': 'dong da',
+  'tho quan': 'dong da',
+  // HAI BÀ TRƯNG
+  'bach mai': 'hai ba trung', 'bach khoa': 'hai ba trung', 'cau den': 'hai ba trung',
+  'dong mac': 'hai ba trung', 'dong nhan': 'hai ba trung', 'le dai hanh': 'hai ba trung',
+  'minh khai': 'hai ba trung', 'ngo thi nham': 'hai ba trung', 'pho hue': 'hai ba trung',
+  'quynh loi': 'hai ba trung', 'quynh mai': 'hai ba trung', 'thanh luong': 'hai ba trung',
+  'thanh nhan': 'hai ba trung', 'truong dinh': 'hai ba trung', 'vinh tuy': 'hai ba trung',
+  'ban dap': 'hai ba trung', 'dong tam': 'hai ba trung', 'bui thi xuan': 'hai ba trung',
+  // CẦU GIẤY
+  'nghia do': 'cau giay', 'nghia tan': 'cau giay', 'yen hoa': 'cau giay',
+  'mai dich': 'cau giay', 'dich vong': 'cau giay', 'dich vong hau': 'cau giay',
+  'trung hoa': 'cau giay', 'quan hoa': 'cau giay',
+  // TÂY HỒ
+  'buoi': 'tay ho', 'nhat tan': 'tay ho', 'quang an': 'tay ho',
+  'tu lien': 'tay ho', 'xuan la': 'tay ho', 'yen phu': 'tay ho',
+  'thuy khue': 'tay ho', 'phu thuong': 'tay ho',
+  // LONG BIÊN
+  'long bien': 'long bien', 'bo de': 'long bien', 'cu khoi': 'long bien',
+  'duc giang': 'long bien', 'gia thuy': 'long bien', 'giang binh': 'long bien',
+  'ngoc lam': 'long bien', 'ngoc thuy': 'long bien', 'phuc dong': 'long bien',
+  'phuc loi': 'long bien', 'sai dong': 'long bien', 'thach ban': 'long bien',
+  'viet hung': 'long bien',
+  // THANH XUÂN
+  'thanh xuan bac': 'thanh xuan', 'thanh xuan nam': 'thanh xuan',
+  'thanh xuan trung': 'thanh xuan', 'ha dinh': 'thanh xuan',
+  'khuong dinh': 'thanh xuan', 'khuong mai': 'thanh xuan',
+  'khuong trung': 'thanh xuan', 'nhan chinh': 'thanh xuan',
+  'kim giang': 'thanh xuan',
+  // HOÀNG MAI
+  'hoang liet': 'hoang mai', 'hoang van thu': 'hoang mai', 'dinh cong': 'hoang mai',
+  'giap bat': 'hoang mai', 'linh nam': 'hoang mai', 'mai dong': 'hoang mai',
+  'tan mai': 'hoang mai', 'thinh liet': 'hoang mai', 'tuong mai': 'hoang mai',
+  'vinh hung': 'hoang mai', 'yen so': 'hoang mai', 'dai kim': 'hoang mai',
+  // HÀ ĐÔNG
+  'nguyen trai': 'ha dong', 'van quan': 'ha dong', 'mo lao': 'ha dong',
+  'ha cau': 'ha dong', 'kien hung': 'ha dong', 'la khe': 'ha dong',
+  'phu la': 'ha dong', 'phu lam': 'ha dong', 'phuc la': 'ha dong',
+  'duong noi': 'ha dong', 'yen nghia': 'ha dong', 'phu luong': 'ha dong',
+  'bien giang': 'ha dong', 'dong mai': 'ha dong',
+  // BẮC TỪ LIÊM
+  'phu dien': 'bac tu liem', 'co nhue': 'bac tu liem', 'co nhue 1': 'bac tu liem',
+  'co nhue 2': 'bac tu liem', 'dong ngac': 'bac tu liem', 'duc thang': 'bac tu liem',
+  'lien mac': 'bac tu liem', 'phuc dien': 'bac tu liem',
+  'tay tuu': 'bac tu liem', 'thuy phuong': 'bac tu liem',
+  'thuong cat': 'bac tu liem', 'xuan dinh': 'bac tu liem',
+  'xuan phuong': 'bac tu liem', 'tu liem': 'bac tu liem',
+  // NAM TỪ LIÊM
+  'cau dien': 'nam tu liem', 'dai mo': 'nam tu liem', 'me tri': 'nam tu liem',
+  'my dinh 1': 'nam tu liem', 'my dinh 2': 'nam tu liem',
+  'phu do': 'nam tu liem', 'tay mo': 'nam tu liem', 'trung van': 'nam tu liem',
+  'phung khoang': 'nam tu liem',
+  // THANH TRÌ
+  'thanh liet': 'thanh tri', 'tan trieu': 'thanh tri',
+  // GIA LÂM
+  'trau quy': 'gia lam', 'co bi': 'gia lam',
+};
 
+function resolveHanoiDistrict(wardRaw) {
+  if (!wardRaw) return null;
+  const w = removeVietnameseAccents(wardRaw.toLowerCase())
+    .replace(/^(phuong|xa|thi tran)\s+/i, '')
+    .trim();
+  return HANOI_WARD_TO_DISTRICT[w] || null;
+}
 // ============================================
 // ALONHADAT LOCATION CODES (q=district, p=ward)
 // Format URL: can-ban-{type}-{slug}-q{code}.htm
@@ -1266,7 +1356,29 @@ longitude: ad.longitude || null,
     results = filterByKeywords(results, typeMapping.include, typeMapping.exclude);
     console.log(`Chotot filtre type: ${beforeFilter} → ${results.length}`);
   }
-
+// *** FIX: Pour Hà Nội, résoudre le Quận depuis le Phường ***
+  // Alonhadat au niveau ville ne retourne que le Phường, pas le Quận
+  if (citySlug === 'ha-noi') {
+    let resolved = 0;
+    allListings.forEach(item => {
+      if (!item.district || item.district === '' ||
+          removeVietnameseAccents(item.district.toLowerCase()).includes('ha noi')) {
+        const districtResolved = resolveHanoiDistrict(item.ward);
+        if (districtResolved) {
+          const districtName = districtResolved
+            .split(' ')
+            .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+            .join(' ');
+          item.district = 'Quận ' + districtName;
+          item.address = [item.street, item.ward, item.district].filter(Boolean).join(', ');
+          resolved++;
+        }
+      }
+    });
+    if (resolved > 0) {
+      console.log(`Alonhadat: Hà Nội ward→district résolu pour ${resolved}/${allListings.length} annonces`);
+    }
+  }
   // *** DIAGNOSTIC: Afficher les districts uniques de Chotot ***
   const districtCounts = {};
   results.forEach(r => {
