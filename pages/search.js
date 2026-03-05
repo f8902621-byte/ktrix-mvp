@@ -849,7 +849,7 @@ const saveCurrentSearch = async () => {
                   <optgroup label="🏠 Houses">{getPropertyTypesByCategory().house.map((pt, i) => <option key={`house-${i}`} value={pt.vn}>{pt[language]}</option>)}</optgroup>
                   <optgroup label="🏪 Commercial">{getPropertyTypesByCategory().commercial.map((pt, i) => <option key={`comm-${i}`} value={pt.vn}>{pt[language]}</option>)}</optgroup>
                   <optgroup label="🌳 Land">{getPropertyTypesByCategory().land.map((pt, i) => <option key={`land-${i}`} value={pt.vn}>{pt[language]}</option>)}</optgroup>
-                  <optgroup label="📦 Other">{getPropertyTypesByCategory().other.map((pt, i) => <option key={`other-${i}`} value={pt.vn}>{pt[language]}</option>)}</optgroup>
+                 
                 </select>
               </div>
             </div>
