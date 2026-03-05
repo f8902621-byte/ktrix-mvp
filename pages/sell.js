@@ -477,7 +477,7 @@ const CheckboxGroup = ({ label, options, field }) => (
               <Home className="w-5 h-5" />
             </button>
             <div className="flex items-center gap-2">
-              <img src="https://raw.githubusercontent.com/f8902621-byte/traxhome-mvp/main/Ktrixlogo.png" alt="K Trix" className="w-12 h-12 object-contain" />
+              <img src="https://raw.githubusercontent.com/f8902621-byte/traxhome-mvp/main/Ktrixlogo.png" alt="K Trix" className="w-20 h-20 object-contain" />
               <div>
                 <h1 className="text-lg font-bold text-white">💰 {t.title}</h1>
                 <p className="text-xs text-gray-500">{t.subtitle}</p>
