@@ -342,19 +342,12 @@ useEffect(() => {
   const propertyTypes = [
     { vn: 'Tất cả nhà đất', en: 'All Properties', fr: 'Tous Biens', category: 'all' },
     { vn: 'Căn hộ chung cư', en: 'Apartment', fr: 'Appartement', category: 'apartment' },
-    { vn: 'Căn hộ nghỉ dưỡng', en: 'Resort Condo', fr: 'Appart. Vacances', category: 'apartment' },
-    { vn: 'Studio', en: 'Studio', fr: 'Studio', category: 'apartment' },
     { vn: 'Nhà ở', en: 'House', fr: 'Maison', category: 'house' },
     { vn: 'Nhà biệt thự', en: 'Villa', fr: 'Villa', category: 'house' },
-    { vn: 'Nhà nghỉ dưỡng', en: 'Resort House', fr: 'Maison Vacances', category: 'house' },
     { vn: 'Shophouse', en: 'Shophouse', fr: 'Shophouse', category: 'commercial' },
     { vn: 'Văn phòng', en: 'Office', fr: 'Bureau', category: 'commercial' },
-    { vn: 'Cửa hàng', en: 'Shop', fr: 'Boutique', category: 'commercial' },
-    { vn: 'Mặt bằng', en: 'Premises', fr: 'Local commercial', category: 'commercial' },
     { vn: 'Kho, nhà xưởng', en: 'Warehouse', fr: 'Entrepôt', category: 'commercial' },
     { vn: 'Đất', en: 'Land', fr: 'Terrain', category: 'land' },
-    { vn: 'Đất nghỉ dưỡng', en: 'Resort Land', fr: 'Terrain Vacances', category: 'land' },
-    { vn: 'Bất động sản khác', en: 'Other Property', fr: 'Autre Bien', category: 'other' },
   ];
 
   const availableSources = [
@@ -697,7 +690,7 @@ const saveCurrentSearch = async () => {
               <Home className="w-5 h-5" />
             </button>
             <div className="flex items-center gap-2">
-              <img src="https://raw.githubusercontent.com/f8902621-byte/traxhome-mvp/main/Ktrixlogo.png" alt="K Trix" className="w-14 h-14 object-contain" />
+              <img src="https://raw.githubusercontent.com/f8902621-byte/traxhome-mvp/main/Ktrixlogo.png" alt="K Trix" className="w-20 h-20 object-contain" />
               <span className="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded-full font-medium border border-emerald-500/30">MVP</span>
             </div>
             <button onClick={() => router.push('/monitoring')} className="px-3 py-1 bg-gray-800 text-gray-400 rounded-lg text-sm hover:bg-gray-700 border border-gray-700" title="Monitoring">🔍</button>
