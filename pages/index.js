@@ -539,20 +539,6 @@ useEffect(() => {
                 </div>
                 <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">{t.ctaTitle}</h2>
                 <p className="text-blue-100 text-base sm:text-lg mb-8">{t.ctaDesc}</p>
-                {submitted ? (
-                  <div className="bg-white/20 backdrop-blur rounded-xl p-6">
-                    <CheckCircle className="w-12 h-12 text-green-300 mx-auto mb-3" />
-                    <p className="text-white font-medium">{t.ctaSuccess}</p>
-                  </div>
-                ) : (
-                  <>
-<button
-  onClick={() => router.push(`/beta?lang=${language}`)}
-  className="px-10 py-4 bg-white text-blue-600 rounded-xl font-bold hover:bg-blue-50 transition shadow-lg text-lg mb-6"
->
-  {t.ctaButton} →
-</button>
-                  </>
                 )}
                 <div className="flex items-center justify-center gap-2 text-blue-100">
                   <span>{t.ctaDirect}</span>
