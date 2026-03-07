@@ -539,7 +539,12 @@ useEffect(() => {
                 </div>
                 <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">{t.ctaTitle}</h2>
                 <p className="text-blue-100 text-base sm:text-lg mb-8">{t.ctaDesc}</p>
-                )}
+             <button
+  onClick={() => router.push(`/beta?lang=${language}`)}
+  className="px-10 py-4 bg-white text-blue-600 rounded-xl font-bold hover:bg-blue-50 transition shadow-lg text-lg mb-6"
+>
+  {t.ctaButton} →
+</button>
                 <div className="flex items-center justify-center gap-2 text-blue-100">
                   <span>{t.ctaDirect}</span>
                   <button onClick={() => router.push(`/beta?lang=${language}`)} className="text-white font-semibold underline hover:no-underline">
