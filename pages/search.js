@@ -735,8 +735,7 @@ const saveCurrentSearch = async () => {
             : `${daysRemaining}d left`}
         </div>
       )}
-        </div>
-      </header>
+         </header>
 
       {/* Saved Searches - Dark */}
       {showSavedSearches && (
