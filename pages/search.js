@@ -736,6 +736,7 @@ const saveCurrentSearch = async () => {
         </div>
       )}
  </div> 
+   </div>
          </header>
 
       {/* Saved Searches - Dark */}
