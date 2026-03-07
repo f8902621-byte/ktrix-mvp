@@ -266,11 +266,19 @@ useEffect(() => {
     setIsSubmitting(true);
     setSubmitError(null);
     try {
-      const response = await fetch('/.netlify/functions/beta-signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, language, source: 'landing' })
-      });
+const response = await fetch('/api/beta-register', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    first_name: email.split('@')[0],
+    email: email,
+    age: 30,
+    city: 'Vietnam',
+    sector: 'real_estate',
+    cgu_accepted: true,
+    lang: language === 'vn' ? 'vn' : language,
+  })
+});
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Error');
       setSubmitted(true);
