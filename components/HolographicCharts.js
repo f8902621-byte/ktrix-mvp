@@ -180,7 +180,7 @@ export function ScoreBars({ scores, title }) {
               <span style={{ color: color, fontSize: 14, fontWeight: 800, fontFamily: 'Orbitron, monospace', textShadow: `0 0 8px ${color}60` }}>{item.value}%</span>
             </div>
             <div style={{ width: '100%', height: 8, borderRadius: 4, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
-              <div style={{ width: `${item.value}%`, height: '100%', borderRadius: 4, background: `linear-gradient(90deg, ${color}90, ${color})`, boxShadow: `0 0 12px ${color}50, 0 0 4px ${color}30`, transition: 'width 1.2s cubic-bezier(0.34, 1.56, 0.64, 1)` }} />
+              <div style={{ width: `${item.value}%`, height: '100%', borderRadius: 4, background: `linear-gradient(90deg, ${color}90, ${color})`, boxShadow: `0 0 12px ${color}50, 0 0 4px ${color}30`, transition: 'width 1.2s cubic-bezier(0.34, 1.56, 0.64, 1)' }} />
             </div>
           </div>
         );
