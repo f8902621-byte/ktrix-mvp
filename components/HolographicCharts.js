@@ -42,10 +42,10 @@ export function NeedleGauge({ score, label }) {
     return NEON.red;
   };
   const getScoreLabel = (s) => {
-    if (s >= 75) return 'Excellent';
-    if (s >= 50) return 'Good';
-    if (s >= 25) return 'Medium';
-    return 'Low';
+    if (s >= 75) return 'Xuất sắc';
+    if (s >= 50) return 'Tốt';
+    if (s >= 25) return 'Trung bình';
+    return 'Thấp';
   };
 
   const renderNeedle = () => {
@@ -92,7 +92,6 @@ export function NeedleGauge({ score, label }) {
 // === PRICE DISTRIBUTION ===
 export function PriceDistribution({ propertyPrice, min, median, max, count, title }) {
 
-const titleText = title || '📊 Price vs Market';
   const data = [];
   const range = max - min;
   const step = range / 20;
@@ -118,13 +117,13 @@ const titleText = title || '📊 Price vs Market';
   return (
     <div style={{ background: `linear-gradient(135deg, ${NEON.card} 0%, rgba(0,212,255,0.03) 100%)`, border: `1px solid ${NEON.border}`, borderRadius: 16, padding: '16px 8px 8px', position: 'relative', overflow: 'hidden' }}>
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundImage: `linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px)`, backgroundSize: '20px 20px', pointerEvents: 'none' }} />
-      <p style={{color: '#f0f8ff', fontSize: 14, fontWeight: 700, textAlign: 'center', margin: '0 0 12px', letterSpacing: 1, textTransform: 'uppercase', textShadow: '0 0 10px rgba(0,212,255,0.4)'}}>{title || '📊 Price vs Market'}</p>
+      <p style={{color: '#f0f8ff', fontSize: 14, fontWeight: 700, textAlign: 'center', margin: '0 0 12px', letterSpacing: 1, textTransform: 'uppercase', textShadow: '0 0 10px rgba(0,212,255,0.4)'}}>{title || '📊 PHÂN TÍCH GIÁ'}</p>
       <div style={{ textAlign: 'center', margin: '0 0 8px' }}>
         <span style={{ fontSize: 32, fontWeight: 900, color: isBelow ? NEON.green : NEON.red, textShadow: `0 0 20px ${isBelow ? NEON.green : NEON.red}60`, fontFamily: 'Orbitron, monospace' }}>
           {isBelow ? '-' : '+'}{Math.abs(Math.round(((propertyPrice - median) / median) * 100))}%
         </span>
         <span style={{ fontSize: 18, marginLeft: 4, color: isBelow ? NEON.green : NEON.red }}>{isBelow ? '↓' : '↑'}</span>
-        <p style={{ color: 'rgba(240,248,255,0.6)', fontSize: 12, margin: '4px 0 0' }}>{isBelow ? 'Below' : 'Above'} market ({count} listings)</p>
+        <p style={{ color: 'rgba(240,248,255,0.6)', fontSize: 12, margin: '4px 0 0' }}>{isBelow ? 'Thấp hơn' : 'Cao hơn'} giá thị trường ({count} tin đăng)</p>
       </div>
       <ResponsiveContainer width="100%" height={140}>
         <AreaChart data={data} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
@@ -143,8 +142,8 @@ const titleText = title || '📊 Price vs Market';
         </AreaChart>
       </ResponsiveContainer>
       <div style={{ display: 'flex', justifyContent: 'center', gap: 20, marginTop: 4, fontSize: 11 }}>
-        <span style={{ color: NEON.orange }}>● This property: {propertyPrice} tr/m²</span>
-        <span style={{ color: 'rgba(0,212,255,0.6)' }}>● Median: {median} tr/m²</span>
+        <span style={{ color: NEON.orange }}>● Bất động sản này: {propertyPrice} tr/m²</span>
+        <span style={{ color: 'rgba(0,212,255,0.6)' }}>● Trung vị: {median} tr/m²</span>
       </div>
     </div>
   );
@@ -153,11 +152,11 @@ const titleText = title || '📊 Price vs Market';
 // === SCORE BARS ===
 export function ScoreBars({ scores, title }) {
   const items = [
-    { icon: '📍', label: 'Location', value: scores.location },
-    { icon: '💰', label: 'Price', value: scores.price },
-    { icon: '✏', label: 'Size', value: scores.size },
-    { icon: '📜', label: 'Legal', value: scores.legal },
-    { icon: '🔥', label: 'Urgency', value: scores.urgency },
+    { icon: '📍', label: 'Vị trí', value: scores.location },
+    { icon: '💰', label: 'Giá', value: scores.price },
+    { icon: '✏', label: 'Diện tích', value: scores.size },
+    { icon: '📜', label: 'Pháp lý', value: scores.legal },
+    { icon: '🔥', label: 'Cần bán gấp', value: scores.urgency },
   ];
 
   const getBarColor = (v) => {
@@ -171,7 +170,7 @@ export function ScoreBars({ scores, title }) {
   return (
     <div style={{ background: `linear-gradient(135deg, ${NEON.card} 0%, rgba(0,212,255,0.03) 100%)`, border: `1px solid ${NEON.border}`, borderRadius: 16, padding: 16, position: 'relative', overflow: 'hidden' }}>
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundImage: `linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px)`, backgroundSize: '20px 20px', pointerEvents: 'none' }} />
-      <p style={{ color: NEON.white, fontSize: 14, fontWeight: 700, textAlign: 'center', margin: '0 0 14px', letterSpacing: 1, textTransform: 'uppercase', textShadow: `0 0 10px ${NEON.blueGlow}` }}>{title || '🎯 Property Score'}</p>
+      <p style={{ color: NEON.white, fontSize: 14, fontWeight: 700, textAlign: 'center', margin: '0 0 14px', letterSpacing: 1, textTransform: 'uppercase', textShadow: `0 0 10px ${NEON.blueGlow}` }}>{title || '🎯 Điểm Bất Động Sản'}</p>
       {items.map((item, i) => {
         const color = getBarColor(item.value);
         return (
@@ -181,7 +180,7 @@ export function ScoreBars({ scores, title }) {
               <span style={{ color: color, fontSize: 14, fontWeight: 800, fontFamily: 'Orbitron, monospace', textShadow: `0 0 8px ${color}60` }}>{item.value}%</span>
             </div>
             <div style={{ width: '100%', height: 8, borderRadius: 4, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
-              <div style={{ width: `${item.value}%`, height: '100%', borderRadius: 4, background: `linear-gradient(90deg, ${color}90, ${color})`, boxShadow: `0 0 12px ${color}50, 0 0 4px ${color}30`, transition: 'width 1.2s cubic-bezier(0.34, 1.56, 0.64, 1)' }} />
+              <div style={{ width: `${item.value}%`, height: '100%', borderRadius: 4, background: `linear-gradient(90deg, ${color}90, ${color})`, boxShadow: `0 0 12px ${color}50, 0 0 4px ${color}30`, transition: 'width 1.2s cubic-bezier(0.34, 1.56, 0.64, 1)` }} />
             </div>
           </div>
         );
@@ -216,7 +215,7 @@ export function SignalItem({ icon, label, value, isPositive }) {
   );
 }
 
-// === NEON CSS (à injecter dans la page) ===
+// === NEON CSS ===
 export const NEON_CSS = `
   @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
   @keyframes neonPulse {
