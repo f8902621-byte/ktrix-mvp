@@ -21,11 +21,7 @@ function RevealOnScroll({ children, className = '' }) {
 
 export default function Landing() {
   const [language, setLanguage] = useState('vn');
-  const [email, setEmail] = useState('');
-  const [submitted, setSubmitted] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState(null);
-  const router = useRouter();
+    const router = useRouter();
 const [stats, setStats] = useState(null);
 
 useEffect(() => {
@@ -259,36 +255,6 @@ useEffect(() => {
       betaLimited: 'Beta Privée — Limitée à 20 testeurs',
     }
   }[language];
-
-  const handleBetaSignup = async (e) => {
-    e.preventDefault();
-    if (!email) return;
-    setIsSubmitting(true);
-    setSubmitError(null);
-    try {
-const response = await fetch('/api/beta-register', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    first_name: email.split('@')[0],
-    email: email,
-    age: 30,
-    city: 'Vietnam',
-    sector: 'real_estate',
-    cgu_accepted: true,
-    lang: language === 'vn' ? 'vn' : language,
-  })
-});
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Error');
-      setSubmitted(true);
-      setEmail('');
-    } catch (error) {
-      setSubmitError(error.message);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   const sources = [
     { name: 'Chotot.com', logo: '🛒', active: true },
@@ -580,21 +546,12 @@ const response = await fetch('/api/beta-register', {
                   </div>
                 ) : (
                   <>
-                    <form onSubmit={handleBetaSignup} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto mb-6">
-                      <input
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder={t.ctaPlaceholder}
-                        className="flex-1 px-5 py-4 rounded-xl border-0 text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-white/50"
-                        required
-                        disabled={isSubmitting}
-                      />
-                      <button type="submit" disabled={isSubmitting} className="px-8 py-4 bg-white text-blue-600 rounded-xl font-bold hover:bg-blue-50 transition shadow-lg disabled:opacity-50">
-                        {isSubmitting ? '...' : t.ctaButton}
-                      </button>
-                    </form>
-                    {submitError && <p className="text-red-200 text-sm mb-4">{submitError}</p>}
+<button
+  onClick={() => router.push(`/beta?lang=${language}`)}
+  className="px-10 py-4 bg-white text-blue-600 rounded-xl font-bold hover:bg-blue-50 transition shadow-lg text-lg mb-6"
+>
+  {t.ctaButton} →
+</button>
                   </>
                 )}
                 <div className="flex items-center justify-center gap-2 text-blue-100">
