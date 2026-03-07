@@ -6,7 +6,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'EraKor@153';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 
 export default async function handler(req, res) {
   const { password, action, code, data: actionData } = req.body || {};
