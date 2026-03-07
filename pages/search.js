@@ -31,6 +31,7 @@ export default function SearchPage() {
   const [enriching, setEnriching] = useState(false);
   const [savedSearches, setSavedSearches] = useState([]);
   const [showSavedSearches, setShowSavedSearches] = useState(false);
+  const [daysRemaining, setDaysRemaining] = useState(null);
   useEffect(() => {
   if (typeof window !== 'undefined') {
     const betaCode = localStorage.getItem('ktrix_beta_code');
