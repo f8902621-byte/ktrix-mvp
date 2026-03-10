@@ -747,6 +747,21 @@ const saveCurrentSearch = async () => {
     ∞ Admin
   </div>
 )}
+  {/* Badge jours restants pour testeurs */}
+{daysRemaining !== null && (
+  <div style={{
+    padding: '6px 12px',
+    borderRadius: 20,
+    fontSize: 12,
+    fontWeight: 700,
+    background: daysRemaining <= 3 ? 'rgba(255,51,102,0.15)' : daysRemaining <= 7 ? 'rgba(255,140,0,0.15)' : 'rgba(0,212,255,0.10)',
+    border: `1px solid ${daysRemaining <= 3 ? 'rgba(255,51,102,0.4)' : daysRemaining <= 7 ? 'rgba(255,140,0,0.4)' : 'rgba(0,212,255,0.25)'}`,
+    color: daysRemaining <= 3 ? '#ff3366' : daysRemaining <= 7 ? '#ff8c00' : '#00d4ff',
+  }}>
+    {daysRemaining <= 3 ? '🚨' : daysRemaining <= 7 ? '⏳' : '✅'}
+    {language === 'vn' ? ` Còn ${daysRemaining} ngày` : language === 'fr' ? ` ${daysRemaining}j restants` : ` ${daysRemaining}d left`}
+  </div>
+)}
   </div> 
    </div>
          </header>
