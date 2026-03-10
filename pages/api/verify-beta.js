@@ -27,10 +27,11 @@ export default async function handler(req, res) {
     if (!data.is_active) {
       return res.status(200).json({ valid: false, error: 'Code deactivated' });
     }
-    // Check expiration
-    if (data.expires_at && new Date(data.expires_at) < new Date()) {
-      return res.status(200).json({ valid: false, error: 'Code expired' });
-    }
+// Check expiration (sauf codes admin permanents)
+const isAdminCode = trimmed.startsWith('KTRIX-ADMIN');
+if (!isAdminCode && data.expires_at && new Date(data.expires_at) < new Date()) {
+  return res.status(200).json({ valid: false, error: 'Code expired' });
+}
     // Check if registered (has email)
     if (!data.email || data.email === '' || data.email === 'EMPTY') {
       return res.status(200).json({ valid: false, needsRegistration: true, error: 'Registration required' });
@@ -42,12 +43,11 @@ export default async function handler(req, res) {
       .eq('code', trimmed);
 
     // Calculate days remaining
-    let daysRemaining = null;
-    if (data.expires_at) {
-      const msRemaining = new Date(data.expires_at) - new Date();
-      daysRemaining = Math.max(0, Math.ceil(msRemaining / (1000 * 60 * 60 * 24)));
-    }
-
+let daysRemaining = null;
+if (!isAdminCode && data.expires_at) {
+  const msRemaining = new Date(data.expires_at) - new Date();
+  daysRemaining = Math.max(0, Math.ceil(msRemaining / (1000 * 60 * 60 * 24)));
+}
     return res.status(200).json({ 
       valid: true, 
       tester: {
