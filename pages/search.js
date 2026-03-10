@@ -1680,7 +1680,6 @@ onClick={() => {
                 </button>
               </div>
             </div>
-          </div>
                )}
               <button
         onClick={() => setShowFeedback(true)}
