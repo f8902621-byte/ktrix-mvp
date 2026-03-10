@@ -1381,7 +1381,7 @@ const saveCurrentSearch = async () => {
               <div style={{margin: '12px 0'}}>
                 <div style={{background: `linear-gradient(135deg, ${NEON.card} 0%, rgba(0,212,255,0.03) 100%)`, border: `1px solid ${NEON.border}`, borderRadius: 16, padding: 16, position: 'relative', overflow: 'hidden'}}>
                   <div style={{position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundImage: `linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px)`, backgroundSize: '20px 20px', pointerEvents: 'none'}} />
-                  <p style={{color: NEON.white, fontSize: 14, fontWeight: 700, textAlign: 'center', margin: '0 0 14px', letterSpacing: 1, textTransform: 'uppercase', textShadow: `0 0 10px ${NEON.blueGlow}`}}>
+                 <div style={{color: NEON.white, fontSize: 14, fontWeight: 700, textAlign: 'center', margin: '0 0 14px', letterSpacing: 1, textTransform: 'uppercase', textShadow: `0 0 10px ${NEON.blueGlow}`}}>
                    📋 {language === 'vn' ? 'Hồ sơ bất động sản' : language === 'fr' ? 'Profil du bien' : 'Property Profile'}
                     {enriching && (
                       <span style={{fontSize: 12, color: '#00d4ff', marginLeft: 8, fontWeight: 400}}>
@@ -1406,7 +1406,7 @@ const saveCurrentSearch = async () => {
                 </div>
               )}
 {/* Image */}
-                  </p>
+                  </div>
                   <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8}}>
                     {/* Road Type */}
                     <div style={{background: 'rgba(0,212,255,0.06)', borderRadius: 10, padding: '10px 12px', border: '1px solid rgba(0,212,255,0.1)'}}>
