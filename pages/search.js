@@ -32,6 +32,22 @@ export default function SearchPage() {
   const [savedSearches, setSavedSearches] = useState([]);
   const [showSavedSearches, setShowSavedSearches] = useState(false);
   const [daysRemaining, setDaysRemaining] = useState(null);
+  useEffect(() => {
+  const code = typeof window !== 'undefined' ? localStorage.getItem('ktrix_beta_code') : null;
+  if (!code) return;
+  fetch('/api/verify-beta', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code })
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.valid && data.tester) {
+        setDaysRemaining(data.tester.days_remaining);
+      }
+    })
+    .catch(() => {});
+}, []);
 useEffect(() => {
   if (typeof window !== 'undefined') {
     // Lire le code depuis l'URL si présent
