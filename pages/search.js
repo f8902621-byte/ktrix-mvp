@@ -32,8 +32,14 @@ export default function SearchPage() {
   const [savedSearches, setSavedSearches] = useState([]);
   const [showSavedSearches, setShowSavedSearches] = useState(false);
   const [daysRemaining, setDaysRemaining] = useState(null);
-  useEffect(() => {
+useEffect(() => {
   if (typeof window !== 'undefined') {
+    // Lire le code depuis l'URL si présent
+    const urlParams = new URLSearchParams(window.location.search);
+    const codeFromUrl = urlParams.get('code');
+    if (codeFromUrl) {
+      localStorage.setItem('ktrix_beta_code', codeFromUrl);
+    }
     const betaCode = localStorage.getItem('ktrix_beta_code');
     if (!betaCode) {
       router.push('/beta');
