@@ -1388,7 +1388,7 @@ const saveCurrentSearch = async () => {
                         ⏳ {language === 'vn' ? 'Đang tải chi tiết...' : language === 'fr' ? 'Chargement détails...' : 'Loading details...'}
                       </span>
                     )}
-
+                </div>
 {/* Enrichment Loading Banner */}
 {enriching && (
                 <div style={{padding: '12px 20px', background: 'rgba(255,140,0,0.15)', border: '1px solid rgba(255,140,0,0.4)', borderRadius: 12, textAlign: 'center', animation: 'enrichPulse 1.5s ease-in-out infinite'}}>
@@ -1406,8 +1406,7 @@ const saveCurrentSearch = async () => {
                 </div>
               )}
 {/* Image */}
-                  </div>
-                  <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8}}>
+                   <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8}}>
                     {/* Road Type */}
                     <div style={{background: 'rgba(0,212,255,0.06)', borderRadius: 10, padding: '10px 12px', border: '1px solid rgba(0,212,255,0.1)'}}>
                       <span style={{color: '#888', fontSize: 11}}>🛣️ {language === 'vn' ? 'Loại đường phố' : language === 'fr' ? 'Type de rue' : 'Road Type'}</span>
@@ -1682,8 +1681,7 @@ onClick={() => {
             </div>
           </div>
         </div>
-        )}
-              <button
+                 <button
         onClick={() => setShowFeedback(true)}
         style={{
           position: 'fixed', bottom: '24px', right: '24px', zIndex: 1000,
