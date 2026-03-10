@@ -1685,6 +1685,7 @@ onClick={() => {
       )}
     </div>
 {/* Bouton flottant feedback */}
+<>
       <button
         onClick={() => setShowFeedback(true)}
         style={{
@@ -1751,5 +1752,6 @@ onClick={() => {
           </div>
         </div>
       )}
+</>
   );
 }
