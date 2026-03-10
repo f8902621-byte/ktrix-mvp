@@ -734,9 +734,15 @@ const saveCurrentSearch = async () => {
     <option value="fr">🇫🇷 FR</option>
       </select>
 
-      {/* Badge jours restants */}
-      {daysRemaining !== null && (
-        {daysRemaining === null && testerName && (
+{/* Badge nom testeur */}
+{testerName && (
+  <span style={{fontSize: 13, color: '#00d4ff', fontWeight: 600}}>
+    👤 {testerName}
+  </span>
+)}
+
+{/* Badge admin */}
+{daysRemaining === null && testerName && (
   <div style={{padding: '6px 12px', borderRadius: 20, fontSize: 12, fontWeight: 700, background: 'rgba(0,212,255,0.10)', border: '1px solid rgba(0,212,255,0.25)', color: '#00d4ff'}}>
     ∞ Admin
   </div>
