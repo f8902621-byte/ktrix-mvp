@@ -79,6 +79,29 @@ export default async function handler(req, res) {
       if (error) throw error;
       return res.status(200).json({ success: true });
     }
+    // Reset complet — remet le code à disposition
+    if (action === 'reset_full') {
+      const { error } = await supabase
+        .from('beta_testers')
+        .update({
+          first_name: null,
+          last_name: null,
+          email: null,
+          age: null,
+          city: null,
+          sector: null,
+          search_count: 0,
+          registered_at: null,
+          expires_at: null,
+          notes: null,
+          feedback: null,
+          status: 'active',
+          is_active: true,
+        })
+        .eq('code', code);
+      if (error) throw error;
+      return res.status(200).json({ success: true });
+    }
     return res.status(400).json({ error: 'Invalid action' });
 
   } catch (err) {
