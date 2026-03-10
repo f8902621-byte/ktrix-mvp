@@ -80,7 +80,7 @@ const getEmailContent = (lang, first_name, code, expiresAt) => {
           </div>
           <p style="color: rgba(240,248,255,0.6); font-size: 13px;">⏳ Code valid until: <strong style="color: #ff8c00;">${expiryDate}</strong></p>
           <div style="margin: 32px 0; text-align: center;">
-            <a href="https://ktrix-mvp.vercel.app/search" style="background: #00d4ff; color: #0a0e1a; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 16px;">
+            <a href="https://www.ktrix.ai/search?code=${code}" style="background: #00d4ff; color: #0a0e1a; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 16px;">
               🚀 Start now
             </a>
           </div>
