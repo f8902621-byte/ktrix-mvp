@@ -1680,7 +1680,7 @@ onClick={() => {
              </div>
             </div>
           </div>
-        </div>
+        )} 
                  <button
         onClick={() => setShowFeedback(true)}
         style={{
