@@ -1678,9 +1678,11 @@ onClick={() => {
                 <button onClick={() => setSelectedProperty(null)} className="px-6 py-3 border border-gray-700 rounded-xl font-medium hover:bg-gray-800 transition text-gray-300">
                   {t.close}
                 </button>
-              </div>
+             </div>
             </div>
-               )}
+          </div>
+        </div>
+        )}
               <button
         onClick={() => setShowFeedback(true)}
         style={{
