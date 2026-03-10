@@ -708,7 +708,6 @@ const saveCurrentSearch = async () => {
       </div>
     );
   };
-};
 
   const submitFeedback = async () => {
     if (!feedbackMsg.trim()) return;
