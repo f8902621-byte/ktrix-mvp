@@ -17,7 +17,11 @@ export default function SearchPage() {
   const [loading, setLoading] = useState(false);
   const [searchProgress, setSearchProgress] = useState(0);
   const [error, setError] = useState(null);
-  
+  // Ligne 20 - après les autres useState
+const [showFeedback, setShowFeedback] = useState(false);
+const [feedbackMsg, setFeedbackMsg] = useState('');
+const [feedbackEmail, setFeedbackEmail] = useState('');
+const [feedbackSent, setFeedbackSent] = useState(false);
   const [sourceStats, setSourceStats] = useState({});
   const [filterSource, setFilterSource] = useState(null);
   const [bdsTaskId, setBdsTaskId] = useState(null);
@@ -703,6 +707,24 @@ const saveCurrentSearch = async () => {
         )}
       </div>
     );
+  };
+};
+
+  const submitFeedback = async () => {
+    if (!feedbackMsg.trim()) return;
+    const code = localStorage.getItem('ktrix_beta_code');
+    await fetch('/api/feedback', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ beta_code: code, message: feedbackMsg, reply_email: feedbackEmail })
+    });
+    setFeedbackSent(true);
+    setTimeout(() => {
+      setShowFeedback(false);
+      setFeedbackSent(false);
+      setFeedbackMsg('');
+      setFeedbackEmail('');
+    }, 2000);
   };
 
   return (
@@ -1662,5 +1684,72 @@ onClick={() => {
         </div>
       )}
     </div>
+{/* Bouton flottant feedback */}
+      <button
+        onClick={() => setShowFeedback(true)}
+        style={{
+          position: 'fixed', bottom: '24px', right: '24px', zIndex: 1000,
+          background: '#6366f1', color: 'white', border: 'none',
+          borderRadius: '50px', padding: '12px 20px', cursor: 'pointer',
+          fontSize: '14px', fontWeight: '600', boxShadow: '0 4px 15px rgba(99,102,241,0.4)',
+          display: 'flex', alignItems: 'center', gap: '8px'
+        }}
+      >
+        💬 Feedback
+      </button>
+
+      {/* Modal feedback */}
+      {showFeedback && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+          zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center'
+        }}>
+          <div style={{
+            background: '#1e1e2e', borderRadius: '16px', padding: '32px',
+            width: '100%', maxWidth: '460px', boxShadow: '0 20px 60px rgba(0,0,0,0.5)'
+          }}>
+            {feedbackSent ? (
+              <div style={{ textAlign: 'center', color: '#a3e635', fontSize: '18px' }}>
+                ✅ Merci pour ton feedback !
+              </div>
+            ) : (
+              <>
+                <h3 style={{ color: 'white', marginBottom: '16px' }}>💬 Envoyer un feedback</h3>
+                <textarea
+                  placeholder="Ton message..."
+                  value={feedbackMsg}
+                  onChange={e => setFeedbackMsg(e.target.value)}
+                  rows={4}
+                  style={{
+                    width: '100%', background: '#2a2a3e', border: '1px solid #444',
+                    borderRadius: '8px', padding: '12px', color: 'white',
+                    fontSize: '14px', resize: 'vertical', marginBottom: '12px', boxSizing: 'border-box'
+                  }}
+                />
+                <input
+                  placeholder="Email de réponse (optionnel)"
+                  value={feedbackEmail}
+                  onChange={e => setFeedbackEmail(e.target.value)}
+                  style={{
+                    width: '100%', background: '#2a2a3e', border: '1px solid #444',
+                    borderRadius: '8px', padding: '12px', color: 'white',
+                    fontSize: '14px', marginBottom: '16px', boxSizing: 'border-box'
+                  }}
+                />
+                <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                  <button onClick={() => setShowFeedback(false)}
+                    style={{ background: '#333', color: 'white', border: 'none', borderRadius: '8px', padding: '10px 20px', cursor: 'pointer' }}>
+                    Annuler
+                  </button>
+                  <button onClick={submitFeedback}
+                    style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '8px', padding: '10px 20px', cursor: 'pointer', fontWeight: '600' }}>
+                    Envoyer
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
   );
 }
