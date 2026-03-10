@@ -283,7 +283,7 @@ useEffect(() => {
               <option value="en">🇬🇧 EN</option>
               <option value="fr">🇫🇷 FR</option>
             </select>
-<button onClick={() => router.push(`/beta?lang=${language}`)} className="hidden sm:flex items-center gap-2 px-4 py-2 text-sm text-gray-400 hover:text-white border border-gray-700 rounded-lg hover:border-gray-600 transition">
+<button onClick={() => router.push(`/login?lang=${language}`)} className="hidden sm:flex items-center gap-2 px-4 py-2 text-sm text-gray-400 hover:text-white border border-gray-700 rounded-lg hover:border-gray-600 transition">
   <LogIn className="w-4 h-4" />
   {t.login}
 </button>
