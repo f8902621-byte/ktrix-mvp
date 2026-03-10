@@ -11,8 +11,8 @@ export default function AdminPage() {
   const [noteEdit, setNoteEdit] = useState({ code: null, text: '' });
   const [savedSearches, setSavedSearches] = useState([]);
   const [loadingSearches, setLoadingSearches] = useState(false);
+  const [feedbackView, setFeedbackView] = useState({ code: null, text: '' });
 
-  // ✅ BUG 1 FIXÉ — savedPwd déclaré avant utilisation
   useEffect(() => {
     const savedPwd = localStorage.getItem('ktrix_admin_pwd');
     if (savedPwd) {
@@ -22,7 +22,6 @@ export default function AdminPage() {
     }
   }, []);
 
-  // ✅ BUG 2 FIXÉ — fetchSavedSearches au même niveau que fetchTesters
   const fetchSavedSearches = async (pwd) => {
     setLoadingSearches(true);
     try {
@@ -77,16 +76,16 @@ export default function AdminPage() {
     fetchTesters(pwd);
   };
 
-const handleReset = async (code) => {
-  if (!confirm(`⚠️ RESET COMPLET de ${code}\n\nCeci va effacer :\n- Nom et email\n- Dates d'inscription et d'expiration\n- Compteur de recherches\n\nLe code sera remis à disposition.\n\nConfirmer ?`)) return;
-  const pwd = password || localStorage.getItem('ktrix_admin_pwd');
-  await fetch('/api/admin-data', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ password: pwd, action: 'reset_full', code }),
-  });
-  fetchTesters(pwd);
-};
+  const handleReset = async (code) => {
+    if (!confirm(`⚠️ RESET COMPLET de ${code}\n\nCeci va effacer :\n- Nom et email\n- Dates d'inscription et d'expiration\n- Compteur de recherches\n\nLe code sera remis à disposition.\n\nConfirmer ?`)) return;
+    const pwd = password || localStorage.getItem('ktrix_admin_pwd');
+    await fetch('/api/admin-data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: pwd, action: 'reset_full', code }),
+    });
+    fetchTesters(pwd);
+  };
 
   const handleExtend = async (code, days) => {
     const pwd = password || localStorage.getItem('ktrix_admin_pwd');
@@ -108,47 +107,49 @@ const handleReset = async (code) => {
     setNoteEdit({ code: null, text: '' });
     fetchTesters(pwd);
   };
-const handleExport = () => {
-  const wb = XLSX.utils.book_new();
-  
-  testers.filter(t => t.email).forEach(tester => {
-    const info = [
-      ['Code', tester.code],
-      ['Prénom', tester.first_name || ''],
-      ['Nom', tester.last_name || ''],
-      ['Email', tester.email || ''],
-      ['Secteur', tester.sector || ''],
-      ['Age', tester.age || ''],
-      ['Inscription', tester.registered_at ? new Date(tester.registered_at).toLocaleDateString('fr-FR') : ''],
-      ['Expiration', tester.expires_at ? new Date(tester.expires_at).toLocaleDateString('fr-FR') : ''],
-      ['Recherches', tester.search_count || 0],
-      ['Statut', tester.is_active ? 'Actif' : 'Inactif'],
-      ['Notes', tester.notes || ''],
-      [],
-      ['Recherches sauvegardées', ''],
-      ['Nom', 'Paramètres', 'Date'],
-      ...savedSearches
-        .filter(s => s.beta_code === tester.code)
-        .map(s => [
-          s.name || '—',
-          s.params ? Object.entries(s.params).filter(([,v]) => v && v !== '' && v !== 'all').map(([k,v]) => `${k}: ${v}`).join(' · ') : '—',
-          new Date(s.created_at).toLocaleDateString('fr-FR')
-        ]),
-      [],
-      ['NOTES ADMIN', ''],
-      [tester.notes || '(vide)'],
-      ['', ''], ['', ''], ['', ''], ['', ''], ['', ''],
-    ];
-    const ws = XLSX.utils.aoa_to_sheet(info);
-    ws['!cols'] = [{ wch: 20 }, { wch: 40 }];
-    XLSX.utils.book_append_sheet(wb, ws, (tester.first_name || tester.code).slice(0, 31));
-  });
 
-  XLSX.writeFile(wb, `ktrix-beta-${new Date().toISOString().slice(0,10)}.xlsx`);
-};
+  const handleExport = () => {
+    const wb = XLSX.utils.book_new();
+    testers.filter(t => t.email).forEach(tester => {
+      const info = [
+        ['Code', tester.code],
+        ['Prénom', tester.first_name || ''],
+        ['Nom', tester.last_name || ''],
+        ['Email', tester.email || ''],
+        ['Secteur', tester.sector || ''],
+        ['Age', tester.age || ''],
+        ['Inscription', tester.registered_at ? new Date(tester.registered_at).toLocaleDateString('fr-FR') : ''],
+        ['Expiration', tester.expires_at ? new Date(tester.expires_at).toLocaleDateString('fr-FR') : ''],
+        ['Recherches', tester.search_count || 0],
+        ['Statut', tester.is_active ? 'Actif' : 'Inactif'],
+        ['Notes', tester.notes || ''],
+        ['Feedback', tester.feedback || ''],
+        [],
+        ['Recherches sauvegardées', ''],
+        ['Nom', 'Paramètres', 'Date'],
+        ...savedSearches
+          .filter(s => s.beta_code === tester.code)
+          .map(s => [
+            s.name || '—',
+            s.params ? Object.entries(s.params).filter(([,v]) => v && v !== '' && v !== 'all').map(([k,v]) => `${k}: ${v}`).join(' · ') : '—',
+            new Date(s.created_at).toLocaleDateString('fr-FR')
+          ]),
+        [],
+        ['NOTES ADMIN', ''],
+        [tester.notes || '(vide)'],
+        ['', ''], ['', ''], ['', ''], ['', ''], ['', ''],
+      ];
+      const ws = XLSX.utils.aoa_to_sheet(info);
+      ws['!cols'] = [{ wch: 20 }, { wch: 40 }];
+      XLSX.utils.book_append_sheet(wb, ws, (tester.first_name || tester.code).slice(0, 31));
+    });
+    XLSX.writeFile(wb, `ktrix-beta-${new Date().toISOString().slice(0,10)}.xlsx`);
+  };
+
   const registered = testers.filter(t => t.email && t.email !== '' && t.email !== 'EMPTY');
   const available = testers.filter(t => !t.email || t.email === '' || t.email === 'EMPTY');
   const expired = testers.filter(t => t.expires_at && new Date(t.expires_at) < new Date());
+  const withFeedback = testers.filter(t => t.feedback && t.feedback.trim() !== '');
 
   const formatDate = (d) => d ? new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '-';
   const isExpired = (d) => d && new Date(d) < new Date();
@@ -205,20 +206,22 @@ const handleExport = () => {
             <Shield className="w-5 h-5 text-red-400" />
             <h1 className="text-lg font-bold text-white">K Trix Admin</h1>
           </div>
-          <button onClick={() => fetchTesters()} className="flex items-center gap-2 px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-300 hover:bg-gray-700 transition">
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
-          </button>
-              <button onClick={handleExport} className="flex items-center gap-2 px-4 py-2 bg-emerald-800 border border-emerald-700 rounded-lg text-sm text-emerald-300 hover:bg-emerald-700 transition">
-  📊 Export Excel
-</button>
+          <div className="flex items-center gap-2">
+            <button onClick={() => fetchTesters()} className="flex items-center gap-2 px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-300 hover:bg-gray-700 transition">
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
+            </button>
+            <button onClick={handleExport} className="flex items-center gap-2 px-4 py-2 bg-emerald-800 border border-emerald-700 rounded-lg text-sm text-emerald-300 hover:bg-emerald-700 transition">
+              📊 Export Excel
+            </button>
+          </div>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-6">
 
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
           <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
             <p className="text-2xl font-bold text-white">{testers.length}</p>
             <p className="text-gray-500 text-sm">Total Codes</p>
@@ -234,6 +237,10 @@ const handleExport = () => {
           <div className="bg-gray-900 border border-red-500/20 rounded-xl p-4">
             <p className="text-2xl font-bold text-red-400">{expired.length}</p>
             <p className="text-gray-500 text-sm">Expired</p>
+          </div>
+          <div className="bg-gray-900 border border-purple-500/20 rounded-xl p-4">
+            <p className="text-2xl font-bold text-purple-400">{withFeedback.length}</p>
+            <p className="text-gray-500 text-sm">Feedbacks</p>
           </div>
         </div>
 
@@ -254,8 +261,8 @@ const handleExport = () => {
                   <th className="text-left p-3 font-medium">Inscription</th>
                   <th className="text-left p-3 font-medium">Expiration</th>
                   <th className="text-center p-3 font-medium">Statut</th>
-                  {/* ✅ NOUVEAU — colonne Notes visible */}
                   <th className="text-left p-3 font-medium">Notes</th>
+                  <th className="text-left p-3 font-medium">Feedback</th>
                   <th className="text-left p-3 font-medium">Actions</th>
                 </tr>
               </thead>
@@ -264,6 +271,7 @@ const handleExport = () => {
                   const isReg = tester.email && tester.email !== '' && tester.email !== 'EMPTY';
                   const isExp = isExpired(tester.expires_at);
                   const daysLeft = getDaysLeft(tester.expires_at);
+                  const hasFeedback = tester.feedback && tester.feedback.trim() !== '';
                   return (
                     <tr key={tester.id} className={`border-b border-gray-800/50 hover:bg-gray-800/20 transition ${!tester.is_active ? 'opacity-40' : ''} ${isExp ? 'bg-red-500/5' : ''}`}>
                       <td className="p-3 font-mono text-xs text-cyan-400">{tester.code}</td>
@@ -298,8 +306,8 @@ const handleExport = () => {
                         )}
                       </td>
 
-                      {/* ✅ NOUVEAU — Notes inline éditable */}
-                      <td className="p-3 max-w-[200px]">
+                      {/* Notes inline */}
+                      <td className="p-3 max-w-[160px]">
                         {noteEdit.code === tester.code ? (
                           <div className="flex items-center gap-1">
                             <input
@@ -328,6 +336,24 @@ const handleExport = () => {
                         )}
                       </td>
 
+                      {/* Feedback */}
+                      <td className="p-3 max-w-[160px]">
+                        {hasFeedback ? (
+                          <button
+                            onClick={() => setFeedbackView({ code: tester.code, text: tester.feedback })}
+                            className="flex items-center gap-1.5 text-left group"
+                            title="Voir le feedback complet"
+                          >
+                            <span className="inline-block w-2 h-2 bg-purple-400 rounded-full flex-shrink-0"></span>
+                            <span className="text-purple-300 text-xs truncate max-w-28 group-hover:text-purple-200 transition">
+                              {tester.feedback.split('\n')[0].replace(/^\[.*?\]\s*/, '').slice(0, 35)}…
+                            </span>
+                          </button>
+                        ) : (
+                          <span className="text-gray-700 text-xs">—</span>
+                        )}
+                      </td>
+
                       <td className="p-3">
                         <div className="flex items-center gap-1">
                           <button onClick={() => handleToggle(tester.code)} title={tester.is_active ? 'Désactiver' : 'Activer'} className="p-1.5 rounded hover:bg-gray-800 transition">
@@ -339,7 +365,7 @@ const handleExport = () => {
                           <button onClick={() => setNoteEdit({ code: tester.code, text: tester.notes || '' })} title="Note" className="p-1.5 rounded hover:bg-gray-800 transition">
                             <MessageSquare className="w-4 h-4 text-gray-400" />
                           </button>
-                          <button onClick={() => handleReset(tester.code)} title="Reset recherches" className="p-1.5 rounded hover:bg-gray-800 transition">
+                          <button onClick={() => handleReset(tester.code)} title="Reset" className="p-1.5 rounded hover:bg-gray-800 transition">
                             <RefreshCw className="w-4 h-4 text-orange-400" />
                           </button>
                         </div>
@@ -405,6 +431,38 @@ const handleExport = () => {
         </div>
 
       </main>
+
+      {/* Feedback View Modal */}
+      {feedbackView.code && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 border border-purple-500/30 rounded-xl p-6 w-full max-w-lg">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-white font-bold flex items-center gap-2">
+                <span className="w-2 h-2 bg-purple-400 rounded-full inline-block"></span>
+                Feedback — {feedbackView.code}
+              </h3>
+              <button onClick={() => setFeedbackView({ code: null, text: '' })} className="text-gray-500 hover:text-white transition text-xl leading-none">✕</button>
+            </div>
+            <div className="bg-gray-800 rounded-lg p-4 max-h-80 overflow-y-auto">
+              {feedbackView.text.split('\n\n').map((entry, i) => (
+                <div key={i} className={`${i > 0 ? 'mt-4 pt-4 border-t border-gray-700' : ''}`}>
+                  {entry.match(/^\[(.+?)\]/) ? (
+                    <>
+                      <p className="text-purple-400 text-xs mb-1">{entry.match(/^\[(.+?)\]/)[1]}</p>
+                      <p className="text-white text-sm">{entry.replace(/^\[.+?\]\s*/, '')}</p>
+                    </>
+                  ) : (
+                    <p className="text-white text-sm">{entry}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+            <button onClick={() => setFeedbackView({ code: null, text: '' })} className="w-full mt-4 py-2 bg-gray-800 text-gray-300 rounded-lg font-medium hover:bg-gray-700 transition border border-gray-700">
+              Fermer
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
