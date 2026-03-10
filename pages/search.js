@@ -1682,9 +1682,7 @@ onClick={() => {
             </div>
           </div>
         </div>
-      )}
-    </div>
-      <button
+              <button
         onClick={() => setShowFeedback(true)}
         style={{
           position: 'fixed', bottom: '24px', right: '24px', zIndex: 1000,
