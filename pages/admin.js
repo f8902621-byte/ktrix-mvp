@@ -76,16 +76,16 @@ export default function AdminPage() {
     fetchTesters(pwd);
   };
 
-  const handleReset = async (code) => {
-    if (!confirm('Reset search count to 0 for this tester?')) return;
-    const pwd = password || localStorage.getItem('ktrix_admin_pwd');
-    await fetch('/api/admin-data', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: pwd, action: 'reset', code }),
-    });
-    fetchTesters(pwd);
-  };
+const handleReset = async (code) => {
+  if (!confirm(`⚠️ RESET COMPLET de ${code}\n\nCeci va effacer :\n- Nom et email\n- Dates d'inscription et d'expiration\n- Compteur de recherches\n\nLe code sera remis à disposition.\n\nConfirmer ?`)) return;
+  const pwd = password || localStorage.getItem('ktrix_admin_pwd');
+  await fetch('/api/admin-data', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password: pwd, action: 'reset_full', code }),
+  });
+  fetchTesters(pwd);
+};
 
   const handleExtend = async (code, days) => {
     const pwd = password || localStorage.getItem('ktrix_admin_pwd');
