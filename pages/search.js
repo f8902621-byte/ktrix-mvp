@@ -32,6 +32,7 @@ export default function SearchPage() {
   const [savedSearches, setSavedSearches] = useState([]);
   const [showSavedSearches, setShowSavedSearches] = useState(false);
   const [daysRemaining, setDaysRemaining] = useState(null);
+  const [testerName, setTesterName] = useState(null);
   useEffect(() => {
   const code = typeof window !== 'undefined' ? localStorage.getItem('ktrix_beta_code') : null;
   if (!code) return;
@@ -40,10 +41,11 @@ export default function SearchPage() {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ code })
   })
-    .then(res => res.json())
+ .then(res => res.json())
     .then(data => {
       if (data.valid && data.tester) {
         setDaysRemaining(data.tester.days_remaining);
+        setTesterName(data.tester.first_name);
       }
     })
     .catch(() => {});
@@ -734,6 +736,11 @@ const saveCurrentSearch = async () => {
 
       {/* Badge jours restants */}
       {daysRemaining !== null && (
+        {daysRemaining === null && testerName && (
+  <div style={{padding: '6px 12px', borderRadius: 20, fontSize: 12, fontWeight: 700, background: 'rgba(0,212,255,0.10)', border: '1px solid rgba(0,212,255,0.25)', color: '#00d4ff'}}>
+    ∞ Admin
+  </div>
+)}
         <div style={{
           display: 'flex',
           alignItems: 'center',
