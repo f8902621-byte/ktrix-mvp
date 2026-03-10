@@ -1,3 +1,4 @@
+import * as XLSX from 'xlsx';
 import { useState, useEffect } from 'react';
 import { Lock, RefreshCw, ToggleLeft, ToggleRight, Clock, MessageSquare, Shield, AlertCircle, Check, X } from 'lucide-react';
 
@@ -107,7 +108,44 @@ const handleReset = async (code) => {
     setNoteEdit({ code: null, text: '' });
     fetchTesters(pwd);
   };
+const handleExport = () => {
+  const wb = XLSX.utils.book_new();
+  
+  testers.filter(t => t.email).forEach(tester => {
+    const info = [
+      ['Code', tester.code],
+      ['Prénom', tester.first_name || ''],
+      ['Nom', tester.last_name || ''],
+      ['Email', tester.email || ''],
+      ['Secteur', tester.sector || ''],
+      ['Age', tester.age || ''],
+      ['Inscription', tester.registered_at ? new Date(tester.registered_at).toLocaleDateString('fr-FR') : ''],
+      ['Expiration', tester.expires_at ? new Date(tester.expires_at).toLocaleDateString('fr-FR') : ''],
+      ['Recherches', tester.search_count || 0],
+      ['Statut', tester.is_active ? 'Actif' : 'Inactif'],
+      ['Notes', tester.notes || ''],
+      [],
+      ['Recherches sauvegardées', ''],
+      ['Nom', 'Paramètres', 'Date'],
+      ...savedSearches
+        .filter(s => s.beta_code === tester.code)
+        .map(s => [
+          s.name || '—',
+          s.params ? Object.entries(s.params).filter(([,v]) => v && v !== '' && v !== 'all').map(([k,v]) => `${k}: ${v}`).join(' · ') : '—',
+          new Date(s.created_at).toLocaleDateString('fr-FR')
+        ]),
+      [],
+      ['NOTES ADMIN', ''],
+      [tester.notes || '(vide)'],
+      ['', ''], ['', ''], ['', ''], ['', ''], ['', ''],
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(info);
+    ws['!cols'] = [{ wch: 20 }, { wch: 40 }];
+    XLSX.utils.book_append_sheet(wb, ws, (tester.first_name || tester.code).slice(0, 31));
+  });
 
+  XLSX.writeFile(wb, `ktrix-beta-${new Date().toISOString().slice(0,10)}.xlsx`);
+};
   const registered = testers.filter(t => t.email && t.email !== '' && t.email !== 'EMPTY');
   const available = testers.filter(t => !t.email || t.email === '' || t.email === 'EMPTY');
   const expired = testers.filter(t => t.expires_at && new Date(t.expires_at) < new Date());
@@ -171,6 +209,9 @@ const handleReset = async (code) => {
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </button>
+              <button onClick={handleExport} className="flex items-center gap-2 px-4 py-2 bg-emerald-800 border border-emerald-700 rounded-lg text-sm text-emerald-300 hover:bg-emerald-700 transition">
+  📊 Export Excel
+</button>
         </div>
       </header>
 
