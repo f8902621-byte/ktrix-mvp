@@ -9,7 +9,7 @@ const T = {
     title: 'Apply for Free Access',
     subtitle: 'Priority given to candidates with the most proof of professional real estate activity.',
     s1: 'Personal Information',
-    firstName: 'First Name *', lastName: 'Last Name', age: 'Age *', city: 'City *', email: 'Email Address',
+    firstName: 'First Name *', lastName: 'Last Name', age: 'Age *', city: 'City *', email: 'Email Address *',
     s2: 'Professional Activity',
     sectorLabel: 'Sector *',
     re: 'Real Estate', other: 'Other',
@@ -38,7 +38,7 @@ const T = {
     title: 'Candidatez pour un Accès Gratuit',
     subtitle: "Priorité aux candidats présentant le plus de preuves d'activité professionnelle dans l'immobilier.",
     s1: 'Informations Personnelles',
-    firstName: 'Prénom *', lastName: 'Nom', age: 'Âge *', city: 'Ville *', email: 'Adresse email',
+    firstName: 'Prénom *', lastName: 'Nom', age: 'Âge *', city: 'Ville *', email: 'Adresse email *',
     s2: 'Activité Professionnelle',
     sectorLabel: 'Secteur *',
     re: 'Immobilier', other: 'Autre',
@@ -67,7 +67,7 @@ const T = {
     title: 'Đăng Ký Truy Cập Miễn Phí',
     subtitle: 'Ưu tiên cho các ứng viên có nhiều bằng chứng hoạt động chuyên nghiệp nhất trong lĩnh vực bất động sản.',
     s1: 'Thông Tin Cá Nhân',
-    firstName: 'Tên *', lastName: 'Họ', age: 'Tuổi *', city: 'Thành phố *', email: 'Địa chỉ email',
+    firstName: 'Tên *', lastName: 'Họ', age: 'Tuổi *', city: 'Thành phố *', email: 'Địa chỉ email *',
     s2: 'Hoạt Động Nghề Nghiệp',
     sectorLabel: 'Lĩnh vực *',
     re: 'Bất động sản', other: 'Khác',
@@ -236,8 +236,8 @@ export default function BetaPage() {
                 </div>
               </div>
               <div className="mt-4">
-                <label className={lbl}>{t.email}</label>
-                <input type="email" className={inp} value={form.email} onChange={e => set('email', e.target.value)} placeholder="you@example.com" />
+               <label className={lbl}>{t.email} <span style={{color: '#ff3366'}}>*</span></label>
+                <input type="email" className={inp} value={form.email} onChange={e => set('email', e.target.value)} placeholder="you@example.com" required />
               </div>
 
               {/* ── SECTION 2 ── */}
