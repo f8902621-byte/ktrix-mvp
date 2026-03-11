@@ -644,28 +644,28 @@ export default function SearchPage() {
     );
   };
 
-const submitFeedback = async () => {
-  if (!feedbackMsg.trim()) return;
-  const code = localStorage.getItem('ktrix_beta_code');
-  const profileInfo = selectedProperty
-    ? `[Profil: ${selectedProperty.title || selectedProperty.id || 'inconnu'}]`
-    : '';
-  const fullMessage = profileInfo
-    ? `${profileInfo}\n${feedbackMsg.trim()}`
-    : feedbackMsg.trim();
-  await fetch('/api/feedback', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ beta_code: code, message: fullMessage })
-  });
-  setFeedbackSent(true);
-  setTimeout(() => {
-    setShowFeedback(false);
-    setFeedbackSent(false);
-    setFeedbackMsg('');
-    setFeedbackEmail('');
-  }, 2000);
-};
+  const submitFeedback = async () => {
+    if (!feedbackMsg.trim()) return;
+    const code = localStorage.getItem('ktrix_beta_code');
+    const profileInfo = selectedProperty
+      ? `[Profil: ${selectedProperty.title || selectedProperty.id || 'inconnu'}]`
+      : '';
+    const fullMessage = profileInfo
+      ? `${profileInfo}\n${feedbackMsg.trim()}`
+      : feedbackMsg.trim();
+    await fetch('/api/feedback', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ beta_code: code, message: fullMessage, reply_email: feedbackEmail || null })
+    });
+    setFeedbackSent(true);
+    setTimeout(() => {
+      setShowFeedback(false);
+      setFeedbackSent(false);
+      setFeedbackMsg('');
+      setFeedbackEmail('');
+    }, 2000);
+  };
 
   // PATCH 3 — Guard authReady : spinner pendant l'init auth
   if (!authReady) {
@@ -1223,40 +1223,31 @@ const submitFeedback = async () => {
                   </div>
                 </div>
               </div>
+              {/* Feedback inline dans le modal — toujours lié au profil ouvert */}
+              <div className="border-t border-gray-800 pt-4">
+                {feedbackSent ? (
+                  <div style={{textAlign: 'center', color: '#a3e635', fontSize: '16px', padding: '12px'}}>✅ {language === 'fr' ? 'Merci pour ton feedback !' : language === 'vn' ? 'Cảm ơn phản hồi của bạn!' : 'Thanks for your feedback!'}</div>
+                ) : showFeedback ? (
+                  <div>
+                    <p className="text-sm font-semibold text-indigo-400 mb-3">💬 {language === 'vn' ? 'Gửi phản hồi' : language === 'fr' ? 'Envoyer un feedback' : 'Send feedback'}</p>
+                    <textarea placeholder={language === 'vn' ? 'Nhận xét của bạn...' : language === 'fr' ? 'Ton message...' : 'Your message...'} value={feedbackMsg} onChange={e => setFeedbackMsg(e.target.value)} rows={3} style={{width: '100%', background: '#1a1a2e', border: '1px solid #444', borderRadius: '8px', padding: '10px', color: 'white', fontSize: '14px', resize: 'vertical', marginBottom: '8px', boxSizing: 'border-box'}} />
+                    <input placeholder={language === 'fr' ? 'Email de réponse (optionnel)' : 'Reply email (optional)'} value={feedbackEmail} onChange={e => setFeedbackEmail(e.target.value)} style={{width: '100%', background: '#1a1a2e', border: '1px solid #444', borderRadius: '8px', padding: '10px', color: 'white', fontSize: '14px', marginBottom: '10px', boxSizing: 'border-box'}} />
+                    <div className="flex gap-2 justify-end">
+                      <button onClick={() => { setShowFeedback(false); setFeedbackMsg(''); setFeedbackEmail(''); }} className="px-4 py-2 bg-gray-700 text-gray-300 rounded-lg text-sm border border-gray-600">{language === 'fr' ? 'Annuler' : language === 'vn' ? 'Hủy' : 'Cancel'}</button>
+                      <button onClick={submitFeedback} className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-500 transition">{language === 'fr' ? 'Envoyer' : language === 'vn' ? 'Gửi' : 'Send'}</button>
+                    </div>
+                  </div>
+                ) : (
+                  <button onClick={() => setShowFeedback(true)} className="w-full py-2.5 bg-indigo-500/10 text-indigo-400 rounded-xl border border-indigo-500/20 hover:bg-indigo-500/20 transition font-medium text-sm">
+                    💬 {language === 'vn' ? 'Gửi phản hồi về hồ sơ này' : language === 'fr' ? 'Donner un feedback sur ce profil' : 'Give feedback on this profile'}
+                  </button>
+                )}
+              </div>
               <div className="flex gap-3 pt-2">
                 <a href={selectedProperty.url} target="_blank" rel="noopener noreferrer" className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl font-medium text-center hover:from-blue-500 hover:to-cyan-400 transition shadow-lg shadow-blue-500/20">🔗 {t.viewOriginal}</a>
-                <button onClick={() => setSelectedProperty(null)} className="px-6 py-3 border border-gray-700 rounded-xl font-medium hover:bg-gray-800 transition text-gray-300">{t.close}</button>
+                <button onClick={() => { setSelectedProperty(null); setShowFeedback(false); setFeedbackMsg(''); setFeedbackEmail(''); }} className="px-6 py-3 border border-gray-700 rounded-xl font-medium hover:bg-gray-800 transition text-gray-300">{t.close}</button>
               </div>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Feedback Button */}
-      <button
-        onClick={() => setShowFeedback(true)}
-        style={{position: 'fixed', bottom: '24px', right: '24px', zIndex: 1000, background: '#6366f1', color: 'white', border: 'none', borderRadius: '50px', padding: '12px 20px', cursor: 'pointer', fontSize: '14px', fontWeight: '600', boxShadow: '0 4px 15px rgba(99,102,241,0.4)', display: 'flex', alignItems: 'center', gap: '8px'}}
-      >
-        💬 Feedback
-      </button>
-
-      {/* Feedback Modal */}
-      {showFeedback && (
-        <div style={{position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
-          <div style={{background: '#1e1e2e', borderRadius: '16px', padding: '32px', width: '100%', maxWidth: '460px', boxShadow: '0 20px 60px rgba(0,0,0,0.5)'}}>
-            {feedbackSent ? (
-              <div style={{textAlign: 'center', color: '#a3e635', fontSize: '18px'}}>✅ Merci pour ton feedback !</div>
-            ) : (
-              <>
-                <h3 style={{color: 'white', marginBottom: '16px'}}>💬 Envoyer un feedback</h3>
-                <textarea placeholder="Ton message..." value={feedbackMsg} onChange={e => setFeedbackMsg(e.target.value)} rows={4} style={{width: '100%', background: '#2a2a3e', border: '1px solid #444', borderRadius: '8px', padding: '12px', color: 'white', fontSize: '14px', resize: 'vertical', marginBottom: '12px', boxSizing: 'border-box'}} />
-                <input placeholder="Email de réponse (optionnel)" value={feedbackEmail} onChange={e => setFeedbackEmail(e.target.value)} style={{width: '100%', background: '#2a2a3e', border: '1px solid #444', borderRadius: '8px', padding: '12px', color: 'white', fontSize: '14px', marginBottom: '16px', boxSizing: 'border-box'}} />
-                <div style={{display: 'flex', gap: '12px', justifyContent: 'flex-end'}}>
-                  <button onClick={() => setShowFeedback(false)} style={{background: '#333', color: 'white', border: 'none', borderRadius: '8px', padding: '10px 20px', cursor: 'pointer'}}>Annuler</button>
-                  <button onClick={submitFeedback} style={{background: '#6366f1', color: 'white', border: 'none', borderRadius: '8px', padding: '10px 20px', cursor: 'pointer', fontWeight: '600'}}>Envoyer</button>
-                </div>
-              </>
-            )}
           </div>
         </div>
       )}
