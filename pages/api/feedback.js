@@ -16,28 +16,14 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Missing fields' });
   }
 
-  // Récupérer le feedback existant pour l'append (si plusieurs feedbacks)
-  const { data: existing } = await supabase
-    .from('beta_testers')
-    .select('feedback')
-    .eq('code', beta_code)
-    .single();
+const { error } = await supabase
+  .from('feedbacks')
+  .insert({ beta_code, message: message.trim(), reply_email: reply_email || null });
 
-  const timestamp = new Date().toLocaleString('fr-FR', { timeZone: 'Asia/Ho_Chi_Minh' });
-  const newEntry = `[${timestamp}] ${message.trim()}`;
-  const updatedFeedback = existing?.feedback
-    ? `${existing.feedback}\n\n${newEntry}`
-    : newEntry;
+if (error) {
+  console.error('Feedback insert error:', error);
+  return res.status(500).json({ error: 'Failed to save feedback' });
+}
 
-  const { error } = await supabase
-    .from('beta_testers')
-    .update({ feedback: updatedFeedback })
-    .eq('code', beta_code);
-
-  if (error) {
-    console.error('Feedback update error:', error);
-    return res.status(500).json({ error: 'Failed to save feedback' });
-  }
-
-  return res.status(200).json({ success: true });
+return res.status(200).json({ success: true });
 }
