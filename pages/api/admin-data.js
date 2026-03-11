@@ -34,7 +34,7 @@ export default async function handler(req, res) {
       if (error) throw error;
       return res.status(200).json({ success: true });
     }
-    // Extend expiration (6 months for top testers)
+    // Extend expiration
     if (action === 'extend') {
       const days = actionData?.days || 180;
       const { error } = await supabase
@@ -65,7 +65,7 @@ export default async function handler(req, res) {
       if (error) throw error;
       return res.status(200).json({ success: true });
     }
-    // Reset complet — remet le code à disposition
+    // Reset complet d'un testeur — remet le code à disposition
     if (action === 'reset_full') {
       const { error } = await supabase
         .from('beta_testers')
@@ -88,7 +88,7 @@ export default async function handler(req, res) {
       if (error) throw error;
       return res.status(200).json({ success: true });
     }
-    // ✅ NOUVEAU — Liste tous les feedbacks de la table dédiée
+    // Liste tous les feedbacks
     if (action === 'list_feedbacks') {
       const { data, error } = await supabase
         .from('feedbacks')
@@ -97,6 +97,48 @@ export default async function handler(req, res) {
       if (error) throw error;
       return res.status(200).json({ feedbacks: data || [] });
     }
+    // ── RAZ GÉNÉRALE — vide feedbacks + saved_searches + reset tous les beta_testers sauf KTRIX-ADMIN0 ──
+    if (action === 'reset_all_test_data') {
+      // 1. Vider la table feedbacks
+      const { error: e1 } = await supabase
+        .from('feedbacks')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // condition toujours vraie = tout supprimer
+      if (e1) throw e1;
+
+      // 2. Vider la table saved_searches
+      const { error: e2 } = await supabase
+        .from('saved_searches')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000');
+      if (e2) throw e2;
+
+      // 3. Reset tous les beta_testers sauf KTRIX-ADMIN0
+      const { error: e3 } = await supabase
+        .from('beta_testers')
+        .update({
+          first_name: null,
+          last_name: null,
+          email: null,
+          age: null,
+          city: null,
+          sector: null,
+          search_count: 0,
+          last_search_at: null,
+          other_activity: null,
+          registered_at: null,
+          expires_at: null,
+          notes: null,
+          feedback: null,
+          status: 'active',
+          is_active: true,
+        })
+        .neq('code', 'KTRIX-ADMIN0');
+      if (e3) throw e3;
+
+      return res.status(200).json({ success: true, message: 'RAZ complète effectuée' });
+    }
+
     return res.status(400).json({ error: 'Invalid action' });
   } catch (err) {
     console.error('Admin error:', err);
