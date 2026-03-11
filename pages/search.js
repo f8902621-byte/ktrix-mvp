@@ -4,7 +4,6 @@ import { useRouter } from 'next/router';
 import { wardsByDistrict, premiumWards } from '../lib/wards-data';
 import { NeedleGauge, PriceDistribution, ScoreBars, AlertBadge, SignalItem, NEON_CSS, NEON } from '../components/HolographicCharts';
 import AdBanner from '../components/AdBanner';
-
 export default function SearchPage() {
   const router = useRouter();
   const [language, setLanguage] = useState('vn');
@@ -36,36 +35,27 @@ export default function SearchPage() {
   const [showSavedSearches, setShowSavedSearches] = useState(false);
   const [daysRemaining, setDaysRemaining] = useState(null);
   const [testerName, setTesterName] = useState(null);
-  const [authReady, setAuthReady] = useState(false); // FIX: guard auth
 
-  // ============================================================
-  // FIX SÉCURITÉ - AUTH UNIFIÉ
-  // Remplace les 2 anciens useEffect (verify-beta + URL params)
-  // Garantit: Start Now email → toujours le bon profil
-  // ============================================================
+  // PATCH 1 — authReady state
+  const [authReady, setAuthReady] = useState(false);
+
+  // PATCH 2 — initAuth unifié (remplace les 2 useEffect auth séparés)
   useEffect(() => {
     const initAuth = async () => {
       if (typeof window === 'undefined') return;
 
-      // 1. Code URL = priorité ABSOLUE (Start Now depuis email)
       const urlParams = new URLSearchParams(window.location.search);
       const codeFromUrl = urlParams.get('code');
       if (codeFromUrl) {
         localStorage.setItem('ktrix_beta_code', codeFromUrl);
-        // Nettoyer l'URL (retire ?code=XXX visible dans la barre)
-        window.history.replaceState({}, '', '/search');
       }
 
-      // 2. Code final (URL ou localStorage)
       const betaCode = localStorage.getItem('ktrix_beta_code');
-
-      // 3. Aucun code → redirect inscription
       if (!betaCode) {
         router.push('/beta');
         return;
       }
 
-      // 4. Vérification SYSTÉMATIQUE via API (même si code déjà en localStorage)
       try {
         const res = await fetch('/api/verify-beta', {
           method: 'POST',
@@ -73,38 +63,44 @@ export default function SearchPage() {
           body: JSON.stringify({ code: betaCode })
         });
         const data = await res.json();
-
-        if (!data.valid) {
-          // Code invalide ou expiré → nettoyer et rediriger
-          localStorage.removeItem('ktrix_beta_code');
-          router.push('/beta');
-          return;
-        }
-
-        // Code valide → infos testeur
-        if (data.tester) {
+        if (data.valid && data.tester) {
           setDaysRemaining(data.tester.days_remaining);
           setTesterName(data.tester.first_name);
         }
       } catch (err) {
-        console.error('[AUTH] Verify error:', err);
-        // Erreur réseau → on laisse passer (évite blocage offline)
+        // silently ignore verify errors
       }
 
       setAuthReady(true);
     };
 
     initAuth();
-  }, []); // Une seule fois au montage
+  }, []);
 
-  // Lang depuis query param
-  useEffect(() => {
-    if (router.query.lang && ['vn', 'en', 'fr'].includes(router.query.lang)) {
-      setLanguage(router.query.lang);
-    }
-  }, [router.query.lang]);
+  const [searchParams, setSearchParams] = useState({
+    city: '',
+    district: '',
+    ward: '',
+    propertyType: '',
+    priceMin: '',
+    priceMax: '',
+    livingAreaMin: '',
+    livingAreaMax: '',
+    bedrooms: '',
+    bathrooms: '',
+    hasParking: false,
+    hasPool: false,
+    streetWidthMin: '',
+    daysListed: '',
+    legalStatus: '',
+    customKeyword: '',
+    sources: ['chotot', 'alonhadat'],
+    keywords: [],
+    keywordsOnly: false,
+    maxResults: 200
+  });
 
-  // Saved searches - seulement après auth confirmée
+  // PATCH 4 — savedSearches dépend de [authReady]
   useEffect(() => {
     if (!authReady) return;
     const loadSavedSearches = async () => {
@@ -122,9 +118,16 @@ export default function SearchPage() {
   }, [authReady]);
 
   useEffect(() => {
+    if (router.query.lang && ['vn', 'en', 'fr'].includes(router.query.lang)) {
+      setLanguage(router.query.lang);
+    }
+  }, [router.query.lang]);
+
+  useEffect(() => {
     if (!selectedProperty) return;
     if (selectedProperty.source !== 'alonhadat.com.vn') return;
     if (selectedProperty._enriched) return;
+
     const enrichListing = async () => {
       setEnriching(true);
       try {
@@ -170,7 +173,10 @@ export default function SearchPage() {
 
   useEffect(() => {
     const handleEscape = (e) => {
-      if (e.key === 'Escape') { setSelectedProperty(null); setExpandedPhoto(null); }
+      if (e.key === 'Escape') {
+        setSelectedProperty(null);
+        setExpandedPhoto(null);
+      }
     };
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
@@ -198,7 +204,9 @@ export default function SearchPage() {
             clearInterval(pollInterval);
           }
         }
-      } catch (err) { console.error('BDS polling error:', err); }
+      } catch (err) {
+        console.error('BDS polling error:', err);
+      }
     }, 5000);
     return () => clearInterval(pollInterval);
   }, [bdsTaskId, bdsStatus]);
@@ -367,109 +375,152 @@ export default function SearchPage() {
     'Lâm Đồng': ['Đà Lạt', 'Bảo Lộc', 'Đức Trọng', 'Lâm Hà', 'Đơn Dương', 'Di Linh', 'Bảo Lâm', 'Đạ Huoai', 'Đạ Tẻh', 'Cát Tiên', 'Lạc Dương'],
   };
 
-  const [searchParams, setSearchParams] = useState({
-    city: '', district: '', ward: '', propertyType: '',
-    priceMin: '', priceMax: '', livingAreaMin: '', livingAreaMax: '',
-    bedrooms: '', bathrooms: '', hasParking: false, hasPool: false,
-    streetWidthMin: '', daysListed: '', legalStatus: '', customKeyword: '',
-    sources: ['chotot', 'alonhadat'], keywords: [], keywordsOnly: false, maxResults: 200
-  });
-
   const currentDistricts = districtsByCity[searchParams.city] || [];
   const currentWards = wardsByDistrict[searchParams.district] || [];
 
   const handleSearch = async () => {
     if (!searchParams.city || !searchParams.propertyType || searchParams.priceMax === null || searchParams.priceMax === undefined || searchParams.priceMax === '' || Number(searchParams.priceMax) <= 0) {
-      setError(t.required); return;
+      setError(t.required);
+      return;
     }
     const betaCode = typeof window !== 'undefined' ? localStorage.getItem('ktrix_beta_code') : null;
     if (betaCode) fetch('/api/track-search', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: betaCode }) });
-    setLoading(true); setSearchProgress(0);
+    setLoading(true);
+    setSearchProgress(0);
     const progressInterval = setInterval(() => {
       setSearchProgress(prev => {
-        if (prev < 30) return prev + 3; if (prev < 60) return prev + 2;
-        if (prev < 85) return prev + 1; if (prev < 95) return prev + 0.3; return prev;
+        if (prev < 30) return prev + 3;
+        if (prev < 60) return prev + 2;
+        if (prev < 85) return prev + 1;
+        if (prev < 95) return prev + 0.3;
+        return prev;
       });
     }, 1000);
-    setError(null); setShowSearch(false);
-    setBdsTaskId(null); setBdsStatus('idle'); setBdsProgress(0); setBdsCount(0);
-    setSourceStats({}); setMarketStats([]);
+    setError(null);
+    setShowSearch(false);
+    setBdsTaskId(null);
+    setBdsStatus('idle');
+    setBdsProgress(0);
+    setBdsCount(0);
+    setSourceStats({});
+    setMarketStats([]);
     try {
       const allSources = searchParams.sources || ['chotot', 'alonhadat'];
       const fastSources = allSources.filter(s => s !== 'alonhadat');
       const slowSources = allSources.filter(s => s === 'alonhadat');
       const searchBody = {
-        ...searchParams, keywords: searchParams.keywords || [],
+        ...searchParams,
+        keywords: searchParams.keywords || [],
         keywordsOnly: searchParams.keywordsOnly || false,
         sortBy: sortBy === 'priceAsc' ? 'price_asc' : sortBy === 'priceDesc' ? 'price_desc' : 'score_desc'
       };
       if (fastSources.length > 0) {
-        const fastResponse = await fetch('/api/search', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...searchBody, sources: fastSources }) });
+        const fastResponse = await fetch('/api/search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...searchBody, sources: fastSources })
+        });
         const fastData = await fastResponse.json();
         if (!fastResponse.ok) throw new Error(fastData.error || 'Search error');
-        setResults(fastData.results || []); setStats(fastData.stats);
+        setResults(fastData.results || []);
+        setStats(fastData.stats);
         if (fastData.marketStats && fastData.marketStats.length > 0) setMarketStats(fastData.marketStats);
         if (fastData.results && fastData.results.length > 0) {
           const statsBySource = {};
-          fastData.results.forEach(r => { const s = r.source || 'unknown'; if (!statsBySource[s]) statsBySource[s] = 0; statsBySource[s]++; });
+          fastData.results.forEach(result => {
+            const source = result.source || 'unknown';
+            if (!statsBySource[source]) statsBySource[source] = 0;
+            statsBySource[source]++;
+          });
           setSourceStats(statsBySource);
         }
       }
       setAlonhadatLoading(true);
       if (slowSources.length > 0 && fastSources.length > 0) {
-        fetch('/api/search', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...searchBody, sources: slowSources }) })
-          .then(res => res.json()).then(slowData => {
-            if (slowData.results && slowData.results.length > 0) {
-              setResults(prev => {
-                const merged = [...prev, ...slowData.results];
-                if (sortBy === 'priceAsc') merged.sort((a, b) => (a.price || 0) - (b.price || 0));
-                else if (sortBy === 'priceDesc') merged.sort((a, b) => (b.price || 0) - (a.price || 0));
-                else merged.sort((a, b) => (b.score || 0) - (a.score || 0));
+        fetch('/api/search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...searchBody, sources: slowSources })
+        }).then(res => res.json()).then(slowData => {
+          if (slowData.results && slowData.results.length > 0) {
+            setResults(prev => {
+              const merged = [...prev, ...slowData.results];
+              if (sortBy === 'priceAsc') merged.sort((a, b) => (a.price || 0) - (b.price || 0));
+              else if (sortBy === 'priceDesc') merged.sort((a, b) => (b.price || 0) - (a.price || 0));
+              else merged.sort((a, b) => (b.score || 0) - (a.score || 0));
+              return merged;
+            });
+            setSourceStats(prev => {
+              const updated = { ...prev };
+              slowData.results.forEach(result => {
+                const source = result.source || 'unknown';
+                if (!updated[source]) updated[source] = 0;
+                updated[source]++;
+              });
+              return updated;
+            });
+            if (slowData.marketStats && slowData.marketStats.length > 0) {
+              setMarketStats(prev => {
+                if (!prev || prev.length === 0) return slowData.marketStats;
+                const merged = [...prev];
+                slowData.marketStats.forEach(newStat => {
+                  const existing = merged.find(m => m.district === newStat.district);
+                  if (existing) existing.count = (existing.count || 0) + (newStat.count || 0);
+                  else merged.push(newStat);
+                });
                 return merged;
               });
-              setSourceStats(prev => {
-                const updated = { ...prev };
-                slowData.results.forEach(r => { const s = r.source || 'unknown'; if (!updated[s]) updated[s] = 0; updated[s]++; });
-                return updated;
-              });
-              if (slowData.marketStats && slowData.marketStats.length > 0) {
-                setMarketStats(prev => {
-                  if (!prev || prev.length === 0) return slowData.marketStats;
-                  const merged = [...prev];
-                  slowData.marketStats.forEach(newStat => {
-                    const existing = merged.find(m => m.district === newStat.district);
-                    if (existing) existing.count = (existing.count || 0) + (newStat.count || 0);
-                    else merged.push(newStat);
-                  });
-                  return merged;
-                });
-              }
             }
-            setAlonhadatLoading(false);
-          }).catch(err => { console.error('Alonhadat background error:', err); setAlonhadatLoading(false); });
+          }
+          setAlonhadatLoading(false);
+        }).catch(err => { console.error('Alonhadat background error:', err); setAlonhadatLoading(false); });
       }
       if (fastSources.length === 0 && slowSources.length > 0) {
-        const response = await fetch('/api/search', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...searchBody, sources: slowSources }) });
+        const response = await fetch('/api/search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...searchBody, sources: slowSources })
+        });
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || 'Search error');
-        setResults(data.results || []); setStats(data.stats);
+        setResults(data.results || []);
+        setStats(data.stats);
         if (data.marketStats && data.marketStats.length > 0) setMarketStats(data.marketStats);
         if (data.results && data.results.length > 0) {
           const statsBySource = {};
-          data.results.forEach(r => { const s = r.source || 'unknown'; if (!statsBySource[s]) statsBySource[s] = 0; statsBySource[s]++; });
+          data.results.forEach(result => {
+            const source = result.source || 'unknown';
+            if (!statsBySource[source]) statsBySource[source] = 0;
+            statsBySource[source]++;
+          });
           setSourceStats(statsBySource);
         }
       }
-    } catch (err) { setError(err.message); }
-    finally { clearInterval(progressInterval); setSearchProgress(100); setLoading(false); }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      clearInterval(progressInterval);
+      setSearchProgress(100);
+      setLoading(false);
+    }
   };
 
-  const formatPrice = (price) => { if (!price) return '-'; return `${(price / 1000000000).toFixed(1).replace('.', ',')} Tỷ`; };
-  const formatPricePerM2 = (price) => { if (!price) return '-'; return `${Math.round(price / 1000000)} tr/m²`; };
+  const formatPrice = (price) => {
+    if (!price) return '-';
+    return `${(price / 1000000000).toFixed(1).replace('.', ',')} Tỷ`;
+  };
+
+  const formatPricePerM2 = (price) => {
+    if (!price) return '-';
+    return `${Math.round(price / 1000000)} tr/m²`;
+  };
 
   const toggleKeyword = (keyword) => {
     const kwVn = keyword.vn;
-    setSearchParams(prev => ({ ...prev, keywords: prev.keywords.includes(kwVn) ? prev.keywords.filter(k => k !== kwVn) : [...prev.keywords, kwVn] }));
+    setSearchParams(prev => ({
+      ...prev,
+      keywords: prev.keywords.includes(kwVn) ? prev.keywords.filter(k => k !== kwVn) : [...prev.keywords, kwVn]
+    }));
   };
 
   const exportToExcel = () => {
@@ -478,18 +529,30 @@ export default function SearchPage() {
     const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url;
-    a.download = `ktrix_${new Date().toISOString().slice(0,10)}.csv`; a.click();
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ktrix_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
   };
 
   const saveCurrentSearch = async () => {
     const code = localStorage.getItem('ktrix_beta_code');
     if (!code) return alert('No beta code found');
+    const searchName = `${searchParams.city} - ${searchParams.propertyType}`;
     try {
-      const res = await fetch('/api/saved-searches', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code, name: `${searchParams.city} - ${searchParams.propertyType}`, params: searchParams }) });
+      const res = await fetch('/api/saved-searches', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, name: searchName, params: searchParams })
+      });
       const data = await res.json();
-      if (data.success) { setSavedSearches(prev => [data.search, ...prev]); alert(t.searchSaved); }
-    } catch (err) { console.error('[SAVED] Save error:', err); }
+      if (data.success) {
+        setSavedSearches(prev => [data.search, ...prev]);
+        alert(t.searchSaved);
+      }
+    } catch (err) {
+      console.error('[SAVED] Save error:', err);
+    }
   };
 
   const sortResults = (res) => {
@@ -532,7 +595,10 @@ export default function SearchPage() {
     return (
       <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden mb-6">
         <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-4 flex items-center justify-between cursor-pointer" onClick={() => setShowMarketStats(!showMarketStats)}>
-          <h3 className="text-white font-bold flex items-center gap-2">📊 {t.marketStats}<span className="bg-white/20 px-2 py-0.5 rounded-full text-sm">{data.length} districts</span></h3>
+          <h3 className="text-white font-bold flex items-center gap-2">
+            📊 {t.marketStats}
+            <span className="bg-white/20 px-2 py-0.5 rounded-full text-sm">{data.length} districts</span>
+          </h3>
           <button className="text-white/80 hover:text-white">{showMarketStats ? '▼' : '▶'}</button>
         </div>
         {showMarketStats && (
@@ -545,7 +611,9 @@ export default function SearchPage() {
                   <th className="text-center px-4 py-3 text-sm font-semibold text-gray-300">{t.avgPrice}</th>
                   <th className="text-center px-4 py-3 text-sm font-semibold text-gray-300">Min</th>
                   <th className="text-center px-4 py-3 text-sm font-semibold text-gray-300">Max</th>
-                  <th className="text-center px-4 py-3 text-sm font-semibold text-gray-300"><span className="flex items-center justify-center gap-1"><Database className="w-4 h-4" />{t.archive}</span></th>
+                  <th className="text-center px-4 py-3 text-sm font-semibold text-gray-300">
+                    <span className="flex items-center justify-center gap-1"><Database className="w-4 h-4" />{t.archive}</span>
+                  </th>
                   <th className="text-center px-4 py-3 text-sm font-semibold text-gray-300">{t.trend}</th>
                 </tr>
               </thead>
@@ -557,13 +625,19 @@ export default function SearchPage() {
                     <td className="px-4 py-4 text-center"><span className="font-semibold text-emerald-400">{formatPricePerM2(district.avgPricePerM2)}</span></td>
                     <td className="px-4 py-4 text-center text-sm text-gray-500">{formatPricePerM2(district.minPricePerM2)}</td>
                     <td className="px-4 py-4 text-center text-sm text-gray-500">{formatPricePerM2(district.maxPricePerM2)}</td>
-                    <td className="px-4 py-4 text-center">{district.archiveCount > 0 ? <span className="px-2 py-1 bg-gray-800 text-gray-300 rounded-full text-sm font-medium">{district.archiveCount}</span> : <span className="text-gray-600 text-sm">—</span>}</td>
+                    <td className="px-4 py-4 text-center">
+                      {district.archiveCount > 0 ? (
+                        <span className="px-2 py-1 bg-gray-800 text-gray-300 rounded-full text-sm font-medium">{district.archiveCount}</span>
+                      ) : <span className="text-gray-600 text-sm">—</span>}
+                    </td>
                     <td className="px-4 py-4 text-center">{getTrendIcon(district.trend, district.trendPercent)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            {data.length > 10 && <div className="px-6 py-3 bg-gray-800 text-center text-sm text-gray-500">+{data.length - 10} autres districts</div>}
+            {data.length > 10 && (
+              <div className="px-6 py-3 bg-gray-800 text-center text-sm text-gray-500">+{data.length - 10} autres districts</div>
+            )}
           </div>
         )}
       </div>
@@ -573,21 +647,25 @@ export default function SearchPage() {
   const submitFeedback = async () => {
     if (!feedbackMsg.trim()) return;
     const code = localStorage.getItem('ktrix_beta_code');
-    await fetch('/api/feedback', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ beta_code: code, message: feedbackMsg, reply_email: feedbackEmail }) });
+    await fetch('/api/feedback', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ beta_code: code, message: feedbackMsg, reply_email: feedbackEmail })
+    });
     setFeedbackSent(true);
-    setTimeout(() => { setShowFeedback(false); setFeedbackSent(false); setFeedbackMsg(''); setFeedbackEmail(''); }, 2000);
+    setTimeout(() => {
+      setShowFeedback(false);
+      setFeedbackSent(false);
+      setFeedbackMsg('');
+      setFeedbackEmail('');
+    }, 2000);
   };
 
-  // ============================================================
-  // FIX SÉCURITÉ - GUARD: bloque l'affichage tant que non authentifié
-  // ============================================================
+  // PATCH 3 — Guard authReady : spinner pendant l'init auth
   if (!authReady) {
     return (
       <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-gray-500 text-sm">Vérification en cours...</p>
-        </div>
+        <Loader className="w-8 h-8 animate-spin text-blue-400" />
       </div>
     );
   }
@@ -605,31 +683,31 @@ export default function SearchPage() {
               <img src="https://raw.githubusercontent.com/f8902621-byte/traxhome-mvp/main/Ktrixlogo.png" alt="K Trix" className="w-20 h-20 object-contain" />
               <span className="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded-full font-medium border border-emerald-500/30">MVP</span>
             </div>
-            <button onClick={() => router.push('/monitoring')} className="px-3 py-1 bg-gray-800 text-gray-400 rounded-lg text-sm hover:bg-gray-700 border border-gray-700" title="Monitoring">\?\?</button>
+            <button onClick={() => router.push('/monitoring')} className="px-3 py-1 bg-gray-800 text-gray-400 rounded-lg text-sm hover:bg-gray-700 border border-gray-700" title="Monitoring">🔍</button>
             <button onClick={() => setShowSearch(!showSearch)} className="px-3 md:px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-lg font-medium flex items-center gap-2 shadow-lg shadow-blue-500/20">
               <Search className="w-4 h-4" />
               <span className="hidden md:inline">{t.searchParams}</span>
             </button>
             <button onClick={() => setShowSavedSearches(!showSavedSearches)} className="px-3 md:px-4 py-2 bg-amber-500/10 text-amber-400 rounded-lg font-medium border border-amber-500/20">
-              \⭐ <span className="hidden md:inline">{t.savedSearches}</span> ({savedSearches.length})
+              ⭐ <span className="hidden md:inline">{t.savedSearches}</span> ({savedSearches.length})
             </button>
           </div>
           <div className="flex items-center gap-4">
             <select value={language} onChange={(e) => setLanguage(e.target.value)} className="px-3 py-2 border border-gray-700 rounded-lg bg-gray-900 text-gray-300">
-              <option value="vn">\?\?\?\? VN</option>
-              <option value="en">\?\?\?\? EN</option>
-              <option value="fr">\?\?\?\? FR</option>
+              <option value="vn">🇻🇳 VN</option>
+              <option value="en">🇬🇧 EN</option>
+              <option value="fr">🇫🇷 FR</option>
             </select>
             {testerName && (
-              <span style={{fontSize: 13, color: '#00d4ff', fontWeight: 600}}>\?\? {testerName}</span>
+              <span style={{fontSize: 13, color: '#00d4ff', fontWeight: 600}}>👤 {testerName}</span>
             )}
             {daysRemaining === null && testerName && (
-              <div style={{padding: '6px 12px', borderRadius: 20, fontSize: 12, fontWeight: 700, background: 'rgba(0,212,255,0.10)', border: '1px solid rgba(0,212,255,0.25)', color: '#00d4ff'}}>\∞ Admin</div>
+              <div style={{padding: '6px 12px', borderRadius: 20, fontSize: 12, fontWeight: 700, background: 'rgba(0,212,255,0.10)', border: '1px solid rgba(0,212,255,0.25)', color: '#00d4ff'}}>∞ Admin</div>
             )}
             {daysRemaining !== null && (
               <div style={{padding: '6px 12px', borderRadius: 20, fontSize: 12, fontWeight: 700, background: daysRemaining <= 3 ? 'rgba(255,51,102,0.15)' : daysRemaining <= 7 ? 'rgba(255,140,0,0.15)' : 'rgba(0,212,255,0.10)', border: `1px solid ${daysRemaining <= 3 ? 'rgba(255,51,102,0.4)' : daysRemaining <= 7 ? 'rgba(255,140,0,0.4)' : 'rgba(0,212,255,0.25)'}`, color: daysRemaining <= 3 ? '#ff3366' : daysRemaining <= 7 ? '#ff8c00' : '#00d4ff'}}>
-                {daysRemaining <= 3 ? '\?\?' : daysRemaining <= 7 ? '\⏳' : '\✅'}
-                {language === 'vn' ? ` C\òn ${daysRemaining} ng\ày` : language === 'fr' ? ` ${daysRemaining}j restants` : ` ${daysRemaining}d left`}
+                {daysRemaining <= 3 ? '🚨' : daysRemaining <= 7 ? '⏳' : '✅'}
+                {language === 'vn' ? ` Còn ${daysRemaining} ngày` : language === 'fr' ? ` ${daysRemaining}j restants` : ` ${daysRemaining}d left`}
               </div>
             )}
           </div>
@@ -640,7 +718,7 @@ export default function SearchPage() {
       {showSavedSearches && (
         <div className="max-w-6xl mx-auto px-4 py-6">
           <div className="bg-gray-900 rounded-xl border border-gray-800 p-6">
-            <h2 className="text-xl font-bold text-white mb-4">\⭐ {t.savedSearches}</h2>
+            <h2 className="text-xl font-bold text-white mb-4">⭐ {t.savedSearches}</h2>
             {savedSearches.length === 0 ? (
               <p className="text-gray-500">{t.noSavedSearches}</p>
             ) : (
@@ -660,7 +738,7 @@ export default function SearchPage() {
                           await fetch('/api/saved-searches', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: search.id, code }) });
                           setSavedSearches(prev => prev.filter(s => s.id !== search.id));
                         } catch (err) { console.error('[SAVED] Delete error:', err); }
-                      }} className="px-3 py-2 bg-red-500/10 text-red-400 rounded-lg border border-red-500/20 hover:bg-red-500/20">\✕</button>
+                      }} className="px-3 py-2 bg-red-500/10 text-red-400 rounded-lg border border-red-500/20 hover:bg-red-500/20">✕</button>
                     </div>
                   </div>
                 ))}
@@ -677,18 +755,18 @@ export default function SearchPage() {
         <div className="max-w-6xl mx-auto px-4 py-6">
           <div className="bg-gray-900 rounded-xl border border-gray-800 p-6 space-y-6" onKeyDown={(e) => { if (e.key === 'Enter' && !loading) handleSearch(); }}>
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-2">\?\? {t.sources}</label>
+              <label className="block text-sm font-medium text-gray-400 mb-2">🌐 {t.sources}</label>
               <div className="flex flex-wrap gap-2">
                 {availableSources.map((source) => (
                   <button key={source.id} type="button" onClick={() => { if (!source.active) return; const newSources = searchParams.sources.includes(source.id) ? searchParams.sources.filter(s => s !== source.id) : [...searchParams.sources, source.id]; setSearchParams({ ...searchParams, sources: newSources }); }} disabled={!source.active} className={`px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 ${!source.active ? 'bg-gray-800 text-gray-600 cursor-not-allowed' : searchParams.sources.includes(source.id) ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700'}`}>
-                    {searchParams.sources.includes(source.id) && <span>\✓</span>}
+                    {searchParams.sources.includes(source.id) && <span>✓</span>}
                     {source.name} {!source.active && `(${t.comingSoon})`}
                   </button>
                 ))}
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-2">\?\? {t.maxResults}</label>
+              <label className="block text-sm font-medium text-gray-400 mb-2">📊 {t.maxResults}</label>
               <div className="flex gap-2">
                 {[50, 100, 200, 300].map((num) => (
                   <button key={num} type="button" onClick={() => setSearchParams({ ...searchParams, maxResults: num })} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${searchParams.maxResults === num ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700'}`}>{num}</button>
@@ -696,8 +774,8 @@ export default function SearchPage() {
               </div>
             </div>
             <div className="flex gap-4">
-              <button onClick={() => setMode('buy')} className={`px-6 py-3 rounded-lg font-medium transition ${mode === 'buy' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'bg-gray-800 text-gray-300 border border-gray-700'}`}>\?\? {t.buy}</button>
-              <button onClick={() => router.push('/sell')} className="px-6 py-3 rounded-lg font-medium bg-gray-800 text-gray-300 border border-gray-700 hover:bg-orange-500/20 hover:text-orange-400 hover:border-orange-500/30 transition">\?\? {t.sell}</button>
+              <button onClick={() => setMode('buy')} className={`px-6 py-3 rounded-lg font-medium transition ${mode === 'buy' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'bg-gray-800 text-gray-300 border border-gray-700'}`}>🏠 {t.buy}</button>
+              <button onClick={() => router.push('/sell')} className="px-6 py-3 rounded-lg font-medium bg-gray-800 text-gray-300 border border-gray-700 hover:bg-orange-500/20 hover:text-orange-400 hover:border-orange-500/30 transition">💰 {t.sell}</button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
@@ -718,18 +796,18 @@ export default function SearchPage() {
                 <label className="block text-sm font-bold text-gray-300 mb-2">{t.ward}</label>
                 <select value={searchParams.ward} onChange={(e) => setSearchParams({...searchParams, ward: e.target.value})} className="w-full px-4 py-2.5 border border-gray-700 rounded-lg bg-gray-800 text-gray-200" disabled={!searchParams.district}>
                   <option value="">{t.wardAll || 'All'}</option>
-                  {currentWards.map((w, i) => <option key={i} value={w}>{premiumWards[w] ? `\⭐ ${w}` : w}</option>)}
+                  {currentWards.map((w, i) => <option key={i} value={w}>{premiumWards[w] ? `⭐ ${w}` : w}</option>)}
                 </select>
               </div>
               <div>
                 <label className="block text-sm font-bold text-gray-300 mb-2">{t.propertyType} <span className="text-orange-400">*</span></label>
                 <select value={searchParams.propertyType} onChange={(e) => setSearchParams({...searchParams, propertyType: e.target.value})} className="w-full px-4 py-2.5 border border-gray-700 rounded-lg bg-gray-800 text-gray-200">
                   <option value="">{t.selectType}</option>
-                  {getPropertyTypesByCategory().all.map((pt, i) => <option key={`all-${i}`} value={pt.vn}>\?\? {pt[language]}</option>)}
-                  <optgroup label="\?\? Apartments">{getPropertyTypesByCategory().apartment.map((pt, i) => <option key={`apt-${i}`} value={pt.vn}>{pt[language]}</option>)}</optgroup>
-                  <optgroup label="\?\? Houses">{getPropertyTypesByCategory().house.map((pt, i) => <option key={`house-${i}`} value={pt.vn}>{pt[language]}</option>)}</optgroup>
-                  <optgroup label="\?\? Commercial">{getPropertyTypesByCategory().commercial.map((pt, i) => <option key={`comm-${i}`} value={pt.vn}>{pt[language]}</option>)}</optgroup>
-                  <optgroup label="\?\? Land">{getPropertyTypesByCategory().land.map((pt, i) => <option key={`land-${i}`} value={pt.vn}>{pt[language]}</option>)}</optgroup>
+                  {getPropertyTypesByCategory().all.map((pt, i) => <option key={`all-${i}`} value={pt.vn}>📋 {pt[language]}</option>)}
+                  <optgroup label="🏢 Apartments">{getPropertyTypesByCategory().apartment.map((pt, i) => <option key={`apt-${i}`} value={pt.vn}>{pt[language]}</option>)}</optgroup>
+                  <optgroup label="🏠 Houses">{getPropertyTypesByCategory().house.map((pt, i) => <option key={`house-${i}`} value={pt.vn}>{pt[language]}</option>)}</optgroup>
+                  <optgroup label="🏪 Commercial">{getPropertyTypesByCategory().commercial.map((pt, i) => <option key={`comm-${i}`} value={pt.vn}>{pt[language]}</option>)}</optgroup>
+                  <optgroup label="🌳 Land">{getPropertyTypesByCategory().land.map((pt, i) => <option key={`land-${i}`} value={pt.vn}>{pt[language]}</option>)}</optgroup>
                 </select>
               </div>
             </div>
@@ -738,14 +816,14 @@ export default function SearchPage() {
                 <label className="block text-sm font-bold text-gray-300 mb-2">{t.priceMin}</label>
                 <div className="flex items-center gap-2">
                   <input type="number" step="0.1" min="0" max="500" value={searchParams.priceMin} onChange={(e) => setSearchParams({...searchParams, priceMin: e.target.value})} className="w-24 px-3 py-2.5 border border-gray-700 rounded-lg bg-gray-800 text-right text-gray-200" placeholder="0" />
-                  <span className="text-gray-500 font-medium">T\ỷ</span>
+                  <span className="text-gray-500 font-medium">Tỷ</span>
                 </div>
               </div>
               <div>
                 <label className="block text-sm font-bold text-gray-300 mb-2">{t.priceMax} <span className="text-orange-400">*</span></label>
                 <div className="flex items-center gap-2">
                   <input type="number" step="0.1" min="0" max="500" value={searchParams.priceMax} onChange={(e) => setSearchParams({...searchParams, priceMax: e.target.value})} className="w-24 px-3 py-2.5 border border-gray-700 rounded-lg bg-gray-800 text-right text-gray-200" placeholder="10" />
-                  <span className="text-gray-500 font-medium">T\ỷ</span>
+                  <span className="text-gray-500 font-medium">Tỷ</span>
                 </div>
               </div>
               <div>
@@ -762,7 +840,7 @@ export default function SearchPage() {
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-bold text-gray-300 mb-2">\?\? {t.bathrooms}</label>
+                <label className="block text-sm font-bold text-gray-300 mb-2">🚿 {t.bathrooms}</label>
                 <input type="number" value={searchParams.bathrooms} onChange={(e) => setSearchParams({...searchParams, bathrooms: e.target.value})} className="w-full px-4 py-2.5 border border-gray-700 rounded-lg bg-gray-800 text-gray-200" placeholder="1" />
               </div>
               <div>
@@ -781,31 +859,31 @@ export default function SearchPage() {
               <div className="flex items-end mt-4">
                 <label className="flex items-center gap-2 cursor-pointer pb-2">
                   <input type="checkbox" checked={searchParams.hasParking} onChange={(e) => setSearchParams({...searchParams, hasParking: e.target.checked})} className="w-5 h-5 rounded bg-gray-800 border-gray-600 text-blue-500" />
-                  <span className="text-sm font-medium text-gray-300">\?\? {t.hasParking}</span>
+                  <span className="text-sm font-medium text-gray-300">🚗 {t.hasParking}</span>
                 </label>
               </div>
               <div className="flex items-end">
                 <label className="flex items-center gap-2 cursor-pointer pb-2">
                   <input type="checkbox" checked={searchParams.hasPool} onChange={(e) => setSearchParams({...searchParams, hasPool: e.target.checked})} className="w-5 h-5 rounded bg-gray-800 border-gray-600 text-blue-500" />
-                  <span className="text-sm font-medium text-gray-300">\?\? {t.hasPool}</span>
+                  <span className="text-sm font-medium text-gray-300">🏊 {t.hasPool}</span>
                 </label>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2">\?\?\️ {t.streetWidth}</label>
+                <label className="block text-sm font-medium text-gray-400 mb-2">🛣️ {t.streetWidth}</label>
                 <input type="number" value={searchParams.streetWidthMin} onChange={(e) => setSearchParams({...searchParams, streetWidthMin: e.target.value})} placeholder="4" className="w-full px-3 py-2.5 border border-gray-700 rounded-lg bg-gray-800 text-gray-200" />
               </div>
             </div>
             <div>
-              <label className="block text-sm font-bold text-orange-400 mb-1">\?\? {t.keywords}</label>
+              <label className="block text-sm font-bold text-orange-400 mb-1">🔥 {t.keywords}</label>
               <p className="text-xs text-gray-500 mb-3">{t.keywordsDesc}</p>
               <div className="bg-orange-500/10 border border-orange-500/20 rounded-lg p-4">
                 <div className="flex items-center justify-between mb-3 pb-3 border-b border-orange-500/20">
                   <button type="button" onClick={() => { const allKeywordsVn = urgentKeywords.map(kw => kw.vn); const allSelected = allKeywordsVn.every(kw => searchParams.keywords.includes(kw)); setSearchParams({ ...searchParams, keywords: allSelected ? [] : allKeywordsVn }); }} className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 font-bold text-sm shadow">
-                    {urgentKeywords.map(kw => kw.vn).every(kw => searchParams.keywords.includes(kw)) ? (language === 'vn' ? '\❌ B\ỏ ch\ọn t\ất c\ả' : language === 'fr' ? '\❌ Tout d\és\électionner' : '\❌ Deselect All') : (language === 'vn' ? '\✅ Ch\ọn t\ất c\ả' : language === 'fr' ? '\✅ Tout s\électionner' : '\✅ Select All')}
+                    {urgentKeywords.map(kw => kw.vn).every(kw => searchParams.keywords.includes(kw)) ? (language === 'vn' ? '❌ Bỏ chọn tất cả' : language === 'fr' ? '❌ Tout désélectionner' : '❌ Deselect All') : (language === 'vn' ? '✅ Chọn tất cả' : language === 'fr' ? '✅ Tout sélectionner' : '✅ Select All')}
                   </button>
                   <label className="flex items-center gap-2 cursor-pointer bg-gray-800 px-3 py-2 rounded-lg border border-orange-500/20">
                     <input type="checkbox" checked={searchParams.keywordsOnly || false} onChange={(e) => setSearchParams({...searchParams, keywordsOnly: e.target.checked})} className="w-4 h-4 text-orange-500 rounded bg-gray-700 border-gray-600" />
-                    <span className="text-sm font-medium text-orange-400">{language === 'vn' ? '\?\? Ch\ỉ k\ết qu\ả c\ó t\ừ kh\óa' : language === 'fr' ? '\?\? Uniquement avec mots-cl\és' : '\?\? Only with keywords'}</span>
+                    <span className="text-sm font-medium text-orange-400">{language === 'vn' ? '🎯 Chỉ kết quả có từ khóa' : language === 'fr' ? '🎯 Uniquement avec mots-clés' : '🎯 Only with keywords'}</span>
                   </label>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -821,9 +899,9 @@ export default function SearchPage() {
               </div>
             )}
             <div className="flex justify-between items-center pt-4 border-t border-gray-800 bg-gray-800/50 -mx-6 -mb-6 px-6 py-4 rounded-b-xl">
-              <div><p className="text-sm font-semibold text-amber-400">\⚠\️ {t.required}</p></div>
+              <div><p className="text-sm font-semibold text-amber-400">⚠️ {t.required}</p></div>
               <div className="flex gap-2">
-                <button onClick={saveCurrentSearch} disabled={!searchParams.city || !searchParams.propertyType || !searchParams.priceMax} className="px-4 py-3 bg-gray-700 text-gray-300 rounded-lg font-medium disabled:opacity-50 border border-gray-600">\⭐ {t.saveSearch}</button>
+                <button onClick={saveCurrentSearch} disabled={!searchParams.city || !searchParams.propertyType || !searchParams.priceMax} className="px-4 py-3 bg-gray-700 text-gray-300 rounded-lg font-medium disabled:opacity-50 border border-gray-600">⭐ {t.saveSearch}</button>
                 <button onClick={handleSearch} disabled={loading} className="px-8 py-3 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-lg font-bold flex items-center gap-2 shadow-lg shadow-blue-500/20 disabled:opacity-50">
                   {loading ? <Loader className="w-6 h-6 animate-spin" /> : <Search className="w-6 h-6" />}
                   {loading ? t.loading : t.search}
@@ -842,7 +920,7 @@ export default function SearchPage() {
               <div className="flex items-start gap-3">
                 <Info className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" />
                 <div className="flex-1">
-                  <p className="text-sm font-bold text-blue-300 mb-2">\?\? {t.searchCriteria}</p>
+                  <p className="text-sm font-bold text-blue-300 mb-2">📊 {t.searchCriteria}</p>
                   <div className="flex flex-wrap gap-2">
                     {getSearchCriteriaSummary().map((criterion, i) => (
                       <span key={i} className="px-3 py-1 bg-gray-800 text-blue-300 rounded-full text-xs font-medium border border-blue-500/20">{criterion}</span>
@@ -855,22 +933,22 @@ export default function SearchPage() {
           )}
           {alonhadatLoading && (
             <div style={{padding: '12px 20px', background: 'rgba(0,212,255,0.1)', border: '1px solid rgba(0,212,255,0.3)', borderRadius: 12, margin: '8px 0', textAlign: 'center'}}>
-              <span style={{color: '#00d4ff', fontSize: 14}}>\⏳ {language === 'vn' ? '\Đang t\ìm th\êm k\ết qu\ả t\ừ Alonhadat...' : language === 'fr' ? 'Recherche Alonhadat en cours...' : 'Searching Alonhadat...'}</span>
+              <span style={{color: '#00d4ff', fontSize: 14}}>⏳ {language === 'vn' ? 'Đang tìm thêm kết quả từ Alonhadat...' : language === 'fr' ? 'Recherche Alonhadat en cours...' : 'Searching Alonhadat...'}</span>
             </div>
           )}
           {Object.keys(sourceStats).length > 0 && (
             <div className="bg-gray-900 rounded-xl border border-gray-800 p-4 mb-4">
-              <p className="text-sm font-bold text-gray-300 mb-3">\?\? {t.sourceResults}</p>
+              <p className="text-sm font-bold text-gray-300 mb-3">🌐 {t.sourceResults}</p>
               <div className="grid grid-cols-3 gap-3">
                 {Object.entries(sourceStats).map(([source, count]) => (
                   <button key={source} onClick={() => setFilterSource(filterSource === source ? null : source)} className={`p-3 rounded-lg text-center cursor-pointer transition-all border ${filterSource === source ? 'ring-2 ring-offset-2 ring-offset-gray-900 ring-blue-500 scale-105' : 'hover:scale-105'} ${source === 'chotot.com' ? 'bg-emerald-500/10 border-emerald-500/20' : source === 'alonhadat.com.vn' ? 'bg-purple-500/10 border-purple-500/20' : 'bg-gray-800 border-gray-700'}`}>
                     <p className={`text-2xl font-bold ${source === 'chotot.com' ? 'text-emerald-400' : source === 'alonhadat.com.vn' ? 'text-purple-400' : 'text-gray-300'}`}>{count}</p>
                     <p className="text-xs text-gray-500">{source}</p>
-                    {filterSource === source && <p className="text-xs text-blue-400 mt-1 font-medium">\✓ Filtr\é</p>}
+                    {filterSource === source && <p className="text-xs text-blue-400 mt-1 font-medium">✓ Filtré</p>}
                   </button>
                 ))}
                 {filterSource && (
-                  <button onClick={() => setFilterSource(null)} className="mt-3 w-full text-sm text-gray-500 hover:text-gray-300 py-2 bg-gray-800 rounded-lg border border-gray-700">\✕ Afficher toutes les sources</button>
+                  <button onClick={() => setFilterSource(null)} className="mt-3 w-full text-sm text-gray-500 hover:text-gray-300 py-2 bg-gray-800 rounded-lg border border-gray-700">✕ Afficher toutes les sources</button>
                 )}
               </div>
             </div>
@@ -880,14 +958,14 @@ export default function SearchPage() {
             <div className="mb-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl flex items-center justify-between shadow-lg animate-pulse">
               <div className="flex items-center gap-3">
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                <span className="font-medium">\?\? Recherche Batdongsan en cours... {bdsProgress}%</span>
-                {bdsCount > 0 && <span className="bg-white/20 px-2 py-1 rounded-full text-sm">{bdsCount} trouv\ées</span>}
+                <span className="font-medium">🔄 Recherche Batdongsan en cours... {bdsProgress}%</span>
+                {bdsCount > 0 && <span className="bg-white/20 px-2 py-1 rounded-full text-sm">{bdsCount} trouvées</span>}
               </div>
             </div>
           )}
           {bdsStatus === 'completed' && bdsCount > 0 && (
             <div className="mb-4 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white px-6 py-3 rounded-xl flex items-center gap-3 shadow-lg">
-              <span>\✅</span><span className="font-medium">{bdsCount} annonces Batdongsan ajout\ées !</span>
+              <span>✅</span><span className="font-medium">{bdsCount} annonces Batdongsan ajoutées !</span>
             </div>
           )}
           {loading ? (
@@ -932,20 +1010,20 @@ export default function SearchPage() {
                     <div className="relative h-48 bg-gray-800">
                       <img src={prop.imageUrl} alt={prop.title} className="w-full h-full object-cover" />
                       {prop.isNew && <div className="absolute top-2 left-2 bg-cyan-500/90 text-white px-3 py-1 rounded-full text-xs font-bold animate-pulse">{t.newListing}</div>}
-                      {prop.urgentKeywords && prop.urgentKeywords.length > 0 && <div className="absolute top-2 right-2 bg-orange-500 text-white px-3 py-1 rounded-full text-xs font-bold animate-pulse">\?\? {prop.urgentKeywords[0]}</div>}
-                      {prop.legalStatus && <div className="absolute bottom-2 left-2 bg-blue-500/80 text-white px-2 py-1 rounded text-xs font-bold">\?\? {prop.legalStatus}</div>}
+                      {prop.urgentKeywords && prop.urgentKeywords.length > 0 && <div className="absolute top-2 right-2 bg-orange-500 text-white px-3 py-1 rounded-full text-xs font-bold animate-pulse">🔥 {prop.urgentKeywords[0]}</div>}
+                      {prop.legalStatus && <div className="absolute bottom-2 left-2 bg-blue-500/80 text-white px-2 py-1 rounded text-xs font-bold">📋 {prop.legalStatus}</div>}
                       <div className="absolute bottom-2 right-2 bg-gray-900/80 text-gray-300 px-2 py-1 rounded text-xs font-bold backdrop-blur-sm">{prop.source}</div>
                     </div>
                     <div className="p-4">
                       <h3 className="font-bold text-lg mb-2 line-clamp-2 text-white">{prop.title}</h3>
                       {prop.matchedKeywords && prop.matchedKeywords.length > 0 && (
                         <div className="flex flex-wrap gap-1 mb-2">
-                          {prop.matchedKeywords.slice(0, 3).map((kw, idx) => <span key={idx} className="px-2 py-0.5 text-xs font-bold bg-orange-500/20 text-orange-400 rounded-full border border-orange-500/30">\?\? {kw}</span>)}
+                          {prop.matchedKeywords.slice(0, 3).map((kw, idx) => <span key={idx} className="px-2 py-0.5 text-xs font-bold bg-orange-500/20 text-orange-400 rounded-full border border-orange-500/30">🔥 {kw}</span>)}
                         </div>
                       )}
                       <div className="flex items-baseline gap-2 mb-2">
                         <p className="text-2xl font-bold text-blue-400">{formatPrice(prop.price)}</p>
-                        {prop.pricePerSqm && prop.pricePerSqm > 0 && <p className="text-sm text-gray-500">{Math.round(prop.pricePerSqm / 1000000)} tr/m\²</p>}
+                        {prop.pricePerSqm && prop.pricePerSqm > 0 && <p className="text-sm text-gray-500">{Math.round(prop.pricePerSqm / 1000000)} tr/m²</p>}
                       </div>
                       <div className="mb-3">
                         <div className="flex justify-between mb-1">
@@ -957,14 +1035,14 @@ export default function SearchPage() {
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-2 text-sm text-gray-400 mb-3">
-                        <div>\?\? {(() => { if (prop.area || prop.floorArea) return `${Math.round((prop.area || prop.floorArea) * 10) / 10}m\²`; if (prop.nlpAnalysis && prop.nlpAnalysis.extractedArea) return `${prop.nlpAnalysis.extractedArea}m\²`; return '?m\²'; })()}</div>
-                        <div>\?\?\️ {(() => { if (prop.bedrooms) return `${prop.bedrooms} ch.`; if (prop.nlpAnalysis && prop.nlpAnalysis.extractedBedrooms) return `${prop.nlpAnalysis.extractedBedrooms} ch.`; return '? ch.'; })()}</div>
+                        <div>📐 {(() => { if (prop.area || prop.floorArea) return `${Math.round((prop.area || prop.floorArea) * 10) / 10}m²`; if (prop.nlpAnalysis && prop.nlpAnalysis.extractedArea) return `${prop.nlpAnalysis.extractedArea}m²`; return '?m²'; })()}</div>
+                        <div>🛏️ {(() => { if (prop.bedrooms) return `${prop.bedrooms} ch.`; if (prop.nlpAnalysis && prop.nlpAnalysis.extractedBedrooms) return `${prop.nlpAnalysis.extractedBedrooms} ch.`; return '? ch.'; })()}</div>
                       </div>
                       <div className="flex items-start gap-2 text-sm text-gray-400 mb-3 cursor-pointer hover:text-blue-400 bg-gray-800 p-2 rounded-lg border border-gray-700" onClick={() => { const lat = prop.latitude; const lng = prop.longitude; if (lat && lng) { window.open(`https://www.google.com/maps?q=${lat},${lng}&z=17`, '_blank'); } else { const parts = [prop.address, prop.ward, prop.district, prop.city].filter(Boolean); window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(parts.join(', '))}&zoom=17`, '_blank'); }}}>
                         <MapPin className="w-4 h-4 mt-0.5 text-blue-400 flex-shrink-0" />
                         <span className="line-clamp-2">{prop.address || `${prop.district}${prop.district ? ', ' : ''}${prop.city}`}</span>
                       </div>
-                      {prop.postedOn && <div className="text-xs text-gray-600 mb-2">\?\? {prop.postedOn}</div>}
+                      {prop.postedOn && <div className="text-xs text-gray-600 mb-2">📅 {prop.postedOn}</div>}
                       <a href={prop.url} onClick={(e) => { e.preventDefault(); setSelectedProperty(prop); }} onAuxClick={(e) => { if (e.button === 1) window.open(prop.url, '_blank'); }} className="block w-full px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-lg hover:from-blue-500 hover:to-cyan-400 font-medium text-center cursor-pointer shadow-lg shadow-blue-500/20">{t.viewDetails}</a>
                     </div>
                   </div>
@@ -986,15 +1064,15 @@ export default function SearchPage() {
           <div className="bg-gray-900 rounded-2xl max-w-4xl w-full max-h-[92vh] overflow-y-auto border border-gray-800" onClick={(e) => e.stopPropagation()}>
             <div className="sticky top-0 bg-gray-900/95 backdrop-blur border-b border-gray-800 p-4 flex justify-between items-center z-10 rounded-t-2xl">
               <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                \?\? {language === 'vn' ? 'B\áo c\áo AI' : language === 'fr' ? 'Rapport IA' : 'AI Report'}
+                🤖 {language === 'vn' ? 'Báo cáo AI' : language === 'fr' ? 'Rapport IA' : 'AI Report'}
                 {selectedProperty.negotiationLevel && (
                   <span className={`px-3 py-1 rounded-full text-xs md:text-sm font-bold ${selectedProperty.negotiationLevel === 'excellent' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : selectedProperty.negotiationLevel === 'good' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : selectedProperty.negotiationLevel === 'moderate' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'bg-gray-800 text-gray-400 border border-gray-700'}`}>
-                    {selectedProperty.negotiationLevel === 'excellent' ? '\?\? ' : selectedProperty.negotiationLevel === 'good' ? '\?\? ' : selectedProperty.negotiationLevel === 'moderate' ? '\➡\️ ' : '\⬇\️ '}
-                    {language === 'vn' ? (selectedProperty.negotiationLevel === 'excellent' ? 'C\ơ h\ội t\ốt' : selectedProperty.negotiationLevel === 'good' ? 'Kh\á t\ốt' : selectedProperty.negotiationLevel === 'moderate' ? 'Trung b\ình' : 'Th\ấp') : language === 'fr' ? (selectedProperty.negotiationLevel === 'excellent' ? 'Excellente opportunit\é' : selectedProperty.negotiationLevel === 'good' ? 'Bonne opportunit\é' : selectedProperty.negotiationLevel === 'moderate' ? 'Opportunit\é moyenne' : 'Faible') : (selectedProperty.negotiationLevel === 'excellent' ? 'Excellent opportunity' : selectedProperty.negotiationLevel === 'good' ? 'Good opportunity' : selectedProperty.negotiationLevel === 'moderate' ? 'Average' : 'Low')}
+                    {selectedProperty.negotiationLevel === 'excellent' ? '🔥 ' : selectedProperty.negotiationLevel === 'good' ? '👍 ' : selectedProperty.negotiationLevel === 'moderate' ? '➡️ ' : '⬇️ '}
+                    {language === 'vn' ? (selectedProperty.negotiationLevel === 'excellent' ? 'Cơ hội tốt' : selectedProperty.negotiationLevel === 'good' ? 'Khá tốt' : selectedProperty.negotiationLevel === 'moderate' ? 'Trung bình' : 'Thấp') : language === 'fr' ? (selectedProperty.negotiationLevel === 'excellent' ? 'Excellente opportunité' : selectedProperty.negotiationLevel === 'good' ? 'Bonne opportunité' : selectedProperty.negotiationLevel === 'moderate' ? 'Opportunité moyenne' : 'Faible') : (selectedProperty.negotiationLevel === 'excellent' ? 'Excellent opportunity' : selectedProperty.negotiationLevel === 'good' ? 'Good opportunity' : selectedProperty.negotiationLevel === 'moderate' ? 'Average' : 'Low')}
                   </span>
                 )}
               </h2>
-              <button onClick={() => setSelectedProperty(null)} className="p-2 hover:bg-gray-800 rounded-full text-xl text-gray-400 hover:text-white">\✕</button>
+              <button onClick={() => setSelectedProperty(null)} className="p-2 hover:bg-gray-800 rounded-full text-xl text-gray-400 hover:text-white">✕</button>
             </div>
             <div className="p-6 space-y-6">
               {selectedProperty.imageUrl && (
@@ -1006,21 +1084,21 @@ export default function SearchPage() {
                 <h3 className="text-xl font-bold text-white mb-1">{selectedProperty.title}</h3>
                 {selectedProperty.matchedKeywords && selectedProperty.matchedKeywords.length > 0 && (
                   <div className="flex flex-wrap gap-1 mb-2">
-                    {selectedProperty.matchedKeywords.map((kw, idx) => <span key={idx} className="px-2 py-0.5 text-xs font-bold bg-orange-500/20 text-orange-400 rounded-full border border-orange-500/30">\?\? {kw}</span>)}
+                    {selectedProperty.matchedKeywords.map((kw, idx) => <span key={idx} className="px-2 py-0.5 text-xs font-bold bg-orange-500/20 text-orange-400 rounded-full border border-orange-500/30">🔥 {kw}</span>)}
                   </div>
                 )}
                 <div className="flex items-baseline gap-3">
                   <span className="text-3xl font-bold text-blue-400">{formatPrice(selectedProperty.price)}</span>
-                  {selectedProperty.area > 0 && <span className="text-base text-gray-500">({Math.round(selectedProperty.price / selectedProperty.area / 1000000)} tr/m\²)</span>}
+                  {selectedProperty.area > 0 && <span className="text-base text-gray-500">({Math.round(selectedProperty.price / selectedProperty.area / 1000000)} tr/m²)</span>}
                 </div>
               </div>
               <style dangerouslySetInnerHTML={{__html: NEON_CSS}} />
               <div style={{margin: '12px 0'}}>
-                <NeedleGauge score={selectedProperty.score || 0} label={language === 'vn' ? '\?\? \Đi\ểm \đ\àm ph\án' : language === 'fr' ? '\?\? Score de n\égociation' : '\?\? Negotiation Score'} />
+                <NeedleGauge score={selectedProperty.score || 0} label={language === 'vn' ? '🎯 Điểm đàm phán' : language === 'fr' ? '🎯 Score de négociation' : '🎯 Negotiation Score'} />
               </div>
               {selectedProperty.pricePosition && (
                 <div style={{margin: '12px 0'}}>
-                  <PriceDistribution propertyPrice={Math.round(selectedProperty.pricePosition.itemPricePerM2 / 1000000)} min={Math.round(selectedProperty.pricePosition.districtMin / 1000000)} median={Math.round(selectedProperty.pricePosition.districtMedian / 1000000)} max={Math.round(selectedProperty.pricePosition.districtMax / 1000000)} count={selectedProperty.pricePosition.districtCount} title={language === 'vn' ? '\?\? Ph\ân t\ích gi\á' : language === 'fr' ? '\?\? Analyse Prix vs March\é' : '\?\? Price vs Market'} />
+                  <PriceDistribution propertyPrice={Math.round(selectedProperty.pricePosition.itemPricePerM2 / 1000000)} min={Math.round(selectedProperty.pricePosition.districtMin / 1000000)} median={Math.round(selectedProperty.pricePosition.districtMedian / 1000000)} max={Math.round(selectedProperty.pricePosition.districtMax / 1000000)} count={selectedProperty.pricePosition.districtCount} title={language === 'vn' ? '📊 Phân tích giá' : language === 'fr' ? '📊 Analyse Prix vs Marché' : '📊 Price vs Market'} />
                 </div>
               )}
               {!selectedProperty.pricePosition && (() => {
@@ -1029,22 +1107,22 @@ export default function SearchPage() {
                   const nlp = selectedProperty.nlpAnalysis || {};
                   if (nlp.extractedArea) { area = nlp.extractedArea; } else {
                     const text = (selectedProperty.title || '') + ' ' + (selectedProperty.description || '');
-                    const dimMatch = text.match(/(\\\\d+[.,]?\\\\d*)\\\\s*x\\\\s*(\\\\d+[.,]?\\\\d*)/i);
+                    const dimMatch = text.match(/(\d+[.,]?\d*)\s*x\s*(\d+[.,]?\d*)/i);
                     if (dimMatch) area = parseFloat(dimMatch[1].replace(',', '.')) * parseFloat(dimMatch[2].replace(',', '.'));
-                    const areaMatch = text.match(/(\\\\d+[.,]?\\\\d*)\\\\s*m2/i);
+                    const areaMatch = text.match(/(\d+[.,]?\d*)\s*m2/i);
                     if (!area && areaMatch) area = parseFloat(areaMatch[1].replace(',', '.'));
                   }
                 }
                 return area && selectedProperty.price ? (
                   <div style={{background: `linear-gradient(135deg, ${NEON.card} 0%, rgba(0,212,255,0.03) 100%)`, border: `1px solid rgba(0,212,255,0.15)`, borderRadius: 16, padding: 16, margin: '12px 0', textAlign: 'center'}}>
-                    <p style={{color: '#f0f8ff', fontSize: 14, fontWeight: 700, margin: '0 0 8px', letterSpacing: 1, textTransform: 'uppercase'}}>\?\? Price vs Market</p>
-                    <p style={{color: NEON.cyan, fontSize: 20, fontWeight: 800, margin: '8px 0'}}>{Math.round(selectedProperty.price / 1000000 / area)} tr/m\²</p>
-                    <p style={{color: 'rgba(240,248,255,0.5)', fontSize: 13, margin: 0}}>{language === 'vn' ? 'Gi\á t\ính t\ừ di\ện t\ích \đ\ất' : language === 'fr' ? 'Prix calcul\é depuis la surface' : 'Price calculated from land area'}</p>
+                    <p style={{color: '#f0f8ff', fontSize: 14, fontWeight: 700, margin: '0 0 8px', letterSpacing: 1, textTransform: 'uppercase'}}>📊 Price vs Market</p>
+                    <p style={{color: NEON.cyan, fontSize: 20, fontWeight: 800, margin: '8px 0'}}>{Math.round(selectedProperty.price / 1000000 / area)} tr/m²</p>
+                    <p style={{color: 'rgba(240,248,255,0.5)', fontSize: 13, margin: 0}}>{language === 'vn' ? 'Giá tính từ diện tích đất' : language === 'fr' ? 'Prix calculé depuis la surface' : 'Price calculated from land area'}</p>
                   </div>
                 ) : (
                   <div style={{background: `linear-gradient(135deg, ${NEON.card} 0%, rgba(0,212,255,0.03) 100%)`, border: `1px solid rgba(0,212,255,0.15)`, borderRadius: 16, padding: 16, margin: '12px 0', textAlign: 'center'}}>
-                    <p style={{color: '#f0f8ff', fontSize: 14, fontWeight: 700, margin: '0 0 8px', letterSpacing: 1, textTransform: 'uppercase'}}>\?\? Price vs Market</p>
-                    <p style={{color: 'rgba(240,248,255,0.5)', fontSize: 13, margin: 0}}>{language === 'vn' ? '\⚠\️ Di\ện t\ích kh\ông c\ó' : language === 'fr' ? '\⚠\️ Surface non renseign\ée' : '\⚠\️ Area not provided'}</p>
+                    <p style={{color: '#f0f8ff', fontSize: 14, fontWeight: 700, margin: '0 0 8px', letterSpacing: 1, textTransform: 'uppercase'}}>📊 Price vs Market</p>
+                    <p style={{color: 'rgba(240,248,255,0.5)', fontSize: 13, margin: 0}}>{language === 'vn' ? '⚠️ Diện tích không có' : language === 'fr' ? '⚠️ Surface non renseignée' : '⚠️ Area not provided'}</p>
                   </div>
                 );
               })()}
@@ -1052,35 +1130,35 @@ export default function SearchPage() {
                 <div style={{background: `linear-gradient(135deg, ${NEON.card} 0%, rgba(0,212,255,0.03) 100%)`, border: `1px solid ${NEON.border}`, borderRadius: 16, padding: 16, position: 'relative', overflow: 'hidden'}}>
                   <div style={{position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundImage: `linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px)`, backgroundSize: '20px 20px', pointerEvents: 'none'}} />
                   <div style={{color: NEON.white, fontSize: 14, fontWeight: 700, textAlign: 'center', margin: '0 0 14px', letterSpacing: 1, textTransform: 'uppercase'}}>
-                    \?\? {language === 'vn' ? 'H\ồ s\ơ b\ất \đ\ộng s\ản' : language === 'fr' ? 'Profil du bien' : 'Property Profile'}
-                    {enriching && <span style={{fontSize: 12, color: '#00d4ff', marginLeft: 8, fontWeight: 400}}>\⏳ {language === 'vn' ? '\Đang t\ải...' : language === 'fr' ? 'Chargement...' : 'Loading...'}</span>}
+                    📋 {language === 'vn' ? 'Hồ sơ bất động sản' : language === 'fr' ? 'Profil du bien' : 'Property Profile'}
+                    {enriching && <span style={{fontSize: 12, color: '#00d4ff', marginLeft: 8, fontWeight: 400}}>⏳ {language === 'vn' ? 'Đang tải...' : language === 'fr' ? 'Chargement...' : 'Loading...'}</span>}
                   </div>
                   {enriching && (
                     <div style={{padding: '12px 20px', background: 'rgba(255,140,0,0.15)', border: '1px solid rgba(255,140,0,0.4)', borderRadius: 12, textAlign: 'center', marginBottom: 12}}>
-                      <span style={{color: '#ff8c00', fontSize: 14, fontWeight: 600}}>\?\? {language === 'vn' ? '\Đang x\ác minh d\ữ li\ệu t\ừ Alonhadat...' : language === 'fr' ? 'V\érification des donn\ées Alonhadat...' : 'Verifying data from Alonhadat...'}</span>
+                      <span style={{color: '#ff8c00', fontSize: 14, fontWeight: 600}}>🔍 {language === 'vn' ? 'Đang xác minh dữ liệu từ Alonhadat...' : language === 'fr' ? 'Vérification des données Alonhadat...' : 'Verifying data from Alonhadat...'}</span>
                     </div>
                   )}
                   {selectedProperty._enriched && !enriching && (
                     <div style={{padding: '8px 16px', background: 'rgba(0,255,136,0.1)', border: '1px solid rgba(0,255,136,0.3)', borderRadius: 10, textAlign: 'center', marginBottom: 12}}>
-                      <span style={{color: '#00ff88', fontSize: 13}}>\✅ {language === 'vn' ? 'D\ữ li\ệu \đ\ã \đ\ư\ợc x\ác minh' : language === 'fr' ? 'Donn\ées v\érifi\ées' : 'Data verified'}</span>
+                      <span style={{color: '#00ff88', fontSize: 13}}>✅ {language === 'vn' ? 'Dữ liệu đã được xác minh' : language === 'fr' ? 'Données vérifiées' : 'Data verified'}</span>
                     </div>
                   )}
                   <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8}}>
                     <div style={{background: 'rgba(0,212,255,0.06)', borderRadius: 10, padding: '10px 12px', border: '1px solid rgba(0,212,255,0.1)'}}>
-                      <span style={{color: '#888', fontSize: 11}}>\?\?\️ {language === 'vn' ? 'Lo\ại \đ\ư\ờng ph\ố' : language === 'fr' ? 'Type de rue' : 'Road Type'}</span>
-                      <p style={{color: NEON.white, fontSize: 14, fontWeight: 600, margin: '4px 0 0'}}>{(() => { const nlp = selectedProperty.nlpAnalysis || {}; const accessMap = {'goc_mt': 'G\óc MT', 'nhieu_mt': '2+ MT', 'mat_tien': 'M\ặt ti\ền', 'goc': 'G\óc', 'hxh': 'H\ẻm xe h\ơi', 'hem': 'H\ẻm', 'kiet': 'Ki\ệt', 'ngo': 'Ng\õ'}; const parts = []; if (nlp.extractedStreetAccess) parts.push(accessMap[nlp.extractedStreetAccess] || nlp.extractedStreetAccess); if (nlp.extractedStreetWidth || selectedProperty.streetWidth) parts.push(`\Đ\ư\ờng ${nlp.extractedStreetWidth || selectedProperty.streetWidth}m`); if (nlp.extractedFacade || selectedProperty.facadeWidth) parts.push(`Ngang ${nlp.extractedFacade || selectedProperty.facadeWidth}m`); return parts.length > 0 ? parts.join(' \• ') : '\—'; })()}</p>
+                      <span style={{color: '#888', fontSize: 11}}>🛣️ {language === 'vn' ? 'Loại đường phố' : language === 'fr' ? 'Type de rue' : 'Road Type'}</span>
+                      <p style={{color: NEON.white, fontSize: 14, fontWeight: 600, margin: '4px 0 0'}}>{(() => { const nlp = selectedProperty.nlpAnalysis || {}; const accessMap = {'goc_mt': 'Góc MT', 'nhieu_mt': '2+ MT', 'mat_tien': 'Mặt tiền', 'goc': 'Góc', 'hxh': 'Hẻm xe hơi', 'hem': 'Hẻm', 'kiet': 'Kiệt', 'ngo': 'Ngõ'}; const parts = []; if (nlp.extractedStreetAccess) parts.push(accessMap[nlp.extractedStreetAccess] || nlp.extractedStreetAccess); if (nlp.extractedStreetWidth || selectedProperty.streetWidth) parts.push(`Đường ${nlp.extractedStreetWidth || selectedProperty.streetWidth}m`); if (nlp.extractedFacade || selectedProperty.facadeWidth) parts.push(`Ngang ${nlp.extractedFacade || selectedProperty.facadeWidth}m`); return parts.length > 0 ? parts.join(' • ') : '—'; })()}</p>
                     </div>
                     <div style={{background: 'rgba(0,212,255,0.06)', borderRadius: 10, padding: '10px 12px', border: '1px solid rgba(0,212,255,0.1)'}}>
-                      <span style={{color: '#888', fontSize: 11}}>\?\? {language === 'vn' ? 'K\ích th\ư\ớc' : language === 'fr' ? 'Dimensions' : 'Dimensions'}</span>
-                      <p style={{color: NEON.white, fontSize: 14, fontWeight: 600, margin: '4px 0 0'}}>{(() => { const nlp = selectedProperty.nlpAnalysis || {}; if (nlp.extractedWidth && nlp.extractedDepth) return `${nlp.extractedWidth}\×${nlp.extractedDepth}m (${nlp.extractedArea}m\²)`; if (nlp.extractedArea) return `${nlp.extractedArea} m\²`; if (selectedProperty.area) return `${Math.round(selectedProperty.area * 10) / 10} m\²`; return '\—'; })()}</p>
+                      <span style={{color: '#888', fontSize: 11}}>📐 {language === 'vn' ? 'Kích thước' : language === 'fr' ? 'Dimensions' : 'Dimensions'}</span>
+                      <p style={{color: NEON.white, fontSize: 14, fontWeight: 600, margin: '4px 0 0'}}>{(() => { const nlp = selectedProperty.nlpAnalysis || {}; if (nlp.extractedWidth && nlp.extractedDepth) return `${nlp.extractedWidth}×${nlp.extractedDepth}m (${nlp.extractedArea}m²)`; if (nlp.extractedArea) return `${nlp.extractedArea} m²`; if (selectedProperty.area) return `${Math.round(selectedProperty.area * 10) / 10} m²`; return '—'; })()}</p>
                     </div>
                     <div style={{background: 'rgba(0,212,255,0.06)', borderRadius: 10, padding: '10px 12px', border: '1px solid rgba(0,212,255,0.1)'}}>
-                      <span style={{color: '#888', fontSize: 11}}>\?\? {language === 'vn' ? 'Ph\áp l\ý' : language === 'fr' ? 'Statut l\égal' : 'Legal Status'}</span>
-                      <p style={{color: (() => { const nlp = selectedProperty.nlpAnalysis || {}; const colorMap = {'so_hong_rieng': NEON.green, 'so_hong': NEON.green, 'hop_dong': NEON.orange, 'gpxd': NEON.orange, 'giay_tay': NEON.red, 'cho_so': NEON.orange, 'vi_bang': NEON.red}; if (nlp.extractedLegalStatus && colorMap[nlp.extractedLegalStatus]) return colorMap[nlp.extractedLegalStatus]; return '#888'; })(), fontSize: 14, fontWeight: 600, margin: '4px 0 0'}}>{(() => { const nlp = selectedProperty.nlpAnalysis || {}; const legalMap = {'so_hong_rieng': '\✅ S\ổ h\ồng ri\êng', 'so_hong': '\✅ S\ổ h\ồng / S\ổ \đ\ỏ', 'hop_dong': '\?\? H\ợp \đ\ồng mua b\án', 'gpxd': '\?\? Gi\ấy ph\ép XD', 'giay_tay': '\⚠\️ Gi\ấy tay', 'cho_so': '\⏳ \Đang ch\ờ s\ổ', 'vi_bang': '\⚠\️ Vi b\ằng'}; if (nlp.extractedLegalStatus && legalMap[nlp.extractedLegalStatus]) return legalMap[nlp.extractedLegalStatus]; if (selectedProperty.legalStatus) return selectedProperty.legalStatus; return '\—'; })()}</p>
+                      <span style={{color: '#888', fontSize: 11}}>📜 {language === 'vn' ? 'Pháp lý' : language === 'fr' ? 'Statut légal' : 'Legal Status'}</span>
+                      <p style={{color: (() => { const nlp = selectedProperty.nlpAnalysis || {}; const colorMap = {'so_hong_rieng': NEON.green, 'so_hong': NEON.green, 'hop_dong': NEON.orange, 'gpxd': NEON.orange, 'giay_tay': NEON.red, 'cho_so': NEON.orange, 'vi_bang': NEON.red}; if (nlp.extractedLegalStatus && colorMap[nlp.extractedLegalStatus]) return colorMap[nlp.extractedLegalStatus]; return '#888'; })(), fontSize: 14, fontWeight: 600, margin: '4px 0 0'}}>{(() => { const nlp = selectedProperty.nlpAnalysis || {}; const legalMap = {'so_hong_rieng': '✅ Sổ hồng riêng', 'so_hong': '✅ Sổ hồng / Sổ đỏ', 'hop_dong': '📄 Hợp đồng mua bán', 'gpxd': '📄 Giấy phép XD', 'giay_tay': '⚠️ Giấy tay', 'cho_so': '⏳ Đang chờ sổ', 'vi_bang': '⚠️ Vi bằng'}; if (nlp.extractedLegalStatus && legalMap[nlp.extractedLegalStatus]) return legalMap[nlp.extractedLegalStatus]; if (selectedProperty.legalStatus) return selectedProperty.legalStatus; return '—'; })()}</p>
                     </div>
                     <div style={{background: 'rgba(0,212,255,0.06)', borderRadius: 10, padding: '10px 12px', border: '1px solid rgba(0,212,255,0.1)'}}>
-                      <span style={{color: '#888', fontSize: 11}}>\?\? {language === 'vn' ? 'K\ết c\ấu' : language === 'fr' ? 'Structure' : 'Structure'}</span>
-                      <p style={{color: NEON.white, fontSize: 14, fontWeight: 600, margin: '4px 0 0'}}>{(() => { const nlp = selectedProperty.nlpAnalysis || {}; const parts = []; const floors = selectedProperty.floors || nlp.extractedFloors; if (floors && floors > 0) parts.push(`${floors} t\ầng`); const beds = selectedProperty.bedrooms || nlp.extractedBedrooms; if (beds && beds > 0) parts.push(`${beds} PN`); const facade = selectedProperty.facadeWidth || nlp.extractedFacade; if (facade && facade > 0) parts.push(`Ngang ${facade}m`); return parts.length > 0 ? parts.join(' \• ') : '\—'; })()}</p>
+                      <span style={{color: '#888', fontSize: 11}}>🏢 {language === 'vn' ? 'Kết cấu' : language === 'fr' ? 'Structure' : 'Structure'}</span>
+                      <p style={{color: NEON.white, fontSize: 14, fontWeight: 600, margin: '4px 0 0'}}>{(() => { const nlp = selectedProperty.nlpAnalysis || {}; const parts = []; const floors = selectedProperty.floors || nlp.extractedFloors; if (floors && floors > 0) parts.push(`${floors} tầng`); const beds = selectedProperty.bedrooms || nlp.extractedBedrooms; if (beds && beds > 0) parts.push(`${beds} PN`); const facade = selectedProperty.facadeWidth || nlp.extractedFacade; if (facade && facade > 0) parts.push(`Ngang ${facade}m`); return parts.length > 0 ? parts.join(' • ') : '—'; })()}</p>
                     </div>
                   </div>
                 </div>
@@ -1088,18 +1166,18 @@ export default function SearchPage() {
               {selectedProperty.scoreDetails && (
                 <div style={{background: 'linear-gradient(135deg, #0d1225 0%, rgba(0,212,255,0.03) 100%)', border: '1px solid rgba(0,212,255,0.15)', borderRadius: 16, padding: 16, margin: '12px 0', position: 'relative', overflow: 'hidden'}}>
                   <div style={{position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundImage: 'linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px)', backgroundSize: '20px 20px', pointerEvents: 'none'}} />
-                  <p style={{color: '#f0f8ff', fontSize: 14, fontWeight: 700, margin: '0 0 12px', letterSpacing: 1, textTransform: 'uppercase'}}>\⚡ {language === 'vn' ? 'T\ín hi\ệu \đ\àm ph\án' : language === 'fr' ? 'Signaux de N\égociation' : 'Negotiation Signals'}</p>
-                  {selectedProperty.scoreDetails.urgentKeywords && selectedProperty.scoreDetails.urgentKeywords.length > 0 && <SignalItem icon="\?\?" label={language === 'vn' ? 'T\ừ kh\óa g\ấp' : language === 'fr' ? 'Mots-cl\és urgents' : 'Urgent keywords'} value={selectedProperty.scoreDetails.urgentKeywords.join(', ')} isPositive={true} />}
-                  {selectedProperty.scoreDetails.listingAge && selectedProperty.scoreDetails.listingAge.days > 0 && <SignalItem icon="\?\?" label={language === 'vn' ? 'Tu\ổi tin \đ\ăng' : language === 'fr' ? 'Anciennet\é' : 'Listing age'} value={`${selectedProperty.scoreDetails.listingAge.days} ${language === 'vn' ? 'ng\ày' : language === 'fr' ? 'jours' : 'days'}`} isPositive={selectedProperty.scoreDetails.listingAge.verdict === 'old' || selectedProperty.scoreDetails.listingAge.verdict === 'very_old'} />}
-                  {selectedProperty.scoreDetails.priceAnalysis && <SignalItem icon="\?\?" label={language === 'vn' ? 'Ph\ân t\ích gi\á' : language === 'fr' ? 'Position prix' : 'Price analysis'} value={`${selectedProperty.scoreDetails.priceAnalysis.diffPercent}%`} isPositive={selectedProperty.scoreDetails.priceAnalysis.verdict === 'excellent' || selectedProperty.scoreDetails.priceAnalysis.verdict === 'good'} />}
-                  {selectedProperty.scoreDetails.priceType === 'round' && <SignalItem icon="\?\?" label={language === 'vn' ? 'Gi\á tr\òn' : language === 'fr' ? 'Prix rond' : 'Round price'} value={language === 'vn' ? 'C\ó' : language === 'fr' ? 'Oui' : 'Yes'} isPositive={true} />}
-                  {selectedProperty.scoreDetails.legalStatus && selectedProperty.scoreDetails.legalStatus.status && <SignalItem icon="\?\?" label={language === 'vn' ? 'Ph\áp l\ý' : language === 'fr' ? 'Statut l\égal' : 'Legal status'} value={selectedProperty.scoreDetails.legalStatus.status} isPositive={selectedProperty.scoreDetails.legalStatus.verdict === 'excellent' || selectedProperty.scoreDetails.legalStatus.verdict === 'good'} />}
+                  <p style={{color: '#f0f8ff', fontSize: 14, fontWeight: 700, margin: '0 0 12px', letterSpacing: 1, textTransform: 'uppercase'}}>⚡ {language === 'vn' ? 'Tín hiệu đàm phán' : language === 'fr' ? 'Signaux de Négociation' : 'Negotiation Signals'}</p>
+                  {selectedProperty.scoreDetails.urgentKeywords && selectedProperty.scoreDetails.urgentKeywords.length > 0 && <SignalItem icon="🔥" label={language === 'vn' ? 'Từ khóa gấp' : language === 'fr' ? 'Mots-clés urgents' : 'Urgent keywords'} value={selectedProperty.scoreDetails.urgentKeywords.join(', ')} isPositive={true} />}
+                  {selectedProperty.scoreDetails.listingAge && selectedProperty.scoreDetails.listingAge.days > 0 && <SignalItem icon="📅" label={language === 'vn' ? 'Tuổi tin đăng' : language === 'fr' ? 'Ancienneté' : 'Listing age'} value={`${selectedProperty.scoreDetails.listingAge.days} ${language === 'vn' ? 'ngày' : language === 'fr' ? 'jours' : 'days'}`} isPositive={selectedProperty.scoreDetails.listingAge.verdict === 'old' || selectedProperty.scoreDetails.listingAge.verdict === 'very_old'} />}
+                  {selectedProperty.scoreDetails.priceAnalysis && <SignalItem icon="💰" label={language === 'vn' ? 'Phân tích giá' : language === 'fr' ? 'Position prix' : 'Price analysis'} value={`${selectedProperty.scoreDetails.priceAnalysis.diffPercent}%`} isPositive={selectedProperty.scoreDetails.priceAnalysis.verdict === 'excellent' || selectedProperty.scoreDetails.priceAnalysis.verdict === 'good'} />}
+                  {selectedProperty.scoreDetails.priceType === 'round' && <SignalItem icon="🎯" label={language === 'vn' ? 'Giá tròn' : language === 'fr' ? 'Prix rond' : 'Round price'} value={language === 'vn' ? 'Có' : language === 'fr' ? 'Oui' : 'Yes'} isPositive={true} />}
+                  {selectedProperty.scoreDetails.legalStatus && selectedProperty.scoreDetails.legalStatus.status && <SignalItem icon="📜" label={language === 'vn' ? 'Pháp lý' : language === 'fr' ? 'Statut légal' : 'Legal status'} value={selectedProperty.scoreDetails.legalStatus.status} isPositive={selectedProperty.scoreDetails.legalStatus.verdict === 'excellent' || selectedProperty.scoreDetails.legalStatus.verdict === 'good'} />}
                 </div>
               )}
               {selectedProperty.scoreDetails && selectedProperty.scoreDetails.nlpFactors && selectedProperty.scoreDetails.nlpFactors.length > 0 && (
                 <div style={{background: 'linear-gradient(135deg, #0d1225 0%, rgba(255,140,0,0.03) 100%)', border: '1px solid rgba(255,140,0,0.15)', borderRadius: 16, padding: 16, margin: '12px 0', position: 'relative', overflow: 'hidden'}}>
                   <div style={{position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundImage: 'linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px)', backgroundSize: '20px 20px', pointerEvents: 'none'}} />
-                  <p style={{color: '#f0f8ff', fontSize: 14, fontWeight: 700, margin: '0 0 12px', letterSpacing: 1, textTransform: 'uppercase'}}>\?\? {language === 'vn' ? 'C\ảnh b\áo & C\ơ h\ội' : language === 'fr' ? 'Alertes & Opportunit\és' : 'Alerts & Opportunities'}</p>
+                  <p style={{color: '#f0f8ff', fontSize: 14, fontWeight: 700, margin: '0 0 12px', letterSpacing: 1, textTransform: 'uppercase'}}>🚨 {language === 'vn' ? 'Cảnh báo & Cơ hội' : language === 'fr' ? 'Alertes & Opportunités' : 'Alerts & Opportunities'}</p>
                   <div style={{display: 'flex', flexWrap: 'wrap', gap: 8}}>
                     {selectedProperty.scoreDetails.nlpFactors.map((factor, i) => <AlertBadge key={i} text={factor.label || factor.text || factor} type={factor.type === 'positive' || factor.type === 'opportunity' ? 'good' : factor.type === 'risk' || factor.type === 'warning' ? 'risk' : 'alert'} />)}
                   </div>
@@ -1107,40 +1185,40 @@ export default function SearchPage() {
               )}
               <div style={{background: 'linear-gradient(135deg, rgba(0,212,255,0.08) 0%, rgba(0,255,136,0.05) 100%)', border: '1px solid rgba(0,212,255,0.25)', borderRadius: 16, padding: 16, margin: '12px 0', position: 'relative', overflow: 'hidden'}}>
                 <div style={{position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundImage: 'linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px)', backgroundSize: '20px 20px', pointerEvents: 'none'}} />
-                <p style={{color: '#00d4ff', fontSize: 14, fontWeight: 700, margin: '0 0 10px', letterSpacing: 1, textTransform: 'uppercase'}}>\?\? {language === 'vn' ? 'Nh\ận x\ét AI' : language === 'fr' ? 'Verdict IA' : 'AI Verdict'}</p>
-                <p style={{color: '#f0f8ff', fontSize: 14, lineHeight: 1.7, margin: 0, opacity: 0.9}}>{(() => { const p = selectedProperty; const sd = p.scoreDetails || {}; const pp = p.pricePosition; const parts = []; if (p.score >= 70) parts.push(language === 'fr' ? '\?\? Opportunit\é tr\ès int\éressante.' : language === 'vn' ? '\?\? C\ơ h\ội r\ất t\ốt.' : '\?\? Very interesting opportunity.'); else if (p.score >= 50) parts.push(language === 'fr' ? '\?\? Annonce int\éressante \à consid\érer.' : language === 'vn' ? '\?\? Tin \đ\áng ch\ú \ý.' : '\?\? Interesting listing to consider.'); else if (p.score >= 30) parts.push(language === 'fr' ? '\?\? Annonce dans la moyenne.' : language === 'vn' ? '\?\? Tin trung b\ình.' : '\?\? Average listing.'); else parts.push(language === 'fr' ? '\?\? Peu de signaux de n\égociation.' : language === 'vn' ? '\?\? \Ít t\ín hi\ệu \đ\àm ph\án.' : '\?\? Few negotiation signals.'); if (pp && pp.position === 'below') parts.push(language === 'fr' ? `Prix ${Math.abs(pp.percentFromMedian)}% en dessous de la m\édiane.` : language === 'vn' ? `Gi\á th\ấp h\ơn ${Math.abs(pp.percentFromMedian)}% so v\ới trung v\ị.` : `Price ${Math.abs(pp.percentFromMedian)}% below district median.`); else if (pp && pp.position === 'above') parts.push(language === 'fr' ? `Attention : prix ${Math.abs(pp.percentFromMedian)}% au dessus de la m\édiane.` : language === 'vn' ? `Ch\ú \ý: gi\á cao h\ơn ${Math.abs(pp.percentFromMedian)}%.` : `Note: price ${Math.abs(pp.percentFromMedian)}% above median.`); if (sd.urgentKeywords && sd.urgentKeywords.length > 0) parts.push(language === 'fr' ? `Signaux d'urgence (${sd.urgentKeywords.join(', ')}) \→ marge probable.` : language === 'vn' ? `T\ừ kh\óa g\ấp (${sd.urgentKeywords.join(', ')}) \→ c\ó th\ể \đ\àm ph\án.` : `Urgent signals (${sd.urgentKeywords.join(', ')}) \→ likely margin.`); if (sd.nlpFactors) { const risks = sd.nlpFactors.filter(f => f.type === 'risk' || f.type === 'warning'); if (risks.length > 0) parts.push(language === 'fr' ? `\⚠\️ Risques: ${risks.map(r => r.label || r.text || r).join(', ')}.` : language === 'vn' ? `\⚠\️ R\ủi ro: ${risks.map(r => r.label || r.text || r).join(', ')}.` : `\⚠\️ Risks: ${risks.map(r => r.label || r.text || r).join(', ')}.`); } if (p.score >= 50 && pp && pp.position !== 'above') { const estimMin = pp.position === 'below' ? 5 : 10; const estimMax = pp.position === 'below' ? 15 : 20; parts.push(language === 'fr' ? `\?\? Potentiel: ${estimMin}-${estimMax}%.` : language === 'vn' ? `\?\? Ti\ềm n\ăng: ${estimMin}-${estimMax}%.` : `\?\? Potential: ${estimMin}-${estimMax}%.`); } if (!p.legalStatus) parts.push(language === 'fr' ? '\?\? Statut l\égal non confirm\é.' : language === 'vn' ? '\?\? Ch\ưa x\ác nh\ận ph\áp l\ý.' : '\?\? Legal status unconfirmed.'); return parts.join(' '); })()}</p>
+                <p style={{color: '#00d4ff', fontSize: 14, fontWeight: 700, margin: '0 0 10px', letterSpacing: 1, textTransform: 'uppercase'}}>🤖 {language === 'vn' ? 'Nhận xét AI' : language === 'fr' ? 'Verdict IA' : 'AI Verdict'}</p>
+                <p style={{color: '#f0f8ff', fontSize: 14, lineHeight: 1.7, margin: 0, opacity: 0.9}}>{(() => { const p = selectedProperty; const sd = p.scoreDetails || {}; const pp = p.pricePosition; const parts = []; if (p.score >= 70) parts.push(language === 'fr' ? '🔥 Opportunité très intéressante.' : language === 'vn' ? '🔥 Cơ hội rất tốt.' : '🔥 Very interesting opportunity.'); else if (p.score >= 50) parts.push(language === 'fr' ? '👍 Annonce intéressante à considérer.' : language === 'vn' ? '👍 Tin đáng chú ý.' : '👍 Interesting listing to consider.'); else if (p.score >= 30) parts.push(language === 'fr' ? '📊 Annonce dans la moyenne.' : language === 'vn' ? '📊 Tin trung bình.' : '📊 Average listing.'); else parts.push(language === 'fr' ? '📉 Peu de signaux de négociation.' : language === 'vn' ? '📉 Ít tín hiệu đàm phán.' : '📉 Few negotiation signals.'); if (pp && pp.position === 'below') parts.push(language === 'fr' ? `Prix ${Math.abs(pp.percentFromMedian)}% en dessous de la médiane.` : language === 'vn' ? `Giá thấp hơn ${Math.abs(pp.percentFromMedian)}% so với trung vị.` : `Price ${Math.abs(pp.percentFromMedian)}% below district median.`); else if (pp && pp.position === 'above') parts.push(language === 'fr' ? `Attention : prix ${Math.abs(pp.percentFromMedian)}% au dessus de la médiane.` : language === 'vn' ? `Chú ý: giá cao hơn ${Math.abs(pp.percentFromMedian)}%.` : `Note: price ${Math.abs(pp.percentFromMedian)}% above median.`); if (sd.urgentKeywords && sd.urgentKeywords.length > 0) parts.push(language === 'fr' ? `Signaux d'urgence (${sd.urgentKeywords.join(', ')}) → marge probable.` : language === 'vn' ? `Từ khóa gấp (${sd.urgentKeywords.join(', ')}) → có thể đàm phán.` : `Urgent signals (${sd.urgentKeywords.join(', ')}) → likely margin.`); if (sd.nlpFactors) { const risks = sd.nlpFactors.filter(f => f.type === 'risk' || f.type === 'warning'); if (risks.length > 0) parts.push(language === 'fr' ? `⚠️ Risques: ${risks.map(r => r.label || r.text || r).join(', ')}.` : language === 'vn' ? `⚠️ Rủi ro: ${risks.map(r => r.label || r.text || r).join(', ')}.` : `⚠️ Risks: ${risks.map(r => r.label || r.text || r).join(', ')}.`); } if (p.score >= 50 && pp && pp.position !== 'above') { const estimMin = pp.position === 'below' ? 5 : 10; const estimMax = pp.position === 'below' ? 15 : 20; parts.push(language === 'fr' ? `💡 Potentiel: ${estimMin}-${estimMax}%.` : language === 'vn' ? `💡 Tiềm năng: ${estimMin}-${estimMax}%.` : `💡 Potential: ${estimMin}-${estimMax}%.`); } if (!p.legalStatus) parts.push(language === 'fr' ? '📋 Statut légal non confirmé.' : language === 'vn' ? '📋 Chưa xác nhận pháp lý.' : '📋 Legal status unconfirmed.'); return parts.join(' '); })()}</p>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                <div className="p-3 bg-gray-800 rounded-lg border border-gray-700"><p className="text-xs text-gray-500">\?\? {language === 'vn' ? 'Di\ện t\ích' : language === 'fr' ? 'Surface' : 'Area'}</p><p className="text-lg font-semibold text-white">{(() => { if (selectedProperty.area) return `${Math.round(selectedProperty.area * 10) / 10} m\²`; const nlp = selectedProperty.nlpAnalysis || {}; if (nlp.extractedArea) return `${nlp.extractedArea} m\²`; return '?'; })()}</p></div>
-                <div className="p-3 bg-gray-800 rounded-lg border border-gray-700"><p className="text-xs text-gray-500">\?\?\️ {t.rooms}</p><p className="text-lg font-semibold text-white">{(() => { if (selectedProperty.bedrooms) return selectedProperty.bedrooms; const nlp = selectedProperty.nlpAnalysis || {}; if (nlp.extractedBedrooms) return nlp.extractedBedrooms; return '?'; })()}</p></div>
-                <div className="p-3 bg-gray-800 rounded-lg border border-gray-700"><p className="text-xs text-gray-500">\?\? {t.bathrooms}</p><p className="text-lg font-semibold text-white">{(() => { if (selectedProperty.bathrooms) return selectedProperty.bathrooms; const nlp = selectedProperty.nlpAnalysis || {}; if (nlp.extractedBathrooms) return nlp.extractedBathrooms; return '?'; })()}</p></div>
-                {(() => { let floors = selectedProperty.floors; if (!floors || floors <= 0) { const nlp = selectedProperty.nlpAnalysis || {}; if (nlp.extractedFloors) floors = nlp.extractedFloors; } return floors && floors > 0 ? (<div className="p-3 bg-gray-800 rounded-lg border border-gray-700"><p className="text-xs text-gray-500">\?\? {language === 'vn' ? 'S\ố t\ầng' : language === 'fr' ? '\Étages' : 'Floors'}</p><p className="text-lg font-semibold text-white">{floors}</p></div>) : null; })()}
-                {selectedProperty.legalStatus && (<div className="p-3 bg-gray-800 rounded-lg border border-gray-700"><p className="text-xs text-gray-500">\?\? {language === 'vn' ? 'Ph\áp l\ý' : language === 'fr' ? 'Statut l\égal' : 'Legal'}</p><p className="text-lg font-semibold text-white">{selectedProperty.legalStatus}</p></div>)}
+                <div className="p-3 bg-gray-800 rounded-lg border border-gray-700"><p className="text-xs text-gray-500">📐 {language === 'vn' ? 'Diện tích' : language === 'fr' ? 'Surface' : 'Area'}</p><p className="text-lg font-semibold text-white">{(() => { if (selectedProperty.area) return `${Math.round(selectedProperty.area * 10) / 10} m²`; const nlp = selectedProperty.nlpAnalysis || {}; if (nlp.extractedArea) return `${nlp.extractedArea} m²`; return '?'; })()}</p></div>
+                <div className="p-3 bg-gray-800 rounded-lg border border-gray-700"><p className="text-xs text-gray-500">🛏️ {t.rooms}</p><p className="text-lg font-semibold text-white">{(() => { if (selectedProperty.bedrooms) return selectedProperty.bedrooms; const nlp = selectedProperty.nlpAnalysis || {}; if (nlp.extractedBedrooms) return nlp.extractedBedrooms; return '?'; })()}</p></div>
+                <div className="p-3 bg-gray-800 rounded-lg border border-gray-700"><p className="text-xs text-gray-500">🚿 {t.bathrooms}</p><p className="text-lg font-semibold text-white">{(() => { if (selectedProperty.bathrooms) return selectedProperty.bathrooms; const nlp = selectedProperty.nlpAnalysis || {}; if (nlp.extractedBathrooms) return nlp.extractedBathrooms; return '?'; })()}</p></div>
+                {(() => { let floors = selectedProperty.floors; if (!floors || floors <= 0) { const nlp = selectedProperty.nlpAnalysis || {}; if (nlp.extractedFloors) floors = nlp.extractedFloors; } return floors && floors > 0 ? (<div className="p-3 bg-gray-800 rounded-lg border border-gray-700"><p className="text-xs text-gray-500">🏢 {language === 'vn' ? 'Số tầng' : language === 'fr' ? 'Étages' : 'Floors'}</p><p className="text-lg font-semibold text-white">{floors}</p></div>) : null; })()}
+                {selectedProperty.legalStatus && (<div className="p-3 bg-gray-800 rounded-lg border border-gray-700"><p className="text-xs text-gray-500">📜 {language === 'vn' ? 'Pháp lý' : language === 'fr' ? 'Statut légal' : 'Legal'}</p><p className="text-lg font-semibold text-white">{selectedProperty.legalStatus}</p></div>)}
               </div>
               <div className="p-4 bg-gray-800 rounded-xl cursor-pointer hover:bg-gray-700 transition border border-gray-700" onClick={() => { const lat = selectedProperty.latitude; const lng = selectedProperty.longitude; if (lat && lng) { window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${lng}&zoom=17`); } else { const parts = [selectedProperty.address, selectedProperty.ward, selectedProperty.district, selectedProperty.city].filter(Boolean); window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(parts.join(', '))}&zoom=17`); }}}>
-                <p className="text-xs text-gray-500 mb-1">\?\? {language === 'fr' ? 'Adresse (cliquer pour Google Maps)' : 'Address (click for Google Maps)'}</p>
+                <p className="text-xs text-gray-500 mb-1">📍 {language === 'fr' ? 'Adresse (cliquer pour Google Maps)' : 'Address (click for Google Maps)'}</p>
                 <p className="font-medium text-gray-200">{selectedProperty.address || `${selectedProperty.district || ''}, ${selectedProperty.ward || ''}, ${selectedProperty.city || ''}`}</p>
               </div>
               <div className="flex items-center justify-between text-sm text-gray-500">
-                <span>\?\? {selectedProperty.source}</span>
-                {selectedProperty.postedOn && <span>\?\? {selectedProperty.postedOn}</span>}
+                <span>🌐 {selectedProperty.source}</span>
+                {selectedProperty.postedOn && <span>📅 {selectedProperty.postedOn}</span>}
               </div>
               <div className="mt-6 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl">
                 <div className="flex items-start gap-3">
-                  <span className="text-lg mt-0.5">\⚖\️</span>
+                  <span className="text-lg mt-0.5">⚖️</span>
                   <div>
-                    <p className="text-sm font-semibold text-amber-400 mb-1">{language === 'vn' ? 'Minh b\ạch d\ữ li\ệu' : language === 'fr' ? 'Transparence des donn\ées' : 'Data Transparency'}</p>
-                    <p className="text-xs text-amber-400/70 leading-relaxed">{language === 'vn' ? 'Ph\ân t\ích gi\á d\ựa tr\ên c\ác tin \đ\ăng tr\ực tuy\ến trong c\ùng qu\ận/huy\ện t\ại th\ời \đi\ểm t\ìm ki\ếm. D\ữ li\ệu n\ày kh\ông thay th\ế th\ẩm \đ\ịnh chuy\ên nghi\ệp.' : language === 'fr' ? "L'analyse des prix est bas\ée sur les annonces en ligne du m\ême district. Ces donn\ées ne remplacent pas une \évaluation professionnelle." : 'Price analysis is based on online listings in the same district. This data does not replace a professional property valuation.'}</p>
+                    <p className="text-sm font-semibold text-amber-400 mb-1">{language === 'vn' ? 'Minh bạch dữ liệu' : language === 'fr' ? 'Transparence des données' : 'Data Transparency'}</p>
+                    <p className="text-xs text-amber-400/70 leading-relaxed">{language === 'vn' ? 'Phân tích giá dựa trên các tin đăng trực tuyến trong cùng quận/huyện tại thời điểm tìm kiếm. Dữ liệu này không thay thế thẩm định chuyên nghiệp.' : language === 'fr' ? "L'analyse des prix est basée sur les annonces en ligne du même district. Ces données ne remplacent pas une évaluation professionnelle." : 'Price analysis is based on online listings in the same district. This data does not replace a professional property valuation.'}</p>
                     <div className="flex items-center gap-4 mt-2 pt-2 border-t border-amber-500/20">
-                      <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-emerald-500"></div><span className="text-xs text-amber-400/70">{language === 'vn' ? 'D\ữ li\ệu th\ực' : language === 'fr' ? 'Donn\ées r\éelles' : 'Real data'}</span></div>
-                      <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-blue-500"></div><span className="text-xs text-amber-400/70">{language === 'vn' ? 'Thu\ật to\án K Trix' : language === 'fr' ? 'Algorithme K Trix' : 'K Trix algorithm'}</span></div>
-                      <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-amber-500"></div><span className="text-xs text-amber-400/70">{language === 'vn' ? 'Tham kh\ảo' : language === 'fr' ? 'Indicatif' : 'Indicative'}</span></div>
+                      <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-emerald-500"></div><span className="text-xs text-amber-400/70">{language === 'vn' ? 'Dữ liệu thực' : language === 'fr' ? 'Données réelles' : 'Real data'}</span></div>
+                      <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-blue-500"></div><span className="text-xs text-amber-400/70">{language === 'vn' ? 'Thuật toán K Trix' : language === 'fr' ? 'Algorithme K Trix' : 'K Trix algorithm'}</span></div>
+                      <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-amber-500"></div><span className="text-xs text-amber-400/70">{language === 'vn' ? 'Tham khảo' : language === 'fr' ? 'Indicatif' : 'Indicative'}</span></div>
                     </div>
                   </div>
                 </div>
               </div>
               <div className="flex gap-3 pt-2">
-                <a href={selectedProperty.url} target="_blank" rel="noopener noreferrer" className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl font-medium text-center hover:from-blue-500 hover:to-cyan-400 transition shadow-lg shadow-blue-500/20">\?\? {t.viewOriginal}</a>
+                <a href={selectedProperty.url} target="_blank" rel="noopener noreferrer" className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl font-medium text-center hover:from-blue-500 hover:to-cyan-400 transition shadow-lg shadow-blue-500/20">🔗 {t.viewOriginal}</a>
                 <button onClick={() => setSelectedProperty(null)} className="px-6 py-3 border border-gray-700 rounded-xl font-medium hover:bg-gray-800 transition text-gray-300">{t.close}</button>
               </div>
             </div>
@@ -1148,25 +1226,25 @@ export default function SearchPage() {
         </div>
       )}
 
-      {/* Feedback Button - INSIDE main div */}
+      {/* Feedback Button */}
       <button
         onClick={() => setShowFeedback(true)}
         style={{position: 'fixed', bottom: '24px', right: '24px', zIndex: 1000, background: '#6366f1', color: 'white', border: 'none', borderRadius: '50px', padding: '12px 20px', cursor: 'pointer', fontSize: '14px', fontWeight: '600', boxShadow: '0 4px 15px rgba(99,102,241,0.4)', display: 'flex', alignItems: 'center', gap: '8px'}}
       >
-        \?\? Feedback
+        💬 Feedback
       </button>
 
-      {/* Feedback Modal - INSIDE main div */}
+      {/* Feedback Modal */}
       {showFeedback && (
         <div style={{position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
           <div style={{background: '#1e1e2e', borderRadius: '16px', padding: '32px', width: '100%', maxWidth: '460px', boxShadow: '0 20px 60px rgba(0,0,0,0.5)'}}>
             {feedbackSent ? (
-              <div style={{textAlign: 'center', color: '#a3e635', fontSize: '18px'}}>\✅ Merci pour ton feedback !</div>
+              <div style={{textAlign: 'center', color: '#a3e635', fontSize: '18px'}}>✅ Merci pour ton feedback !</div>
             ) : (
               <>
-                <h3 style={{color: 'white', marginBottom: '16px'}}>\?\? Envoyer un feedback</h3>
+                <h3 style={{color: 'white', marginBottom: '16px'}}>💬 Envoyer un feedback</h3>
                 <textarea placeholder="Ton message..." value={feedbackMsg} onChange={e => setFeedbackMsg(e.target.value)} rows={4} style={{width: '100%', background: '#2a2a3e', border: '1px solid #444', borderRadius: '8px', padding: '12px', color: 'white', fontSize: '14px', resize: 'vertical', marginBottom: '12px', boxSizing: 'border-box'}} />
-                <input placeholder="Email de r\éponse (optionnel)" value={feedbackEmail} onChange={e => setFeedbackEmail(e.target.value)} style={{width: '100%', background: '#2a2a3e', border: '1px solid #444', borderRadius: '8px', padding: '12px', color: 'white', fontSize: '14px', marginBottom: '16px', boxSizing: 'border-box'}} />
+                <input placeholder="Email de réponse (optionnel)" value={feedbackEmail} onChange={e => setFeedbackEmail(e.target.value)} style={{width: '100%', background: '#2a2a3e', border: '1px solid #444', borderRadius: '8px', padding: '12px', color: 'white', fontSize: '14px', marginBottom: '16px', boxSizing: 'border-box'}} />
                 <div style={{display: 'flex', gap: '12px', justifyContent: 'flex-end'}}>
                   <button onClick={() => setShowFeedback(false)} style={{background: '#333', color: 'white', border: 'none', borderRadius: '8px', padding: '10px 20px', cursor: 'pointer'}}>Annuler</button>
                   <button onClick={submitFeedback} style={{background: '#6366f1', color: 'white', border: 'none', borderRadius: '8px', padding: '10px 20px', cursor: 'pointer', fontWeight: '600'}}>Envoyer</button>
