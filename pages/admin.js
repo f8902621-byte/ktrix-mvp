@@ -239,7 +239,7 @@ export default function AdminPage() {
             <h1 className="text-lg font-bold text-white">K Trix Admin</h1>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={() => fetchTesters()} className="flex items-center gap-2 px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-300 hover:bg-gray-700 transition">
+            <button onClick={() => { const pwd = password || localStorage.getItem('ktrix_admin_pwd'); fetchTesters(pwd); fetchFeedbacks(pwd); }} className="flex items-center gap-2 px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-300 hover:bg-gray-700 transition">
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
               Refresh
             </button>
