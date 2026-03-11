@@ -47,10 +47,16 @@ export default function SearchPage() {
       const urlParams = new URLSearchParams(window.location.search);
       const codeFromUrl = urlParams.get('code');
       if (codeFromUrl) {
+        // Nouveau code depuis URL : stocker dans les 2
+        sessionStorage.setItem('ktrix_beta_code', codeFromUrl);
         localStorage.setItem('ktrix_beta_code', codeFromUrl);
+      } else if (!sessionStorage.getItem('ktrix_beta_code') && localStorage.getItem('ktrix_beta_code')) {
+        // Pas de code en session mais un en localStorage : recopier dans sessionStorage de CET onglet
+        sessionStorage.setItem('ktrix_beta_code', localStorage.getItem('ktrix_beta_code'));
       }
 
-      const betaCode = localStorage.getItem('ktrix_beta_code');
+      // Toujours lire depuis sessionStorage — isolé par onglet
+      const betaCode = sessionStorage.getItem('ktrix_beta_code');
       if (!betaCode) {
         router.push('/beta');
         return;
@@ -104,7 +110,7 @@ export default function SearchPage() {
   useEffect(() => {
     if (!authReady) return;
     const loadSavedSearches = async () => {
-      const code = localStorage.getItem('ktrix_beta_code');
+      const code = sessionStorage.getItem('ktrix_beta_code');
       if (!code) return;
       try {
         const res = await fetch(`/api/saved-searches?code=${encodeURIComponent(code)}`);
@@ -383,7 +389,7 @@ export default function SearchPage() {
       setError(t.required);
       return;
     }
-    const betaCode = typeof window !== 'undefined' ? localStorage.getItem('ktrix_beta_code') : null;
+    const betaCode = typeof window !== 'undefined' ? sessionStorage.getItem('ktrix_beta_code') : null;
     if (betaCode) fetch('/api/track-search', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: betaCode }) });
     setLoading(true);
     setSearchProgress(0);
@@ -536,7 +542,7 @@ export default function SearchPage() {
   };
 
   const saveCurrentSearch = async () => {
-    const code = localStorage.getItem('ktrix_beta_code');
+    const code = sessionStorage.getItem('ktrix_beta_code');
     if (!code) return alert('No beta code found');
     const searchName = `${searchParams.city} - ${searchParams.propertyType}`;
     try {
@@ -646,7 +652,7 @@ export default function SearchPage() {
 
   const submitFeedback = async () => {
     if (!feedbackMsg.trim()) return;
-    const code = localStorage.getItem('ktrix_beta_code');
+    const code = sessionStorage.getItem('ktrix_beta_code');
     const profileInfo = selectedProperty
       ? `[Profil: ${selectedProperty.title || selectedProperty.id || 'inconnu'}]`
       : '';
@@ -738,7 +744,7 @@ export default function SearchPage() {
                     <div className="flex gap-2">
                       <button onClick={() => { setSearchParams(search.params); setShowSavedSearches(false); }} className="px-4 py-2 bg-blue-500/10 text-blue-400 rounded-lg border border-blue-500/20">{t.loadSearch}</button>
                       <button onClick={async () => {
-                        const code = localStorage.getItem('ktrix_beta_code');
+                        const code = sessionStorage.getItem('ktrix_beta_code');
                         if (!code) return;
                         try {
                           await fetch('/api/saved-searches', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: search.id, code }) });
