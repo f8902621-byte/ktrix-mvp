@@ -644,22 +644,28 @@ export default function SearchPage() {
     );
   };
 
-  const submitFeedback = async () => {
-    if (!feedbackMsg.trim()) return;
-    const code = localStorage.getItem('ktrix_beta_code');
-    await fetch('/api/feedback', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ beta_code: code, message: feedbackMsg, reply_email: feedbackEmail })
-    });
-    setFeedbackSent(true);
-    setTimeout(() => {
-      setShowFeedback(false);
-      setFeedbackSent(false);
-      setFeedbackMsg('');
-      setFeedbackEmail('');
-    }, 2000);
-  };
+const submitFeedback = async () => {
+  if (!feedbackMsg.trim()) return;
+  const code = localStorage.getItem('ktrix_beta_code');
+  const profileInfo = selectedProperty
+    ? `[Profil: ${selectedProperty.title || selectedProperty.id || 'inconnu'}]`
+    : '';
+  const fullMessage = profileInfo
+    ? `${profileInfo}\n${feedbackMsg.trim()}`
+    : feedbackMsg.trim();
+  await fetch('/api/feedback', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ beta_code: code, message: fullMessage })
+  });
+  setFeedbackSent(true);
+  setTimeout(() => {
+    setShowFeedback(false);
+    setFeedbackSent(false);
+    setFeedbackMsg('');
+    setFeedbackEmail('');
+  }, 2000);
+};
 
   // PATCH 3 — Guard authReady : spinner pendant l'init auth
   if (!authReady) {
