@@ -117,6 +117,25 @@ export default function AdminPage() {
     fetchTesters(pwd);
   };
 
+  const handleResetAll = async () => {
+    if (!confirm('⚠️ RAZ GÉNÉRALE\n\nCeci va EFFACER DÉFINITIVEMENT :\n- Tous les feedbacks\n- Toutes les recherches sauvegardées\n- Toutes les inscriptions testeurs (sauf KTRIX-ADMIN0)\n\nLes codes beta seront remis à disposition.\nCette action est IRRÉVERSIBLE.\n\nConfirmer ?')) return;
+    if (!confirm('DERNIÈRE CONFIRMATION\n\nVous êtes sur le point de remettre à zéro toutes les données de test.\n\nContinuer ?')) return;
+    const pwd = password || localStorage.getItem('ktrix_admin_pwd');
+    const res = await fetch('/api/admin-data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: pwd, action: 'reset_all_test_data' }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      alert('✅ RAZ complète effectuée avec succès.');
+      fetchTesters(pwd);
+      fetchFeedbacks(pwd);
+    } else {
+      alert('❌ Erreur lors de la RAZ : ' + (data.error || 'inconnue'));
+    }
+  };
+
   const handleNote = async (code) => {
     const pwd = password || localStorage.getItem('ktrix_admin_pwd');
     await fetch('/api/admin-data', {
@@ -276,6 +295,9 @@ export default function AdminPage() {
             <button onClick={() => { const pwd = password || localStorage.getItem('ktrix_admin_pwd'); fetchTesters(pwd); fetchFeedbacks(pwd); }} className="flex items-center gap-2 px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-300 hover:bg-gray-700 transition">
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
               Refresh
+            </button>
+            <button onClick={handleResetAll} className="flex items-center gap-2 px-4 py-2 bg-red-900 border border-red-700 rounded-lg text-sm text-red-300 hover:bg-red-800 transition">
+              🗑️ RAZ Données
             </button>
             <button onClick={handleExport} className="flex items-center gap-2 px-4 py-2 bg-emerald-800 border border-emerald-700 rounded-lg text-sm text-emerald-300 hover:bg-emerald-700 transition">
               📊 Export Excel
