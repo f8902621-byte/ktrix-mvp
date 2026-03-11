@@ -12,7 +12,6 @@ export default function AdminPage() {
   const [savedSearches, setSavedSearches] = useState([]);
   const [loadingSearches, setLoadingSearches] = useState(false);
   const [feedbackView, setFeedbackView] = useState({ code: null, text: '' });
-  // ✅ NOUVEAU: state pour la table feedbacks dédiée
   const [feedbacks, setFeedbacks] = useState([]);
   const [loadingFeedbacks, setLoadingFeedbacks] = useState(false);
 
@@ -22,7 +21,7 @@ export default function AdminPage() {
       setPassword(savedPwd);
       fetchTesters(savedPwd);
       fetchSavedSearches(savedPwd);
-      fetchFeedbacks(savedPwd); // ✅ Charger feedbacks au démarrage
+      fetchFeedbacks(savedPwd);
     }
   }, []);
 
@@ -40,7 +39,6 @@ export default function AdminPage() {
     setLoadingSearches(false);
   };
 
-  // ✅ NOUVEAU: charger feedbacks depuis Supabase via API
   const fetchFeedbacks = async (pwd) => {
     setLoadingFeedbacks(true);
     try {
@@ -74,7 +72,7 @@ export default function AdminPage() {
         setTesters(data.testers);
         setAuthenticated(true);
         fetchSavedSearches(pwd);
-        fetchFeedbacks(pwd); // ✅ Recharger feedbacks aussi
+        fetchFeedbacks(pwd);
       }
     } catch (err) {
       setError('Connection error');
@@ -130,52 +128,88 @@ export default function AdminPage() {
     fetchTesters(pwd);
   };
 
-  // ✅ MODIFIÉ: Feedback maintenant en position D (juste après Email)
-  // + largeur de colonne augmentée pour le feedback
   const handleExport = () => {
     const wb = XLSX.utils.book_new();
-    testers.filter(t => t.email).forEach(tester => {
-      // Récupérer les feedbacks de ce testeur depuis la table feedbacks dédiée
-      const testerFeedbacks = feedbacks.filter(f => f.beta_code === tester.code);
-      const feedbackText = testerFeedbacks
-        .map(f => `[${new Date(f.created_at).toLocaleDateString('fr-FR')}] ${f.message}${f.reply_email ? ` (${f.reply_email})` : ''}`)
-        .join('\n---\n') || tester.feedback || '';
 
-      const info = [
-        ['Code', tester.code],
-        ['Prénom', tester.first_name || ''],
-        ['Nom', tester.last_name || ''],
-        ['Email', tester.email || ''],
-        // ✅ FEEDBACK EN POSITION D (4e champ = après Email)
-        ['Feedback', feedbackText],
-        ['Secteur', tester.sector || ''],
-        ['Age', tester.age || ''],
+    testers.filter(t => t.email).forEach(tester => {
+      const testerFeedbacks = feedbacks.filter(f => f.beta_code === tester.code);
+      const testerSearches = savedSearches.filter(s => s.beta_code === tester.code);
+
+      // ── Bloc infos tester (col A = label, col B = valeur) ──
+      const rows = [
+        ['Code',        tester.code],
+        ['Prénom',      tester.first_name || ''],
+        ['Nom',         tester.last_name || ''],
+        ['Email',       tester.email || ''],
+        ['Secteur',     tester.sector || ''],
+        ['Age',         tester.age || ''],
         ['Inscription', tester.registered_at ? new Date(tester.registered_at).toLocaleDateString('fr-FR') : ''],
-        ['Expiration', tester.expires_at ? new Date(tester.expires_at).toLocaleDateString('fr-FR') : ''],
-        ['Recherches', tester.search_count || 0],
-        ['Statut', tester.is_active ? 'Actif' : 'Inactif'],
-        ['Notes', tester.notes || ''],
+        ['Expiration',  tester.expires_at   ? new Date(tester.expires_at).toLocaleDateString('fr-FR')   : ''],
+        ['Recherches',  tester.search_count || 0],
+        ['Statut',      tester.is_active ? 'Actif' : 'Inactif'],
+        ['Notes admin', tester.notes || ''],
         [],
-        ['Recherches sauvegardées', ''],
-        ['Nom', 'Paramètres', 'Date'],
-        ...savedSearches
-          .filter(s => s.beta_code === tester.code)
-          .map(s => [
-            s.name || '—',
-            s.params ? Object.entries(s.params).filter(([,v]) => v && v !== '' && v !== 'all').map(([k,v]) => `${k}: ${v}`).join(' · ') : '—',
-            new Date(s.created_at).toLocaleDateString('fr-FR')
-          ]),
-        [],
-        ['NOTES ADMIN', ''],
-        [tester.notes || '(vide)'],
-        ['', ''], ['', ''], ['', ''], ['', ''], ['', ''],
       ];
-      const ws = XLSX.utils.aoa_to_sheet(info);
-      // ✅ Largeur colonne A: 20, colonne B: 80 (large pour feedback)
-      ws['!cols'] = [{ wch: 20 }, { wch: 80 }];
+
+      // ── Bloc feedbacks : 1 feedback = 1 ligne, col A = date, col B = message, col C = email réponse ──
+      rows.push(['── FEEDBACKS ──', '', '']);
+      if (testerFeedbacks.length === 0) {
+        rows.push(['(aucun feedback)', '', '']);
+      } else {
+        rows.push(['Date', 'Message', 'Email réponse']);
+        testerFeedbacks.forEach(fb => {
+          rows.push([
+            new Date(fb.created_at).toLocaleDateString('fr-FR', {
+              day: '2-digit', month: '2-digit', year: 'numeric',
+              hour: '2-digit', minute: '2-digit'
+            }),
+            fb.message || '',
+            fb.reply_email && fb.reply_email !== 'EMPTY' ? fb.reply_email : '',
+          ]);
+        });
+      }
+
+      rows.push([]);
+
+      // ── Bloc recherches sauvegardées ──
+      rows.push(['── RECHERCHES SAUVEGARDÉES ──', '', '']);
+      if (testerSearches.length === 0) {
+        rows.push(['(aucune)', '', '']);
+      } else {
+        rows.push(['Nom', 'Paramètres', 'Date']);
+        testerSearches.forEach(s => {
+          rows.push([
+            s.name || '—',
+            s.params
+              ? Object.entries(s.params)
+                  .filter(([, v]) => v && v !== '' && v !== 'all')
+                  .map(([k, v]) => `${k}: ${v}`)
+                  .join(' · ')
+              : '—',
+            new Date(s.created_at).toLocaleDateString('fr-FR'),
+          ]);
+        });
+      }
+
+      const ws = XLSX.utils.aoa_to_sheet(rows);
+
+      // Largeurs : A=22, B=70 (messages), C=30 (email)
+      ws['!cols'] = [{ wch: 22 }, { wch: 70 }, { wch: 30 }];
+
+      // Wrap text sur toute la colonne B pour les messages longs
+      const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+      for (let R = range.s.r; R <= range.e.r; R++) {
+        const cellAddr = XLSX.utils.encode_cell({ r: R, c: 1 });
+        if (ws[cellAddr] && ws[cellAddr].v) {
+          if (!ws[cellAddr].s) ws[cellAddr].s = {};
+          ws[cellAddr].s.alignment = { wrapText: true };
+        }
+      }
+
       XLSX.utils.book_append_sheet(wb, ws, (tester.first_name || tester.code).slice(0, 31));
     });
-    XLSX.writeFile(wb, `ktrix-beta-${new Date().toISOString().slice(0,10)}.xlsx`);
+
+    XLSX.writeFile(wb, `ktrix-beta-${new Date().toISOString().slice(0, 10)}.xlsx`);
   };
 
   const registered = testers.filter(t => t.email && t.email !== '' && t.email !== 'EMPTY');
@@ -372,7 +406,7 @@ export default function AdminPage() {
                         )}
                       </td>
 
-                      {/* Feedback - affiche le nombre de feedbacks + aperçu */}
+                      {/* Feedback */}
                       <td className="p-3 max-w-[160px]">
                         {hasFeedback ? (
                           <button
@@ -417,7 +451,7 @@ export default function AdminPage() {
           </div>
         </div>
 
-        {/* ✅ NOUVEAU: Section Feedbacks dédiée */}
+        {/* Section Feedbacks dédiée */}
         <div className="bg-gray-900 border border-purple-500/20 rounded-xl overflow-hidden mb-8">
           <div className="p-4 border-b border-purple-500/20 flex items-center justify-between">
             <h2 className="text-white font-bold flex items-center gap-2">
@@ -451,7 +485,7 @@ export default function AdminPage() {
                         <p className="text-sm leading-relaxed">{fb.message}</p>
                       </td>
                       <td className="p-3 text-xs">
-                        {fb.reply_email ? (
+                        {fb.reply_email && fb.reply_email !== 'EMPTY' ? (
                           <a href={`mailto:${fb.reply_email}`} className="text-blue-400 hover:text-blue-300 transition">
                             ✉️ {fb.reply_email}
                           </a>
@@ -539,7 +573,6 @@ export default function AdminPage() {
               <button onClick={() => setFeedbackView({ code: null, text: '' })} className="text-gray-500 hover:text-white transition text-xl leading-none">✕</button>
             </div>
             <div className="bg-gray-800 rounded-lg p-4 max-h-80 overflow-y-auto space-y-3">
-              {/* Afficher les feedbacks de la table dédiée en priorité */}
               {feedbacks.filter(f => f.beta_code === feedbackView.code).length > 0 ? (
                 feedbacks.filter(f => f.beta_code === feedbackView.code).map((fb, i) => (
                   <div key={fb.id} className={i > 0 ? 'pt-3 border-t border-gray-700' : ''}>
@@ -547,7 +580,7 @@ export default function AdminPage() {
                       {new Date(fb.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                     </p>
                     <p className="text-white text-sm">{fb.message}</p>
-                    {fb.reply_email && (
+                    {fb.reply_email && fb.reply_email !== 'EMPTY' && (
                       <a href={`mailto:${fb.reply_email}`} className="text-blue-400 text-xs mt-1 block hover:text-blue-300">
                         ✉️ {fb.reply_email}
                       </a>
@@ -555,7 +588,6 @@ export default function AdminPage() {
                   </div>
                 ))
               ) : (
-                /* Fallback: anciens feedbacks stockés sur le testeur */
                 feedbackView.text.split('\n\n').map((entry, i) => (
                   <div key={i} className={i > 0 ? 'pt-3 border-t border-gray-700' : ''}>
                     {entry.match(/^\[(.+?)\]/) ? (
