@@ -1251,6 +1251,38 @@ export default function SearchPage() {
           </div>
         </div>
       )}
+
+      {/* Bouton flottant — feedback général sur l'app (hors profil) */}
+      {!selectedProperty && (
+        <>
+          <button
+            onClick={() => setShowFeedback(true)}
+            style={{position: 'fixed', bottom: '24px', right: '24px', zIndex: 1000, background: '#6366f1', color: 'white', border: 'none', borderRadius: '50px', padding: '12px 20px', cursor: 'pointer', fontSize: '14px', fontWeight: '600', boxShadow: '0 4px 15px rgba(99,102,241,0.4)', display: 'flex', alignItems: 'center', gap: '8px'}}
+          >
+            💬 Feedback
+          </button>
+          {showFeedback && (
+            <div style={{position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+              <div style={{background: '#1e1e2e', borderRadius: '16px', padding: '32px', width: '100%', maxWidth: '460px', boxShadow: '0 20px 60px rgba(0,0,0,0.5)'}}>
+                {feedbackSent ? (
+                  <div style={{textAlign: 'center', color: '#a3e635', fontSize: '18px'}}>✅ {language === 'fr' ? 'Merci pour ton feedback !' : language === 'vn' ? 'Cảm ơn phản hồi của bạn!' : 'Thanks for your feedback!'}</div>
+                ) : (
+                  <>
+                    <h3 style={{color: 'white', marginBottom: '4px'}}>💬 {language === 'fr' ? 'Feedback général' : language === 'vn' ? 'Phản hồi chung' : 'General feedback'}</h3>
+                    <p style={{color: '#888', fontSize: '13px', marginBottom: '16px'}}>{language === 'fr' ? "Ton avis sur l'application en général" : language === 'vn' ? 'Nhận xét chung về ứng dụng' : 'Your thoughts on the app in general'}</p>
+                    <textarea placeholder={language === 'fr' ? 'Ton message...' : 'Your message...'} value={feedbackMsg} onChange={e => setFeedbackMsg(e.target.value)} rows={4} style={{width: '100%', background: '#2a2a3e', border: '1px solid #444', borderRadius: '8px', padding: '12px', color: 'white', fontSize: '14px', resize: 'vertical', marginBottom: '12px', boxSizing: 'border-box'}} />
+                    <input placeholder={language === 'fr' ? 'Email de réponse (optionnel)' : 'Reply email (optional)'} value={feedbackEmail} onChange={e => setFeedbackEmail(e.target.value)} style={{width: '100%', background: '#2a2a3e', border: '1px solid #444', borderRadius: '8px', padding: '12px', color: 'white', fontSize: '14px', marginBottom: '16px', boxSizing: 'border-box'}} />
+                    <div style={{display: 'flex', gap: '12px', justifyContent: 'flex-end'}}>
+                      <button onClick={() => { setShowFeedback(false); setFeedbackMsg(''); setFeedbackEmail(''); }} style={{background: '#333', color: 'white', border: 'none', borderRadius: '8px', padding: '10px 20px', cursor: 'pointer'}}>{language === 'fr' ? 'Annuler' : 'Cancel'}</button>
+                      <button onClick={submitFeedback} style={{background: '#6366f1', color: 'white', border: 'none', borderRadius: '8px', padding: '10px 20px', cursor: 'pointer', fontWeight: '600'}}>{language === 'fr' ? 'Envoyer' : language === 'vn' ? 'Gửi' : 'Send'}</button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
