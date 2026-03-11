@@ -12,6 +12,9 @@ export default function AdminPage() {
   const [savedSearches, setSavedSearches] = useState([]);
   const [loadingSearches, setLoadingSearches] = useState(false);
   const [feedbackView, setFeedbackView] = useState({ code: null, text: '' });
+  // ✅ NOUVEAU: state pour la table feedbacks dédiée
+  const [feedbacks, setFeedbacks] = useState([]);
+  const [loadingFeedbacks, setLoadingFeedbacks] = useState(false);
 
   useEffect(() => {
     const savedPwd = localStorage.getItem('ktrix_admin_pwd');
@@ -19,6 +22,7 @@ export default function AdminPage() {
       setPassword(savedPwd);
       fetchTesters(savedPwd);
       fetchSavedSearches(savedPwd);
+      fetchFeedbacks(savedPwd); // ✅ Charger feedbacks au démarrage
     }
   }, []);
 
@@ -34,6 +38,23 @@ export default function AdminPage() {
       console.error('Error fetching saved searches:', err);
     }
     setLoadingSearches(false);
+  };
+
+  // ✅ NOUVEAU: charger feedbacks depuis Supabase via API
+  const fetchFeedbacks = async (pwd) => {
+    setLoadingFeedbacks(true);
+    try {
+      const res = await fetch('/api/admin-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: pwd || password, action: 'list_feedbacks' }),
+      });
+      const data = await res.json();
+      if (Array.isArray(data.feedbacks)) setFeedbacks(data.feedbacks);
+    } catch (err) {
+      console.error('Error fetching feedbacks:', err);
+    }
+    setLoadingFeedbacks(false);
   };
 
   const fetchTesters = async (pwd) => {
@@ -53,6 +74,7 @@ export default function AdminPage() {
         setTesters(data.testers);
         setAuthenticated(true);
         fetchSavedSearches(pwd);
+        fetchFeedbacks(pwd); // ✅ Recharger feedbacks aussi
       }
     } catch (err) {
       setError('Connection error');
@@ -108,14 +130,24 @@ export default function AdminPage() {
     fetchTesters(pwd);
   };
 
+  // ✅ MODIFIÉ: Feedback maintenant en position D (juste après Email)
+  // + largeur de colonne augmentée pour le feedback
   const handleExport = () => {
     const wb = XLSX.utils.book_new();
     testers.filter(t => t.email).forEach(tester => {
+      // Récupérer les feedbacks de ce testeur depuis la table feedbacks dédiée
+      const testerFeedbacks = feedbacks.filter(f => f.beta_code === tester.code);
+      const feedbackText = testerFeedbacks
+        .map(f => `[${new Date(f.created_at).toLocaleDateString('fr-FR')}] ${f.message}${f.reply_email ? ` (${f.reply_email})` : ''}`)
+        .join('\n---\n') || tester.feedback || '';
+
       const info = [
         ['Code', tester.code],
         ['Prénom', tester.first_name || ''],
         ['Nom', tester.last_name || ''],
         ['Email', tester.email || ''],
+        // ✅ FEEDBACK EN POSITION D (4e champ = après Email)
+        ['Feedback', feedbackText],
         ['Secteur', tester.sector || ''],
         ['Age', tester.age || ''],
         ['Inscription', tester.registered_at ? new Date(tester.registered_at).toLocaleDateString('fr-FR') : ''],
@@ -123,7 +155,6 @@ export default function AdminPage() {
         ['Recherches', tester.search_count || 0],
         ['Statut', tester.is_active ? 'Actif' : 'Inactif'],
         ['Notes', tester.notes || ''],
-        ['Feedback', tester.feedback || ''],
         [],
         ['Recherches sauvegardées', ''],
         ['Nom', 'Paramètres', 'Date'],
@@ -140,7 +171,8 @@ export default function AdminPage() {
         ['', ''], ['', ''], ['', ''], ['', ''], ['', ''],
       ];
       const ws = XLSX.utils.aoa_to_sheet(info);
-      ws['!cols'] = [{ wch: 20 }, { wch: 40 }];
+      // ✅ Largeur colonne A: 20, colonne B: 80 (large pour feedback)
+      ws['!cols'] = [{ wch: 20 }, { wch: 80 }];
       XLSX.utils.book_append_sheet(wb, ws, (tester.first_name || tester.code).slice(0, 31));
     });
     XLSX.writeFile(wb, `ktrix-beta-${new Date().toISOString().slice(0,10)}.xlsx`);
@@ -239,7 +271,7 @@ export default function AdminPage() {
             <p className="text-gray-500 text-sm">Expired</p>
           </div>
           <div className="bg-gray-900 border border-purple-500/20 rounded-xl p-4">
-            <p className="text-2xl font-bold text-purple-400">{withFeedback.length}</p>
+            <p className="text-2xl font-bold text-purple-400">{feedbacks.length}</p>
             <p className="text-gray-500 text-sm">Feedbacks</p>
           </div>
         </div>
@@ -271,7 +303,11 @@ export default function AdminPage() {
                   const isReg = tester.email && tester.email !== '' && tester.email !== 'EMPTY';
                   const isExp = isExpired(tester.expires_at);
                   const daysLeft = getDaysLeft(tester.expires_at);
-                  const hasFeedback = tester.feedback && tester.feedback.trim() !== '';
+                  const testerFeedbacks = feedbacks.filter(f => f.beta_code === tester.code);
+                  const hasFeedback = testerFeedbacks.length > 0 || (tester.feedback && tester.feedback.trim() !== '');
+                  const latestFeedback = testerFeedbacks.length > 0
+                    ? testerFeedbacks[0].message
+                    : tester.feedback || '';
                   return (
                     <tr key={tester.id} className={`border-b border-gray-800/50 hover:bg-gray-800/20 transition ${!tester.is_active ? 'opacity-40' : ''} ${isExp ? 'bg-red-500/5' : ''}`}>
                       <td className="p-3 font-mono text-xs text-cyan-400">{tester.code}</td>
@@ -336,17 +372,20 @@ export default function AdminPage() {
                         )}
                       </td>
 
-                      {/* Feedback */}
+                      {/* Feedback - affiche le nombre de feedbacks + aperçu */}
                       <td className="p-3 max-w-[160px]">
                         {hasFeedback ? (
                           <button
-                            onClick={() => setFeedbackView({ code: tester.code, text: tester.feedback })}
+                            onClick={() => setFeedbackView({ code: tester.code, text: latestFeedback })}
                             className="flex items-center gap-1.5 text-left group"
                             title="Voir le feedback complet"
                           >
                             <span className="inline-block w-2 h-2 bg-purple-400 rounded-full flex-shrink-0"></span>
+                            {testerFeedbacks.length > 1 && (
+                              <span className="text-purple-500 text-xs font-bold">{testerFeedbacks.length}</span>
+                            )}
                             <span className="text-purple-300 text-xs truncate max-w-28 group-hover:text-purple-200 transition">
-                              {tester.feedback.split('\n')[0].replace(/^\[.*?\]\s*/, '').slice(0, 35)}…
+                              {latestFeedback.slice(0, 35)}…
                             </span>
                           </button>
                         ) : (
@@ -373,6 +412,62 @@ export default function AdminPage() {
                     </tr>
                   );
                 })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* ✅ NOUVEAU: Section Feedbacks dédiée */}
+        <div className="bg-gray-900 border border-purple-500/20 rounded-xl overflow-hidden mb-8">
+          <div className="p-4 border-b border-purple-500/20 flex items-center justify-between">
+            <h2 className="text-white font-bold flex items-center gap-2">
+              <span className="w-2 h-2 bg-purple-400 rounded-full inline-block"></span>
+              Feedbacks testeurs ({feedbacks.length})
+            </h2>
+            <button onClick={() => fetchFeedbacks()} className="text-xs text-gray-500 hover:text-gray-300 transition">
+              <RefreshCw className={`w-3 h-3 ${loadingFeedbacks ? 'animate-spin' : ''}`} />
+            </button>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-800 text-gray-400">
+                  <th className="text-left p-3 font-medium">Code beta</th>
+                  <th className="text-left p-3 font-medium">Message</th>
+                  <th className="text-left p-3 font-medium">Email réponse</th>
+                  <th className="text-left p-3 font-medium">Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loadingFeedbacks ? (
+                  <tr><td colSpan={4} className="p-6 text-center text-gray-500">Chargement...</td></tr>
+                ) : feedbacks.length === 0 ? (
+                  <tr><td colSpan={4} className="p-6 text-center text-gray-500">Aucun feedback pour l'instant</td></tr>
+                ) : (
+                  feedbacks.map((fb) => (
+                    <tr key={fb.id} className="border-b border-gray-800/50 hover:bg-gray-800/30">
+                      <td className="p-3 font-mono text-xs text-cyan-400">{fb.beta_code}</td>
+                      <td className="p-3 text-white max-w-md">
+                        <p className="text-sm leading-relaxed">{fb.message}</p>
+                      </td>
+                      <td className="p-3 text-xs">
+                        {fb.reply_email ? (
+                          <a href={`mailto:${fb.reply_email}`} className="text-blue-400 hover:text-blue-300 transition">
+                            ✉️ {fb.reply_email}
+                          </a>
+                        ) : (
+                          <span className="text-gray-600">—</span>
+                        )}
+                      </td>
+                      <td className="p-3 text-gray-500 text-xs whitespace-nowrap">
+                        {new Date(fb.created_at).toLocaleDateString('fr-FR', {
+                          day: '2-digit', month: '2-digit', year: 'numeric',
+                          hour: '2-digit', minute: '2-digit'
+                        })}
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -443,19 +538,37 @@ export default function AdminPage() {
               </h3>
               <button onClick={() => setFeedbackView({ code: null, text: '' })} className="text-gray-500 hover:text-white transition text-xl leading-none">✕</button>
             </div>
-            <div className="bg-gray-800 rounded-lg p-4 max-h-80 overflow-y-auto">
-              {feedbackView.text.split('\n\n').map((entry, i) => (
-                <div key={i} className={`${i > 0 ? 'mt-4 pt-4 border-t border-gray-700' : ''}`}>
-                  {entry.match(/^\[(.+?)\]/) ? (
-                    <>
-                      <p className="text-purple-400 text-xs mb-1">{entry.match(/^\[(.+?)\]/)[1]}</p>
-                      <p className="text-white text-sm">{entry.replace(/^\[.+?\]\s*/, '')}</p>
-                    </>
-                  ) : (
-                    <p className="text-white text-sm">{entry}</p>
-                  )}
-                </div>
-              ))}
+            <div className="bg-gray-800 rounded-lg p-4 max-h-80 overflow-y-auto space-y-3">
+              {/* Afficher les feedbacks de la table dédiée en priorité */}
+              {feedbacks.filter(f => f.beta_code === feedbackView.code).length > 0 ? (
+                feedbacks.filter(f => f.beta_code === feedbackView.code).map((fb, i) => (
+                  <div key={fb.id} className={i > 0 ? 'pt-3 border-t border-gray-700' : ''}>
+                    <p className="text-purple-400 text-xs mb-1">
+                      {new Date(fb.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                    <p className="text-white text-sm">{fb.message}</p>
+                    {fb.reply_email && (
+                      <a href={`mailto:${fb.reply_email}`} className="text-blue-400 text-xs mt-1 block hover:text-blue-300">
+                        ✉️ {fb.reply_email}
+                      </a>
+                    )}
+                  </div>
+                ))
+              ) : (
+                /* Fallback: anciens feedbacks stockés sur le testeur */
+                feedbackView.text.split('\n\n').map((entry, i) => (
+                  <div key={i} className={i > 0 ? 'pt-3 border-t border-gray-700' : ''}>
+                    {entry.match(/^\[(.+?)\]/) ? (
+                      <>
+                        <p className="text-purple-400 text-xs mb-1">{entry.match(/^\[(.+?)\]/)[1]}</p>
+                        <p className="text-white text-sm">{entry.replace(/^\[.+?\]\s*/, '')}</p>
+                      </>
+                    ) : (
+                      <p className="text-white text-sm">{entry}</p>
+                    )}
+                  </div>
+                ))
+              )}
             </div>
             <button onClick={() => setFeedbackView({ code: null, text: '' })} className="w-full mt-4 py-2 bg-gray-800 text-gray-300 rounded-lg font-medium hover:bg-gray-700 transition border border-gray-700">
               Fermer
