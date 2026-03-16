@@ -2920,8 +2920,25 @@ hasPlanningRisk: nlpAnalysis.hasPlanningRisk,
         source: item.source || 'unknown',
         url: item.url || '#',
         imageUrl: item.thumbnail || '',
-        district: item.district || null,
-        ward: item.ward || null,
+        district: (() => {
+  let d = item.district || null;
+  if (!d) return null;
+  // Chotot: "Qui Nhơn" → "Quy Nhơn"
+  d = d.replace(/Qui Nh/g, 'Quy Nh');
+  // Alonhadat: "Gia Lai" → "Bình Định" si ward contient "Quy Nhơn"
+  if (d.toLowerCase().includes('gia lai') && item.ward && 
+      removeVietnameseAccents(item.ward.toLowerCase()).includes('quy nh')) {
+    d = 'Bình Định';
+  }
+  return d;
+})(),
+       ward: (() => {
+  let w = item.ward || null;
+  if (!w) return null;
+  // Normaliser "Phường Quy Nhơn Nam, Gia Lai" → "Phường Quy Nhơn Nam"
+  w = w.replace(/,\s*Gia Lai$/i, '');
+  return w;
+})(),
         city: item.city || null,
         postedOn: item.postedOn || null,
         bedrooms: item.bedrooms || null,
