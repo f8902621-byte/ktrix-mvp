@@ -2012,7 +2012,10 @@ function applyFilters(results, filters) {
     'thu duc': ['thu duc', 'thanh pho thu duc', 'tp thu duc', 'tp. thu duc', 'quan 2', 'quan 9', 'quan thu duc'],
     'quan 2': ['quan 2', 'thu duc', 'thanh pho thu duc', 'tp thu duc'],
     'quan 9': ['quan 9', 'thu duc', 'thanh pho thu duc', 'tp thu duc'],
-  };
+    'quy nhon': ['quy nhon', 'qui nhon', 'thanh pho quy nhon', 'thanh pho qui nhon', 'tp quy nhon', 'tp qui nhon'],
+  'nha trang': ['nha trang', 'thanh pho nha trang', 'tp nha trang'],
+  'da lat': ['da lat', 'dalat', 'thanh pho da lat', 'tp da lat'],
+};
 
   // Wards de TP. Thủ Đức (pour matcher même si le district est mal renseigné)
   const THU_DUC_WARDS = [
