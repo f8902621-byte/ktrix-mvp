@@ -2052,7 +2052,17 @@ function applyFilters(results, filters) {
         const wardMatch = THU_DUC_WARDS.some(w => wardName === w);
         if (wardMatch) return true;
       }
-      
+      // Check 3: ward contient le nom de la ville cherchée
+          // (cas Alonhadat: district="Gia Lai" mais ward="Phường Quy Nhơn")
+          const CITY_IN_WARD_ALIASES = {
+            'quy nhon': ['quy nhon', 'qui nhon'],
+            'nha trang': ['nha trang'],
+            'da lat': ['da lat', 'dalat'],
+          };
+          const cityWardAliases = CITY_IN_WARD_ALIASES[d] || [];
+          if (cityWardAliases.length > 0 && itemWard) {
+            if (cityWardAliases.some(alias => itemWard.includes(alias))) return true;
+          }
       if (itemDistrict || itemWard) {
         console.log(`District filter: "${d}" not in district="${itemDistrict}" ward="${itemWard}" | title: ${removeVietnameseAccents((item.title || '')).substring(0, 30)}`);
       }
