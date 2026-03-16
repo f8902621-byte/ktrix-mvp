@@ -360,12 +360,12 @@ export default function SearchPage() {
     { vn: 'Hà Nội', en: 'Hanoi', fr: 'Hanoï' },
     { vn: 'Đà Nẵng', en: 'Da Nang', fr: 'Da Nang' },
     { vn: 'Bình Dương', en: 'Binh Duong', fr: 'Binh Duong' },
-    { vn: 'Khánh Hòa', en: 'Khanh Hoa (Nha Trang)', fr: 'Khanh Hoa (Nha Trang)' },
+    { vn: 'Nha Trang (Khánh Hòa)', en: 'Nha Trang (Khanh Hoa)', fr: 'Nha Trang (Khanh Hoa)' },
     { vn: 'Cần Thơ', en: 'Can Tho', fr: 'Can Tho' },
     { vn: 'Hải Phòng', en: 'Hai Phong', fr: 'Hai Phong' },
     { vn: 'Bà Rịa - Vũng Tàu', en: 'Ba Ria - Vung Tau', fr: 'Ba Ria - Vung Tau' },
-    { vn: 'Bình Định', en: 'Binh Dinh (Quy Nhon)', fr: 'Binh Dinh (Quy Nhon)' },
-    { vn: 'Lâm Đồng', en: 'Lam Dong (Da Lat)', fr: 'Lam Dong (Da Lat)' },
+    { vn: 'Quy Nhơn (Bình Định)', en: 'Quy Nhon (Binh Dinh)', fr: 'Quy Nhon (Binh Dinh)' },
+    { vn: 'Đà Lạt (Lâm Đồng)', en: 'Da Lat (Lam Dong)', fr: 'Da Lat (Lam Dong)' },
   ];
 
   const districtsByCity = {
@@ -373,12 +373,12 @@ export default function SearchPage() {
     'Hà Nội': ['Ba Đình', 'Hoàn Kiếm', 'Hai Bà Trưng', 'Đống Đa', 'Tây Hồ', 'Cầu Giấy'],
     'Đà Nẵng': ['Hải Châu', 'Thanh Khê', 'Sơn Trà', 'Ngũ Hành Sơn', 'Liên Chiểu'],
     'Bình Dương': ['Thủ Dầu Một', 'Dĩ An', 'Thuận An'],
-    'Khánh Hòa': ['Nha Trang', 'Cam Ranh', 'Diên Khánh'],
+    'Nha Trang (Khánh Hòa)': ['Nha Trang', 'Cam Ranh', 'Diên Khánh'],
     'Cần Thơ': ['Ninh Kiều', 'Bình Thủy', 'Cái Răng'],
     'Hải Phòng': ['Hồng Bàng', 'Lê Chân', 'Ngô Quyền', 'Đồ Sơn'],
     'Bà Rịa - Vũng Tàu': ['Vũng Tàu', 'Bà Rịa', 'Long Điền', 'Phú Mỹ'],
-    'Bình Định': ['Quy Nhơn', 'An Nhơn', 'Hoài Nhơn', 'Tuy Phước', 'Phù Cát'],
-    'Lâm Đồng': ['Đà Lạt', 'Bảo Lộc', 'Đức Trọng', 'Lâm Hà', 'Đơn Dương', 'Di Linh', 'Bảo Lâm', 'Đạ Huoai', 'Đạ Tẻh', 'Cát Tiên', 'Lạc Dương'],
+    'Quy Nhơn (Bình Định)': ['Quy Nhơn', 'An Nhơn', 'Hoài Nhơn', 'Tuy Phước', 'Phù Cát'],
+    'Đà Lạt (Lâm Đồng)': ['Đà Lạt', 'Bảo Lộc', 'Đức Trọng', 'Lâm Hà', 'Đơn Dương', 'Di Linh', 'Bảo Lâm', 'Đạ Huoai', 'Đạ Tẻh', 'Cát Tiên', 'Lạc Dương'],
   };
 
   const currentDistricts = districtsByCity[searchParams.city] || [];
