@@ -1806,10 +1806,7 @@ function parseAlonhadatHtml(html, city, propertyType) {
       if (!imageMatch) {
         imageMatch = articleHtml.match(/src=["']([^"']*(?:alonhadat|files)[^"']*)["']/i);
       }
-      if (!imageMatch) {
-         if (imageMatch && !imageMatch[1].includes('default.jpg')) {
-        }
-        
+              
         if (!imageMatch) {
           imageMatch = articleHtml.match(/data-lazy=["']([^"']+)["']/i);
         }
@@ -1817,7 +1814,7 @@ function parseAlonhadatHtml(html, city, propertyType) {
         if (!imageMatch) {
           imageMatch = articleHtml.match(/data-img=["']([^"']+)["']/i);
         }
-      if (imageMatch) {
+      if (imageMatch && !imageMatch[1].includes('default.jpg')) {
         let imgUrl = imageMatch[1];
         imgUrl = imgUrl
           .replace('/thumbnails/', '/images/')
