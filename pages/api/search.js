@@ -2676,6 +2676,9 @@ hasPlanningRisk: nlpAnalysis.hasPlanningRisk,
             'thu duc': ['thu duc', 'thanh pho thu duc', 'tp thu duc', 'tp. thu duc', 'quan 2', 'quan 9', 'quan thu duc'],
             'quan 2': ['quan 2', 'thu duc', 'thanh pho thu duc', 'tp thu duc'],
             'quan 9': ['quan 9', 'thu duc', 'thanh pho thu duc', 'tp thu duc'],
+            'quy nhon': ['quy nhon', 'qui nhon', 'thanh pho quy nhon', 'thanh pho qui nhon'],
+            'nha trang': ['nha trang', 'thanh pho nha trang'],
+            'da lat': ['da lat', 'dalat', 'thanh pho da lat'],
           };
           const aliases = DISTRICT_ALIASES_PREFILT[d] || [d];
           
