@@ -268,6 +268,28 @@ const CHOTOT_DISTRICTS = {
     'tay ho': '12011',
     'ha dong': '12012',
   },
+  // Bình Định / Quy Nhơn (7043)
+  '7043': {
+    'quy nhon': '70431', 'thanh pho quy nhon': '70431', 'tp quy nhon': '70431',
+    'an nhon': '70432', 'hoai nhon': '70433', 'hoai an': '70434',
+    'phu my': '70435', 'tay son': '70436', 'van canh': '70437',
+    'vinh thanh': '70438', 'phu cat': '70439',
+  },
+
+  // Khánh Hòa / Nha Trang (7044)
+  '7044': {
+    'nha trang': '70441', 'thanh pho nha trang': '70441', 'tp nha trang': '70441',
+    'cam ranh': '70442', 'ninh hoa': '70443', 'van ninh': '70444',
+    'dien khanh': '70445', 'khanh vinh': '70446', 'khanh son': '70447',
+  },
+
+  // Lâm Đồng / Đà Lạt (9057)
+  '9057': {
+    'da lat': '90571', 'thanh pho da lat': '90571', 'tp da lat': '90571', 'dalat': '90571',
+    'bao loc': '90572', 'thanh pho bao loc': '90572',
+    'di linh': '90573', 'bao lam': '90574', 'don duong': '90575',
+    'duc trong': '90576', 'lac duong': '90577', 'lam ha': '90578',
+  },
 };
 
 function getChototDistrictCode(regionCode, district) {
