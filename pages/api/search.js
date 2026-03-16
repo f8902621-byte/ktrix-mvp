@@ -2925,11 +2925,10 @@ hasPlanningRisk: nlpAnalysis.hasPlanningRisk,
   if (!d) return null;
   // Chotot: "Qui Nhơn" → "Quy Nhơn"
   d = d.replace(/Qui Nh/g, 'Quy Nh');
-  // Alonhadat: "Gia Lai" → "Bình Định" si ward contient "Quy Nhơn"
-  if (d.toLowerCase().includes('gia lai') && item.ward && 
-      removeVietnameseAccents(item.ward.toLowerCase()).includes('quy nh')) {
-    d = 'Bình Định';
-  }
+// Alonhadat: "Gia Lai" → "Bình Định"
+          if (d.toLowerCase().includes('gia lai')) {
+            d = 'Bình Định';
+          }
   return d;
 })(),
        ward: (() => {
