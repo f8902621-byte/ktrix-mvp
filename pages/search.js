@@ -441,7 +441,7 @@ export default function SearchPage() {
           setSourceStats(statsBySource);
         }
       }
-      setAlonhadatLoading(true);
+      setAlonhadatLoading(slowSources.length > 0);
       if (slowSources.length > 0 && fastSources.length > 0) {
         fetch('/api/search', {
           method: 'POST',
