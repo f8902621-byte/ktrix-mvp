@@ -2993,7 +2993,25 @@ hasPlanningRisk: nlpAnalysis.hasPlanningRisk,
         trendPercent: trendPercent,
       };
     }).sort((a, b) => b.count - a.count);
+// Normalisation des districts mal renseignés par les sources
+        results.forEach(item => {
+          if (item.district) {
+            // Chotot: "Qui Nhơn" → "Quy Nhơn"
+            item.district = item.district.replace(/Qui Nhơn/g, 'Quy Nhơn').replace(/Qui Nhon/g, 'Quy Nhon');
+            // Alonhadat: "Gia Lai" → "Bình Định" si ward contient "Quy Nhơn"
+            if (item.district.toLowerCase().includes('gia lai') && 
+                item.ward && item.ward.toLowerCase().includes('quy nh')) {
+              item.district = 'Bình Định';
+            }
+          }
+        });
 
+        // Normalisation des marketStats
+        marketStats.forEach(stat => {
+          stat.district = stat.district
+            .replace(/Qui nhơn/gi, 'Quy Nhơn')
+            .replace(/Gia lai/gi, 'Quy Nhơn (Bình Định)');
+        });
     console.log(`FINAL: ${results.length} résultats, ${marketStats.length} districts`);
     
     // Dédupliquer par id avant sauvegarde Supabase
