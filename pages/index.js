@@ -23,13 +23,46 @@ export default function Landing() {
   const [language, setLanguage] = useState('vn');
     const router = useRouter();
 const [stats, setStats] = useState(null);
+const [animatedCount, setAnimatedCount] = useState(0);
 
+useEffect(() => {
+  const target = stats?.total_listings || 21147;
+  const duration = 2000;
+  const step = Math.ceil(target / (duration / 16));
+  let current = 0;
+  const timer = setInterval(() => {
+    current += step;
+    if (current >= target) {
+      current = target;
+      clearInterval(timer);
+    }
+    setAnimatedCount(current);
+  }, 16);
+  return () => clearInterval(timer);
+}, [stats]);
 useEffect(() => {
   fetch('/api/monitoring')
     .then(res => res.json())
     .then(data => setStats(data.stats))
     .catch(() => {});
 }, []);
+  const [animatedCount, setAnimatedCount] = useState(0);
+
+useEffect(() => {
+  const target = stats?.total_listings || 21147;
+  const duration = 2000;
+  const step = Math.ceil(target / (duration / 16));
+  let current = 0;
+  const timer = setInterval(() => {
+    current += step;
+    if (current >= target) {
+      current = target;
+      clearInterval(timer);
+    }
+    setAnimatedCount(current);
+  }, 16);
+  return () => clearInterval(timer);
+}, [stats]);
   const t = {
     vn: {
       tagline: 'Nền tảng Tìm kiếm BĐS Thông minh',
@@ -298,6 +331,7 @@ roadmapMore: 'Et bien plus encore...',
   const sources = [
     { name: 'Chotot.com', logo: '🛒', active: true },
     { name: 'Alonhadat.com.vn', logo: '📍', active: true },
+    { name: 'Facebook Groups', logo: '👥', active: false, highlight: true }, // ← nouveau
     { name: 'Batdongsan.com.vn', logo: '🏠', active: false, status: 'maintenance' },
     { name: 'Nhadat247.com.vn', logo: '🏘️', active: false },
     { name: 'Homedy.com', logo: '🏡', active: false },
@@ -382,7 +416,7 @@ roadmapMore: 'Et bien plus encore...',
             <div className="grid grid-cols-2 gap-3 sm:gap-4">
               {[
                 { icon: <BarChart3 className="w-6 h-6 text-cyan-400" />, value: '2', label: t.statSources, bg: 'bg-cyan-500/10', border: 'border-cyan-500/20' },
-                { icon: <TrendingUp className="w-6 h-6 text-orange-400" />, value: stats?.total_listings ? stats.total_listings.toLocaleString() : '20,000+', label: t.statListings, bg: 'bg-orange-500/10', border: 'border-orange-500/20' },
+                { icon: <TrendingUp className="w-6 h-6 text-orange-400" />, value: animatedCount > 0 ? animatedCount.toLocaleString('fr-FR') : '21,000+', label: t.statListings, bg: 'bg-orange-500/10', border: 'border-orange-500/20' },
                 { icon: <Shield className="w-6 h-6 text-blue-400" />, value: '65%', label: t.statCoverage, bg: 'bg-blue-500/10', border: 'border-blue-500/20', gradient: true },
                 { icon: <Globe className="w-6 h-6 text-emerald-400" />, value: '12+', label: t.statCities, bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
               ].map((stat, i) => (
