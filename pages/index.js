@@ -46,21 +46,7 @@ useEffect(() => {
     .then(data => setStats(data.stats))
     .catch(() => {});
 }, []);
-  const [animatedCount, setAnimatedCount] = useState(0);
 
-useEffect(() => {
-  const target = stats?.total_listings || 21147;
-  const duration = 2000;
-  const step = Math.ceil(target / (duration / 16));
-  let current = 0;
-  const timer = setInterval(() => {
-    current += step;
-    if (current >= target) {
-      current = target;
-      clearInterval(timer);
-    }
-    setAnimatedCount(current);
-  }, 16);
   return () => clearInterval(timer);
 }, [stats]);
   const t = {
