@@ -105,6 +105,19 @@ useEffect(() => {
       nlpDesc: 'AI trích xuất diện tích, tầng, bề rộng đường ngay cả khi không có dữ liệu cấu trúc.',
       explore: 'Khám phá ngay! 🎉',
       betaLimited: 'Beta Riêng — Giới hạn 20 người dùng',
+      roadmapTitle: 'Sắp ra mắt',
+roadmapDesc: 'K Trix không ngừng phát triển',
+roadmapFacebook: 'Tích hợp nhóm Facebook BĐS',
+roadmapFacebookDesc: 'Hàng triệu tin đăng trực tiếp từ chủ nhà',
+roadmapAlerts: 'Tìm kiếm tự động & Cảnh báo',
+roadmapAlertsDesc: 'Nhận thông báo ngay khi có tin mới phù hợp',
+roadmapChinese: 'Phiên bản tiếng Trung',
+roadmapChineseDesc: 'Dành cho nhà đầu tư Trung Quốc & Đài Loan',
+roadmapKorean: 'Phiên bản tiếng Hàn',
+roadmapKoreanDesc: 'Cộng đồng Hàn Quốc tại Việt Nam',
+roadmapHistory: 'Lịch sử giá',
+roadmapHistoryDesc: 'Theo dõi xu hướng giá theo thời gian',
+roadmapMore: 'Và nhiều hơn nữa...',
     },
     en: {
       tagline: 'Smart Real Estate Search Platform',
@@ -179,6 +192,19 @@ useEffect(() => {
       nlpDesc: 'Our AI extracts key info (area, floors, street width) even when unstructured.',
       explore: 'Happy exploring! 🎉',
       betaLimited: 'Private Beta — Limited to 20 users',
+      roadmapTitle: 'Coming soon',
+roadmapDesc: 'K Trix is constantly evolving',
+roadmapFacebook: 'Facebook Real Estate Groups',
+roadmapFacebookDesc: 'Millions of direct listings from property owners',
+roadmapAlerts: 'Automatic search & Alerts',
+roadmapAlertsDesc: 'Get notified instantly when new matching listings appear',
+roadmapChinese: 'Chinese version',
+roadmapChineseDesc: 'For Chinese & Taiwanese investors',
+roadmapKorean: 'Korean version',
+roadmapKoreanDesc: 'Korean community in Vietnam',
+roadmapHistory: 'Price history',
+roadmapHistoryDesc: 'Track price trends over time',
+roadmapMore: 'And much more...',
     },
     fr: {
       tagline: 'Plateforme de Recherche Immobilière Intelligente',
@@ -253,6 +279,19 @@ useEffect(() => {
       nlpDesc: 'Notre IA extrait les informations clés (surface, étages, largeur de rue) même quand elles ne sont pas structurées.',
       explore: 'Bonne exploration ! 🎉',
       betaLimited: 'Beta Privée — Limitée à 20 testeurs',
+      roadmapTitle: 'Bientôt disponible',
+roadmapDesc: 'K Trix évolue en permanence',
+roadmapFacebook: 'Groupes Facebook Immobilier',
+roadmapFacebookDesc: 'Des millions d\'annonces directes de propriétaires',
+roadmapAlerts: 'Recherche automatique & Alertes',
+roadmapAlertsDesc: 'Soyez notifié instantanément des nouvelles annonces',
+roadmapChinese: 'Version chinoise',
+roadmapChineseDesc: 'Pour les investisseurs chinois & taïwanais',
+roadmapKorean: 'Version coréenne',
+roadmapKoreanDesc: 'Communauté coréenne au Vietnam',
+roadmapHistory: 'Historique des prix',
+roadmapHistoryDesc: 'Suivez l\'évolution des prix dans le temps',
+roadmapMore: 'Et bien plus encore...',
     }
   }[language];
 
@@ -525,7 +564,39 @@ useEffect(() => {
           </RevealOnScroll>
         </div>
       </section>
-
+{/* Roadmap Section */}
+<section className="py-16 sm:py-20 px-4 sm:px-6 bg-gray-900/50">
+  <div className="max-w-6xl mx-auto">
+    <RevealOnScroll>
+      <div className="text-center mb-12">
+        <div className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 text-blue-400 px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider mb-4">
+          🚀 {t.roadmapTitle}
+        </div>
+        <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">{t.roadmapDesc}</h2>
+      </div>
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {[
+          { icon: '📱', title: t.roadmapFacebook, desc: t.roadmapFacebookDesc, color: 'blue' },
+          { icon: '🔔', title: t.roadmapAlerts, desc: t.roadmapAlertsDesc, color: 'cyan' },
+          { icon: '🇨🇳', title: t.roadmapChinese, desc: t.roadmapChineseDesc, color: 'red' },
+          { icon: '🇰🇷', title: t.roadmapKorean, desc: t.roadmapKoreanDesc, color: 'emerald' },
+          { icon: '📈', title: t.roadmapHistory, desc: t.roadmapHistoryDesc, color: 'orange' },
+          { icon: '✨', title: t.roadmapMore, desc: '', color: 'purple' },
+        ].map((item, i) => (
+          <div key={i} className="bg-gray-900 border border-gray-800 rounded-2xl p-5 sm:p-6 hover:border-gray-700 transition relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-20 h-20 bg-white/2 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-150 transition-transform duration-500"></div>
+            <span className="text-3xl mb-3 block">{item.icon}</span>
+            <h4 className="font-bold text-white mb-2">{item.title}</h4>
+            <p className="text-gray-500 text-sm leading-relaxed">{item.desc}</p>
+            <span className="inline-block mt-3 text-xs bg-gray-800 text-gray-500 px-2 py-1 rounded-full border border-gray-700">
+              {t.sourceComingSoon}
+            </span>
+          </div>
+        ))}
+      </div>
+    </RevealOnScroll>
+  </div>
+</section>
       {/* CTA Section */}
       <section className="py-16 sm:py-20 px-4 sm:px-6">
         <div className="max-w-2xl mx-auto">
