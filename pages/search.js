@@ -220,7 +220,7 @@ export default function SearchPage() {
   const t = {
     vn: {
       menu: 'Menu', searchParams: 'Tham số Tìm kiếm', backToHome: 'Trang chủ',
-      city: 'Thành phố', district: 'Quận/Huyện', propertyType: 'Loại BDS',
+      city: 'Thành phố', district: 'Quận/Huyện/TP', propertyType: 'Loại BDS',
       priceMin: 'Giá tối thiểu', priceMax: 'Giá tối đa', livingArea: 'Diện tích (m²)',
       bedrooms: 'Phòng ngủ', daysListed: 'Đăng trong (ngày)', legalStatus: 'Pháp lý',
       legalAll: 'Tất cả', legalSoHong: 'Sổ đỏ/Sổ hồng', legalHopdong: 'Hợp đồng mua bán', legalDangcho: 'Đang chờ sổ',
@@ -255,7 +255,7 @@ export default function SearchPage() {
     },
     en: {
       menu: 'Menu', searchParams: 'Search Parameters', backToHome: 'Home',
-      city: 'City', district: 'District', propertyType: 'Property Type',
+      city: 'City', district: 'District / City', propertyType: 'Property Type',
       priceMin: 'Min Price', priceMax: 'Max Price', livingArea: 'Living Area (m²)',
       bedrooms: 'Bedrooms', daysListed: 'Listed within (days)', legalStatus: 'Legal Status',
       legalAll: 'All', legalSoHong: 'Red/Pink Book', legalHopdong: 'Sales Contract', legalDangcho: 'Pending',
@@ -290,7 +290,7 @@ export default function SearchPage() {
     },
     fr: {
       menu: 'Menu', searchParams: 'Paramètres', backToHome: 'Accueil',
-      city: 'Ville', district: 'District', propertyType: 'Type de Bien',
+      city: 'Ville', district: 'District / Ville', propertyType: 'Type de Bien',
       priceMin: 'Prix Min', priceMax: 'Prix Max', livingArea: 'Surface (m²)',
       bedrooms: 'Chambres', daysListed: 'Publié depuis (jours)', legalStatus: 'Statut légal',
       legalAll: 'Tous', legalSoHong: 'Sổ đỏ/Sổ hồng', legalHopdong: 'Contrat de vente', legalDangcho: 'En attente',
