@@ -368,18 +368,46 @@ export default function SearchPage() {
     { vn: 'Đà Lạt (Lâm Đồng)', en: 'Da Lat (Lam Dong)', fr: 'Da Lat (Lam Dong)' },
   ];
 
-  const districtsByCity = {
-    'Hồ Chí Minh': ['Quận 1', 'Quận 3', 'Quận 7', 'Bình Thạnh', 'Gò Vấp', 'Phú Nhuận', 'Tân Bình', 'Thủ Đức'],
-    'Hà Nội': ['Ba Đình', 'Hoàn Kiếm', 'Hai Bà Trưng', 'Đống Đa', 'Tây Hồ', 'Cầu Giấy'],
-    'Đà Nẵng': ['Hải Châu', 'Thanh Khê', 'Sơn Trà', 'Ngũ Hành Sơn', 'Liên Chiểu'],
-    'Bình Dương': ['Thủ Dầu Một', 'Dĩ An', 'Thuận An'],
-    'Nha Trang (Khánh Hòa)': ['Nha Trang', 'Cam Ranh', 'Diên Khánh'],
-    'Cần Thơ': ['Ninh Kiều', 'Bình Thủy', 'Cái Răng'],
-    'Hải Phòng': ['Hồng Bàng', 'Lê Chân', 'Ngô Quyền', 'Đồ Sơn'],
-    'Bà Rịa - Vũng Tàu': ['Vũng Tàu', 'Bà Rịa', 'Long Điền', 'Phú Mỹ'],
-    'Quy Nhơn (Bình Định)': ['Quy Nhơn', 'An Nhơn', 'Hoài Nhơn', 'Tuy Phước', 'Phù Cát'],
-    'Đà Lạt (Lâm Đồng)': ['Đà Lạt', 'Bảo Lộc', 'Đức Trọng', 'Lâm Hà', 'Đơn Dương', 'Di Linh', 'Bảo Lâm', 'Đạ Huoai', 'Đạ Tẻh', 'Cát Tiên', 'Lạc Dương'],
-  };
+const districtsByCity = {
+  'Hồ Chí Minh': [
+    'Quận 1', 'Quận 3', 'Quận 4', 'Quận 5', 'Quận 6', 'Quận 7', 'Quận 8',
+    'Quận 10', 'Quận 11', 'Quận 12', 'Bình Tân', 'Bình Thạnh', 'Gò Vấp',
+    'Phú Nhuận', 'Tân Bình', 'Tân Phú', 'Thủ Đức',
+    'Bình Chánh', 'Cần Giờ', 'Củ Chi', 'Hóc Môn', 'Nhà Bè'
+  ],
+  'Hà Nội': [
+    'Ba Đình', 'Hoàn Kiếm', 'Hai Bà Trưng', 'Đống Đa', 'Tây Hồ', 'Cầu Giấy',
+    'Thanh Xuân', 'Hoàng Mai', 'Long Biên', 'Nam Từ Liêm', 'Bắc Từ Liêm', 'Hà Đông'
+  ],
+  'Đà Nẵng': [
+    'Hải Châu', 'Thanh Khê', 'Sơn Trà', 'Ngũ Hành Sơn', 'Liên Chiểu', 'Cẩm Lệ', 'Hòa Vang'
+  ],
+  'Bình Dương': [
+    'Thủ Dầu Một', 'Dĩ An', 'Thuận An', 'Bến Cát', 'Tân Uyên', 'Bàu Bàng', 'Bắc Tân Uyên', 'Phú Giáo', 'Dầu Tiếng'
+  ],
+  'Nha Trang (Khánh Hòa)': [
+    'Nha Trang', 'Cam Ranh', 'Diên Khánh', 'Ninh Hòa', 'Vạn Ninh', 'Khánh Vĩnh', 'Khánh Sơn', 'Trường Sa'
+  ],
+  'Cần Thơ': [
+    'Ninh Kiều', 'Bình Thủy', 'Cái Răng', 'Ô Môn', 'Thốt Nốt',
+    'Phong Điền', 'Cờ Đỏ', 'Vĩnh Thạnh', 'Thới Lai'
+  ],
+  'Hải Phòng': [
+    'Hồng Bàng', 'Lê Chân', 'Ngô Quyền', 'Kiến An', 'Hải An',
+    'Dương Kinh', 'Đồ Sơn', 'Thủy Nguyên', 'An Dương', 'An Lão', 'Kiến Thụy', 'Tiên Lãng', 'Vĩnh Bảo', 'Cát Hải'
+  ],
+  'Bà Rịa - Vũng Tàu': [
+    'Vũng Tàu', 'Bà Rịa', 'Long Điền', 'Phú Mỹ', 'Xuyên Mộc', 'Châu Đức', 'Đất Đỏ', 'Côn Đảo'
+  ],
+  'Quy Nhơn (Bình Định)': [
+    'Quy Nhơn', 'An Nhơn', 'Hoài Nhơn', 'Tuy Phước', 'Phù Cát',
+    'Phù Mỹ', 'Tây Sơn', 'Vĩnh Thạnh', 'An Lão', 'Hoài Ân', 'Vân Canh'
+  ],
+  'Đà Lạt (Lâm Đồng)': [
+    'Đà Lạt', 'Bảo Lộc', 'Đức Trọng', 'Lâm Hà', 'Đơn Dương',
+    'Di Linh', 'Bảo Lâm', 'Đạ Huoai', 'Đạ Tẻh', 'Cát Tiên', 'Lạc Dương'
+  ],
+};
 
   const currentDistricts = districtsByCity[searchParams.city] || [];
   const currentWards = wardsByDistrict[searchParams.district] || [];
