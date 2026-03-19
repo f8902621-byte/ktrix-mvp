@@ -315,7 +315,7 @@ roadmapMore: 'Et bien plus encore...',
   const sources = [
     { name: 'Chotot.com', logo: '🛒', active: true },
     { name: 'Alonhadat.com.vn', logo: '📍', active: true },
-    { name: 'Facebook Groups', logo: '👥', active: false, highlight: true }, // ← nouveau
+    { name: 'Facebook Groups', logo: '👥', active: false, highlight: true },
     { name: 'Batdongsan.com.vn', logo: '🏠', active: false, status: 'maintenance' },
     { name: 'Nhadat247.com.vn', logo: '🏘️', active: false },
     { name: 'Homedy.com', logo: '🏡', active: false },
@@ -518,15 +518,21 @@ roadmapMore: 'Et bien plus encore...',
                   </div>
                 </div>
               ))}
-              {sources.filter(s => !s.active).map((source, i) => (
-                <div key={i} className="flex items-center gap-3 bg-gray-900/50 border border-gray-800/50 rounded-xl px-5 py-3 opacity-50">
-                  <span className="w-2.5 h-2.5 bg-gray-600 rounded-full"></span>
-                  <div>
-                    <p className="font-medium text-gray-400 text-sm">{source.name}</p>
-                    <p className="text-gray-600 text-xs">{t.sourceComingSoon}</p>
-                  </div>
-                </div>
-              ))}
+{sources.filter(s => !s.active).map((source, i) => (
+  <div key={i} className={`flex items-center gap-3 rounded-xl px-5 py-3 border transition ${
+    source.highlight 
+      ? 'bg-blue-500/10 border-blue-500/30 opacity-90' 
+      : 'bg-gray-900/50 border-gray-800/50 opacity-50'
+  }`}>
+    <span className={`w-2.5 h-2.5 rounded-full ${source.highlight ? 'bg-blue-400' : 'bg-gray-600'}`}></span>
+    <div>
+      <p className={`font-medium text-sm ${source.highlight ? 'text-blue-300' : 'text-gray-400'}`}>{source.name}</p>
+      <p className={`text-xs ${source.highlight ? 'text-blue-400 font-semibold' : 'text-gray-600'}`}>
+        {source.highlight ? '🔜 ' : ''}{t.sourceComingSoon}
+      </p>
+    </div>
+  </div>
+))}
             </div>
           </RevealOnScroll>
         </div>
