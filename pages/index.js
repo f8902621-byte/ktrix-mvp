@@ -47,8 +47,6 @@ useEffect(() => {
     .catch(() => {});
 }, []);
 
-  return () => clearInterval(timer);
-}, [stats]);
   const t = {
     vn: {
       tagline: 'Nền tảng Tìm kiếm BĐS Thông minh',
