@@ -35,78 +35,39 @@ export default function SearchPage() {
   const [showSavedSearches, setShowSavedSearches] = useState(false);
   const [daysRemaining, setDaysRemaining] = useState(null);
   const [testerName, setTesterName] = useState(null);
-
-  // PATCH 1 — authReady state
   const [authReady, setAuthReady] = useState(false);
 
-  // PATCH 2 — initAuth unifié (remplace les 2 useEffect auth séparés)
   useEffect(() => {
     const initAuth = async () => {
       if (typeof window === 'undefined') return;
-
       const urlParams = new URLSearchParams(window.location.search);
       const codeFromUrl = urlParams.get('code');
       if (codeFromUrl) {
-        // Nouveau code depuis URL : stocker dans les 2
         sessionStorage.setItem('ktrix_beta_code', codeFromUrl);
         localStorage.setItem('ktrix_beta_code', codeFromUrl);
       } else if (!sessionStorage.getItem('ktrix_beta_code') && localStorage.getItem('ktrix_beta_code')) {
-        // Pas de code en session mais un en localStorage : recopier dans sessionStorage de CET onglet
         sessionStorage.setItem('ktrix_beta_code', localStorage.getItem('ktrix_beta_code'));
       }
-
-      // Toujours lire depuis sessionStorage — isolé par onglet
       const betaCode = sessionStorage.getItem('ktrix_beta_code');
-      if (!betaCode) {
-        router.push('/beta');
-        return;
-      }
-
+      if (!betaCode) { router.push('/beta'); return; }
       try {
-        const res = await fetch('/api/verify-beta', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ code: betaCode })
-        });
+        const res = await fetch('/api/verify-beta', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: betaCode }) });
         const data = await res.json();
-        if (data.valid && data.tester) {
-          setDaysRemaining(data.tester.days_remaining);
-          setTesterName(data.tester.first_name);
-        }
-      } catch (err) {
-        // silently ignore verify errors
-      }
-
+        if (data.valid && data.tester) { setDaysRemaining(data.tester.days_remaining); setTesterName(data.tester.first_name); }
+      } catch (err) {}
       setAuthReady(true);
     };
-
     initAuth();
   }, []);
 
   const [searchParams, setSearchParams] = useState({
-    city: '',
-    district: '',
-    ward: '',
-    propertyType: '',
-    priceMin: '',
-    priceMax: '',
-    livingAreaMin: '',
-    livingAreaMax: '',
-    bedrooms: '',
-    bathrooms: '',
-    hasParking: false,
-    hasPool: false,
-    streetWidthMin: '',
-    daysListed: '',
-    legalStatus: '',
-    customKeyword: '',
-    sources: ['chotot', 'alonhadat'],
-    keywords: [],
-    keywordsOnly: false,
-    maxResults: 200
+    city: '', district: '', ward: '', propertyType: '',
+    priceMin: '', priceMax: '', livingAreaMin: '', livingAreaMax: '',
+    bedrooms: '', bathrooms: '', hasParking: false, hasPool: false,
+    streetWidthMin: '', daysListed: '', legalStatus: '', customKeyword: '',
+    sources: ['chotot', 'alonhadat'], keywords: [], keywordsOnly: false, maxResults: 200
   });
 
-  // PATCH 4 — savedSearches dépend de [authReady]
   useEffect(() => {
     if (!authReady) return;
     const loadSavedSearches = async () => {
@@ -116,32 +77,23 @@ export default function SearchPage() {
         const res = await fetch(`/api/saved-searches?code=${encodeURIComponent(code)}`);
         const data = await res.json();
         if (data.searches) setSavedSearches(data.searches);
-      } catch (err) {
-        console.error('[SAVED] Load error:', err);
-      }
+      } catch (err) { console.error('[SAVED] Load error:', err); }
     };
     loadSavedSearches();
   }, [authReady]);
 
   useEffect(() => {
-    if (router.query.lang && ['vn', 'en', 'fr'].includes(router.query.lang)) {
-      setLanguage(router.query.lang);
-    }
+    if (router.query.lang && ['vn', 'en', 'fr'].includes(router.query.lang)) setLanguage(router.query.lang);
   }, [router.query.lang]);
 
   useEffect(() => {
     if (!selectedProperty) return;
     if (selectedProperty.source !== 'alonhadat.com.vn') return;
     if (selectedProperty._enriched) return;
-
     const enrichListing = async () => {
       setEnriching(true);
       try {
-        const response = await fetch('/api/enrich', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url: selectedProperty.url })
-        });
+        const response = await fetch('/api/enrich', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: selectedProperty.url }) });
         const data = await response.json();
         if (data.success && data.enriched) {
           setSelectedProperty(prev => {
@@ -155,10 +107,7 @@ export default function SearchPage() {
             if (data.enriched.facadeWidth) updated.facadeWidth = data.enriched.facadeWidth;
             if (data.enriched.direction) updated.direction = data.enriched.direction;
             if (data.enriched.streetWidth) updated.streetWidth = data.enriched.streetWidth;
-            if (data.enriched.streetAccess) {
-              if (!updated.nlpAnalysis) updated.nlpAnalysis = {};
-              updated.nlpAnalysis.extractedStreetAccess = data.enriched.streetAccess;
-            }
+            if (data.enriched.streetAccess) { if (!updated.nlpAnalysis) updated.nlpAnalysis = {}; updated.nlpAnalysis.extractedStreetAccess = data.enriched.streetAccess; }
             if (data.enriched.depth && data.enriched.facadeWidth) {
               if (!updated.nlpAnalysis) updated.nlpAnalysis = {};
               updated.nlpAnalysis.extractedWidth = data.enriched.facadeWidth;
@@ -168,22 +117,13 @@ export default function SearchPage() {
             return updated;
           });
         }
-      } catch (err) {
-        console.error('[ENRICH] Error:', err);
-      } finally {
-        setEnriching(false);
-      }
+      } catch (err) { console.error('[ENRICH] Error:', err); } finally { setEnriching(false); }
     };
     enrichListing();
   }, [selectedProperty?.url]);
 
   useEffect(() => {
-    const handleEscape = (e) => {
-      if (e.key === 'Escape') {
-        setSelectedProperty(null);
-        setExpandedPhoto(null);
-      }
-    };
+    const handleEscape = (e) => { if (e.key === 'Escape') { setSelectedProperty(null); setExpandedPhoto(null); } };
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
   }, []);
@@ -198,21 +138,11 @@ export default function SearchPage() {
           setBdsProgress(data.progress || 0);
           setBdsCount(data.listingsCount || 0);
           if (data.listings && data.listings.length > 0) {
-            setResults(prev => {
-              const existingIds = new Set(prev.map(r => r.id));
-              const newBds = data.listings.filter(l => !existingIds.has(l.id));
-              if (newBds.length > 0) return [...prev, ...newBds];
-              return prev;
-            });
+            setResults(prev => { const existingIds = new Set(prev.map(r => r.id)); const newBds = data.listings.filter(l => !existingIds.has(l.id)); if (newBds.length > 0) return [...prev, ...newBds]; return prev; });
           }
-          if (data.status === 'completed' || data.status === 'error') {
-            setBdsStatus(data.status);
-            clearInterval(pollInterval);
-          }
+          if (data.status === 'completed' || data.status === 'error') { setBdsStatus(data.status); clearInterval(pollInterval); }
         }
-      } catch (err) {
-        console.error('BDS polling error:', err);
-      }
+      } catch (err) { console.error('BDS polling error:', err); }
     }, 5000);
     return () => clearInterval(pollInterval);
   }, [bdsTaskId, bdsStatus]);
@@ -368,255 +298,73 @@ export default function SearchPage() {
     { vn: 'Đà Lạt (Lâm Đồng)', en: 'Da Lat (Lam Dong)', fr: 'Da Lat (Lam Dong)' },
   ];
 
-const districtsByCity = {
-  'Hồ Chí Minh': [
-    'Quận 1', 'Quận 3', 'Quận 4', 'Quận 5', 'Quận 6', 'Quận 7', 'Quận 8',
-    'Quận 10', 'Quận 11', 'Quận 12', 'Bình Tân', 'Bình Thạnh', 'Gò Vấp',
-    'Phú Nhuận', 'Tân Bình', 'Tân Phú', 'Thủ Đức',
-    'Bình Chánh', 'Cần Giờ', 'Củ Chi', 'Hóc Môn', 'Nhà Bè'
-  ],
-  'Hà Nội': [
-    'Ba Đình', 'Hoàn Kiếm', 'Hai Bà Trưng', 'Đống Đa', 'Tây Hồ', 'Cầu Giấy',
-    'Thanh Xuân', 'Hoàng Mai', 'Long Biên', 'Nam Từ Liêm', 'Bắc Từ Liêm', 'Hà Đông'
-  ],
-  'Đà Nẵng': [
-    'Hải Châu', 'Thanh Khê', 'Sơn Trà', 'Ngũ Hành Sơn', 'Liên Chiểu', 'Cẩm Lệ', 'Hòa Vang'
-  ],
-  'Bình Dương': [
-    'Thủ Dầu Một', 'Dĩ An', 'Thuận An', 'Bến Cát', 'Tân Uyên', 'Bàu Bàng', 'Bắc Tân Uyên', 'Phú Giáo', 'Dầu Tiếng'
-  ],
-  'Nha Trang (Khánh Hòa)': [
-    'Nha Trang', 'Cam Ranh', 'Diên Khánh', 'Ninh Hòa', 'Vạn Ninh', 'Khánh Vĩnh', 'Khánh Sơn', 'Trường Sa'
-  ],
-  'Cần Thơ': [
-    'Ninh Kiều', 'Bình Thủy', 'Cái Răng', 'Ô Môn', 'Thốt Nốt',
-    'Phong Điền', 'Cờ Đỏ', 'Vĩnh Thạnh', 'Thới Lai'
-  ],
-  'Hải Phòng': [
-    'Hồng Bàng', 'Lê Chân', 'Ngô Quyền', 'Kiến An', 'Hải An',
-    'Dương Kinh', 'Đồ Sơn', 'Thủy Nguyên', 'An Dương', 'An Lão', 'Kiến Thụy', 'Tiên Lãng', 'Vĩnh Bảo', 'Cát Hải'
-  ],
-  'Bà Rịa - Vũng Tàu': [
-    'Vũng Tàu', 'Bà Rịa', 'Long Điền', 'Phú Mỹ', 'Xuyên Mộc', 'Châu Đức', 'Đất Đỏ', 'Côn Đảo'
-  ],
-  'Quy Nhơn (Bình Định)': [
-    'Quy Nhơn', 'An Nhơn', 'Hoài Nhơn', 'Tuy Phước', 'Phù Cát',
-    'Phù Mỹ', 'Tây Sơn', 'Vĩnh Thạnh', 'An Lão', 'Hoài Ân', 'Vân Canh'
-  ],
-  'Đà Lạt (Lâm Đồng)': [
-    'Đà Lạt', 'Bảo Lộc', 'Đức Trọng', 'Lâm Hà', 'Đơn Dương',
-    'Di Linh', 'Bảo Lâm', 'Đạ Huoai', 'Đạ Tẻh', 'Cát Tiên', 'Lạc Dương'
-  ],
-};
+  const districtsByCity = {
+    'Hồ Chí Minh': ['Quận 1', 'Quận 3', 'Quận 4', 'Quận 5', 'Quận 6', 'Quận 7', 'Quận 8', 'Quận 10', 'Quận 11', 'Quận 12', 'Bình Tân', 'Bình Thạnh', 'Gò Vấp', 'Phú Nhuận', 'Tân Bình', 'Tân Phú', 'Thủ Đức', 'Bình Chánh', 'Cần Giờ', 'Củ Chi', 'Hóc Môn', 'Nhà Bè'],
+    'Hà Nội': ['Ba Đình', 'Hoàn Kiếm', 'Hai Bà Trưng', 'Đống Đa', 'Tây Hồ', 'Cầu Giấy', 'Thanh Xuân', 'Hoàng Mai', 'Long Biên', 'Nam Từ Liêm', 'Bắc Từ Liêm', 'Hà Đông'],
+    'Đà Nẵng': ['Hải Châu', 'Thanh Khê', 'Sơn Trà', 'Ngũ Hành Sơn', 'Liên Chiểu', 'Cẩm Lệ', 'Hòa Vang'],
+    'Bình Dương': ['Thủ Dầu Một', 'Dĩ An', 'Thuận An', 'Bến Cát', 'Tân Uyên', 'Bàu Bàng', 'Bắc Tân Uyên', 'Phú Giáo', 'Dầu Tiếng'],
+    'Nha Trang (Khánh Hòa)': ['Nha Trang', 'Cam Ranh', 'Diên Khánh', 'Ninh Hòa', 'Vạn Ninh', 'Khánh Vĩnh', 'Khánh Sơn', 'Trường Sa'],
+    'Cần Thơ': ['Ninh Kiều', 'Bình Thủy', 'Cái Răng', 'Ô Môn', 'Thốt Nốt', 'Phong Điền', 'Cờ Đỏ', 'Vĩnh Thạnh', 'Thới Lai'],
+    'Hải Phòng': ['Hồng Bàng', 'Lê Chân', 'Ngô Quyền', 'Kiến An', 'Hải An', 'Dương Kinh', 'Đồ Sơn', 'Thủy Nguyên', 'An Dương', 'An Lão', 'Kiến Thụy', 'Tiên Lãng', 'Vĩnh Bảo', 'Cát Hải'],
+    'Bà Rịa - Vũng Tàu': ['Vũng Tàu', 'Bà Rịa', 'Long Điền', 'Phú Mỹ', 'Xuyên Mộc', 'Châu Đức', 'Đất Đỏ', 'Côn Đảo'],
+    'Quy Nhơn (Bình Định)': ['Quy Nhơn', 'An Nhơn', 'Hoài Nhơn', 'Tuy Phước', 'Phù Cát', 'Phù Mỹ', 'Tây Sơn', 'Vĩnh Thạnh', 'An Lão', 'Hoài Ân', 'Vân Canh'],
+    'Đà Lạt (Lâm Đồng)': ['Đà Lạt', 'Bảo Lộc', 'Đức Trọng', 'Lâm Hà', 'Đơn Dương', 'Di Linh', 'Bảo Lâm', 'Đạ Huoai', 'Đạ Tẻh', 'Cát Tiên', 'Lạc Dương'],
+  };
 
   const currentDistricts = districtsByCity[searchParams.city] || [];
   const currentWards = wardsByDistrict[searchParams.district] || [];
 
   const handleSearch = async () => {
-    if (!searchParams.city || !searchParams.propertyType || searchParams.priceMax === null || searchParams.priceMax === undefined || searchParams.priceMax === '' || Number(searchParams.priceMax) <= 0) {
-      setError(t.required);
-      return;
-    }
+    if (!searchParams.city || !searchParams.propertyType || searchParams.priceMax === null || searchParams.priceMax === undefined || searchParams.priceMax === '' || Number(searchParams.priceMax) <= 0) { setError(t.required); return; }
     const betaCode = typeof window !== 'undefined' ? sessionStorage.getItem('ktrix_beta_code') : null;
     if (betaCode) fetch('/api/track-search', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: betaCode }) });
-    setLoading(true);
-    setSearchProgress(0);
-    const progressInterval = setInterval(() => {
-      setSearchProgress(prev => {
-        if (prev < 30) return prev + 3;
-        if (prev < 60) return prev + 2;
-        if (prev < 85) return prev + 1;
-        if (prev < 95) return prev + 0.3;
-        return prev;
-      });
-    }, 1000);
-    setError(null);
-    setShowSearch(false);
-    setBdsTaskId(null);
-    setBdsStatus('idle');
-    setBdsProgress(0);
-    setBdsCount(0);
-    setSourceStats({});
-    setMarketStats([]);
+    setLoading(true); setSearchProgress(0);
+    const progressInterval = setInterval(() => { setSearchProgress(prev => { if (prev < 30) return prev + 3; if (prev < 60) return prev + 2; if (prev < 85) return prev + 1; if (prev < 95) return prev + 0.3; return prev; }); }, 1000);
+    setError(null); setShowSearch(false); setBdsTaskId(null); setBdsStatus('idle'); setBdsProgress(0); setBdsCount(0); setSourceStats({}); setMarketStats([]);
     try {
       const allSources = searchParams.sources || ['chotot', 'alonhadat'];
       const fastSources = allSources.filter(s => s !== 'alonhadat');
       const slowSources = allSources.filter(s => s === 'alonhadat');
-      const searchBody = {
-        ...searchParams,
-        keywords: searchParams.keywords || [],
-        keywordsOnly: searchParams.keywordsOnly || false,
-        sortBy: sortBy === 'priceAsc' ? 'price_asc' : sortBy === 'priceDesc' ? 'price_desc' : 'score_desc'
-      };
+      const searchBody = { ...searchParams, keywords: searchParams.keywords || [], keywordsOnly: searchParams.keywordsOnly || false, sortBy: sortBy === 'priceAsc' ? 'price_asc' : sortBy === 'priceDesc' ? 'price_desc' : 'score_desc' };
       if (fastSources.length > 0) {
-        const fastResponse = await fetch('/api/search', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...searchBody, sources: fastSources })
-        });
+        const fastResponse = await fetch('/api/search', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...searchBody, sources: fastSources }) });
         const fastData = await fastResponse.json();
         if (!fastResponse.ok) throw new Error(fastData.error || 'Search error');
-        setResults(fastData.results || []);
-        setStats(fastData.stats);
+        setResults(fastData.results || []); setStats(fastData.stats);
         if (fastData.marketStats && fastData.marketStats.length > 0) setMarketStats(fastData.marketStats);
-        if (fastData.results && fastData.results.length > 0) {
-          const statsBySource = {};
-          fastData.results.forEach(result => {
-            const source = result.source || 'unknown';
-            if (!statsBySource[source]) statsBySource[source] = 0;
-            statsBySource[source]++;
-          });
-          setSourceStats(statsBySource);
-        }
+        if (fastData.results && fastData.results.length > 0) { const statsBySource = {}; fastData.results.forEach(result => { const source = result.source || 'unknown'; if (!statsBySource[source]) statsBySource[source] = 0; statsBySource[source]++; }); setSourceStats(statsBySource); }
       }
       setAlonhadatLoading(slowSources.length > 0);
       if (slowSources.length > 0 && fastSources.length > 0) {
-        fetch('/api/search', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...searchBody, sources: slowSources })
-        }).then(res => res.json()).then(slowData => {
-          if (slowData.results && slowData.results.length > 0) {
-            setResults(prev => {
-              const merged = [...prev, ...slowData.results];
-              if (sortBy === 'priceAsc') merged.sort((a, b) => (a.price || 0) - (b.price || 0));
-              else if (sortBy === 'priceDesc') merged.sort((a, b) => (b.price || 0) - (a.price || 0));
-              else merged.sort((a, b) => (b.score || 0) - (a.score || 0));
-              return merged;
-            });
-            setSourceStats(prev => {
-              const updated = { ...prev };
-              slowData.results.forEach(result => {
-                const source = result.source || 'unknown';
-                if (!updated[source]) updated[source] = 0;
-                updated[source]++;
-              });
-              return updated;
-            });
-            if (slowData.marketStats && slowData.marketStats.length > 0) {
-              setMarketStats(prev => {
-                if (!prev || prev.length === 0) return slowData.marketStats;
-                const merged = [...prev];
-                slowData.marketStats.forEach(newStat => {
-                  const existing = merged.find(m => m.district === newStat.district);
-                  if (existing) existing.count = (existing.count || 0) + (newStat.count || 0);
-                  else merged.push(newStat);
-                });
-                return merged;
-              });
+        fetch('/api/search', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...searchBody, sources: slowSources }) })
+          .then(res => res.json()).then(slowData => {
+            if (slowData.results && slowData.results.length > 0) {
+              setResults(prev => { const merged = [...prev, ...slowData.results]; if (sortBy === 'priceAsc') merged.sort((a, b) => (a.price || 0) - (b.price || 0)); else if (sortBy === 'priceDesc') merged.sort((a, b) => (b.price || 0) - (a.price || 0)); else merged.sort((a, b) => (b.score || 0) - (a.score || 0)); return merged; });
+              setSourceStats(prev => { const updated = { ...prev }; slowData.results.forEach(result => { const source = result.source || 'unknown'; if (!updated[source]) updated[source] = 0; updated[source]++; }); return updated; });
+              if (slowData.marketStats && slowData.marketStats.length > 0) { setMarketStats(prev => { if (!prev || prev.length === 0) return slowData.marketStats; const merged = [...prev]; slowData.marketStats.forEach(newStat => { const existing = merged.find(m => m.district === newStat.district); if (existing) existing.count = (existing.count || 0) + (newStat.count || 0); else merged.push(newStat); }); return merged; }); }
             }
-          }
-          setAlonhadatLoading(false);
-        }).catch(err => { console.error('Alonhadat background error:', err); setAlonhadatLoading(false); });
+            setAlonhadatLoading(false);
+          }).catch(err => { console.error('Alonhadat background error:', err); setAlonhadatLoading(false); });
       }
       if (fastSources.length === 0 && slowSources.length > 0) {
-        const response = await fetch('/api/search', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...searchBody, sources: slowSources })
-        });
+        const response = await fetch('/api/search', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...searchBody, sources: slowSources }) });
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || 'Search error');
-        setResults(data.results || []);
-        setStats(data.stats);
+        setResults(data.results || []); setStats(data.stats);
         if (data.marketStats && data.marketStats.length > 0) setMarketStats(data.marketStats);
-        if (data.results && data.results.length > 0) {
-          const statsBySource = {};
-          data.results.forEach(result => {
-            const source = result.source || 'unknown';
-            if (!statsBySource[source]) statsBySource[source] = 0;
-            statsBySource[source]++;
-          });
-          setSourceStats(statsBySource);
-        }
+        if (data.results && data.results.length > 0) { const statsBySource = {}; data.results.forEach(result => { const source = result.source || 'unknown'; if (!statsBySource[source]) statsBySource[source] = 0; statsBySource[source]++; }); setSourceStats(statsBySource); }
       }
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      clearInterval(progressInterval);
-      setSearchProgress(100);
-      setLoading(false);
-    }
+    } catch (err) { setError(err.message); } finally { clearInterval(progressInterval); setSearchProgress(100); setLoading(false); }
   };
 
-  const formatPrice = (price) => {
-    if (!price) return '-';
-    return `${(price / 1000000000).toFixed(1).replace('.', ',')} Tỷ`;
-  };
-
-  const formatPricePerM2 = (price) => {
-    if (!price) return '-';
-    return `${Math.round(price / 1000000)} tr/m²`;
-  };
-
-  const toggleKeyword = (keyword) => {
-    const kwVn = keyword.vn;
-    setSearchParams(prev => ({
-      ...prev,
-      keywords: prev.keywords.includes(kwVn) ? prev.keywords.filter(k => k !== kwVn) : [...prev.keywords, kwVn]
-    }));
-  };
-
-  const exportToExcel = () => {
-    const headers = ['Titre', 'Prix', 'Ville', 'Surface', 'Chambres', 'Score', 'Source'];
-    const rows = results.map(r => [r.title, r.price, r.city, r.floorArea, r.bedrooms, r.score, r.source]);
-    const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `ktrix_${new Date().toISOString().slice(0,10)}.csv`;
-    a.click();
-  };
-
-  const saveCurrentSearch = async () => {
-    const code = sessionStorage.getItem('ktrix_beta_code');
-    if (!code) return alert('No beta code found');
-    const searchName = `${searchParams.city} - ${searchParams.propertyType}`;
-    try {
-      const res = await fetch('/api/saved-searches', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code, name: searchName, params: searchParams })
-      });
-      const data = await res.json();
-      if (data.success) {
-        setSavedSearches(prev => [data.search, ...prev]);
-        alert(t.searchSaved);
-      }
-    } catch (err) {
-      console.error('[SAVED] Save error:', err);
-    }
-  };
-
-  const sortResults = (res) => {
-    if (!res || res.length === 0) return [];
-    const sorted = [...res];
-    if (sortBy === 'priceAsc') return sorted.sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0));
-    if (sortBy === 'priceDesc') return sorted.sort((a, b) => (Number(b.price) || 0) - (Number(a.price) || 0));
-    return sorted.sort((a, b) => (Number(b.score) || 0) - (Number(a.score) || 0));
-  };
-
-  const getPropertyTypesByCategory = () => ({
-    all: propertyTypes.filter(pt => pt.category === 'all'),
-    apartment: propertyTypes.filter(pt => pt.category === 'apartment'),
-    house: propertyTypes.filter(pt => pt.category === 'house'),
-    commercial: propertyTypes.filter(pt => pt.category === 'commercial'),
-    land: propertyTypes.filter(pt => pt.category === 'land'),
-    other: propertyTypes.filter(pt => pt.category === 'other'),
-  });
-
-  const getSearchCriteriaSummary = () => {
-    const criteria = [];
-    if (searchParams.city) criteria.push(`${t.city}: ${searchParams.city}`);
-    if (searchParams.district) criteria.push(`${t.district}: ${searchParams.district}`);
-    if (searchParams.propertyType) criteria.push(`${t.propertyType}: ${searchParams.propertyType}`);
-    if (searchParams.priceMin || searchParams.priceMax) criteria.push(`${t.price}: ${searchParams.priceMin || '0'} - ${searchParams.priceMax || '∞'} Tỷ`);
-    if (searchParams.bedrooms) criteria.push(`${t.bedrooms}: ${searchParams.bedrooms}`);
-    if (searchParams.keywords.length > 0) criteria.push(`${t.keywordsLabel}: ${searchParams.keywords.slice(0, 3).join(', ')}${searchParams.keywords.length > 3 ? '...' : ''}`);
-    if (searchParams.sources.length < 3) criteria.push(`${t.sourcesLabel}: ${searchParams.sources.join(', ')}`);
-    return criteria;
-  };
+  const formatPrice = (price) => { if (!price) return '-'; return `${(price / 1000000000).toFixed(1).replace('.', ',')} Tỷ`; };
+  const formatPricePerM2 = (price) => { if (!price) return '-'; return `${Math.round(price / 1000000)} tr/m²`; };
+  const toggleKeyword = (keyword) => { const kwVn = keyword.vn; setSearchParams(prev => ({ ...prev, keywords: prev.keywords.includes(kwVn) ? prev.keywords.filter(k => k !== kwVn) : [...prev.keywords, kwVn] })); };
+  const exportToExcel = () => { const headers = ['Titre', 'Prix', 'Ville', 'Surface', 'Chambres', 'Score', 'Source']; const rows = results.map(r => [r.title, r.price, r.city, r.floorArea, r.bedrooms, r.score, r.source]); const csv = [headers, ...rows].map(row => row.join(',')).join('\n'); const blob = new Blob([csv], { type: 'text/csv' }); const url = window.URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `ktrix_${new Date().toISOString().slice(0,10)}.csv`; a.click(); };
+  const saveCurrentSearch = async () => { const code = sessionStorage.getItem('ktrix_beta_code'); if (!code) return alert('No beta code found'); const searchName = `${searchParams.city} - ${searchParams.propertyType}`; try { const res = await fetch('/api/saved-searches', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code, name: searchName, params: searchParams }) }); const data = await res.json(); if (data.success) { setSavedSearches(prev => [data.search, ...prev]); alert(t.searchSaved); } } catch (err) { console.error('[SAVED] Save error:', err); } };
+  const sortResults = (res) => { if (!res || res.length === 0) return []; const sorted = [...res]; if (sortBy === 'priceAsc') return sorted.sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0)); if (sortBy === 'priceDesc') return sorted.sort((a, b) => (Number(b.price) || 0) - (Number(a.price) || 0)); return sorted.sort((a, b) => (Number(b.score) || 0) - (Number(a.score) || 0)); };
+  const getPropertyTypesByCategory = () => ({ all: propertyTypes.filter(pt => pt.category === 'all'), apartment: propertyTypes.filter(pt => pt.category === 'apartment'), house: propertyTypes.filter(pt => pt.category === 'house'), commercial: propertyTypes.filter(pt => pt.category === 'commercial'), land: propertyTypes.filter(pt => pt.category === 'land'), other: propertyTypes.filter(pt => pt.category === 'other') });
+  const getSearchCriteriaSummary = () => { const criteria = []; if (searchParams.city) criteria.push(`${t.city}: ${searchParams.city}`); if (searchParams.district) criteria.push(`${t.district}: ${searchParams.district}`); if (searchParams.propertyType) criteria.push(`${t.propertyType}: ${searchParams.propertyType}`); if (searchParams.priceMin || searchParams.priceMax) criteria.push(`${t.price}: ${searchParams.priceMin || '0'} - ${searchParams.priceMax || '∞'} Tỷ`); if (searchParams.bedrooms) criteria.push(`${t.bedrooms}: ${searchParams.bedrooms}`); if (searchParams.keywords.length > 0) criteria.push(`${t.keywordsLabel}: ${searchParams.keywords.slice(0, 3).join(', ')}${searchParams.keywords.length > 3 ? '...' : ''}`); if (searchParams.sources.length < 3) criteria.push(`${t.sourcesLabel}: ${searchParams.sources.join(', ')}`); return criteria; };
 
   const MarketStatsTable = ({ data }) => {
     if (!data || data.length === 0) return null;
@@ -629,10 +377,7 @@ const districtsByCity = {
     return (
       <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden mb-6">
         <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-4 flex items-center justify-between cursor-pointer" onClick={() => setShowMarketStats(!showMarketStats)}>
-          <h3 className="text-white font-bold flex items-center gap-2">
-            📊 {t.marketStats}
-            <span className="bg-white/20 px-2 py-0.5 rounded-full text-sm">{data.length} districts</span>
-          </h3>
+          <h3 className="text-white font-bold flex items-center gap-2">📊 {t.marketStats}<span className="bg-white/20 px-2 py-0.5 rounded-full text-sm">{data.length} districts</span></h3>
           <button className="text-white/80 hover:text-white">{showMarketStats ? '▼' : '▶'}</button>
         </div>
         {showMarketStats && (
@@ -645,9 +390,7 @@ const districtsByCity = {
                   <th className="text-center px-4 py-3 text-sm font-semibold text-gray-300">{t.avgPrice}</th>
                   <th className="text-center px-4 py-3 text-sm font-semibold text-gray-300">Min</th>
                   <th className="text-center px-4 py-3 text-sm font-semibold text-gray-300">Max</th>
-                  <th className="text-center px-4 py-3 text-sm font-semibold text-gray-300">
-                    <span className="flex items-center justify-center gap-1"><Database className="w-4 h-4" />{t.archive}</span>
-                  </th>
+                  <th className="text-center px-4 py-3 text-sm font-semibold text-gray-300"><span className="flex items-center justify-center gap-1"><Database className="w-4 h-4" />{t.archive}</span></th>
                   <th className="text-center px-4 py-3 text-sm font-semibold text-gray-300">{t.trend}</th>
                 </tr>
               </thead>
@@ -659,19 +402,13 @@ const districtsByCity = {
                     <td className="px-4 py-4 text-center"><span className="font-semibold text-emerald-400">{formatPricePerM2(district.avgPricePerM2)}</span></td>
                     <td className="px-4 py-4 text-center text-sm text-gray-500">{formatPricePerM2(district.minPricePerM2)}</td>
                     <td className="px-4 py-4 text-center text-sm text-gray-500">{formatPricePerM2(district.maxPricePerM2)}</td>
-                    <td className="px-4 py-4 text-center">
-                      {district.archiveCount > 0 ? (
-                        <span className="px-2 py-1 bg-gray-800 text-gray-300 rounded-full text-sm font-medium">{district.archiveCount}</span>
-                      ) : <span className="text-gray-600 text-sm">—</span>}
-                    </td>
+                    <td className="px-4 py-4 text-center">{district.archiveCount > 0 ? <span className="px-2 py-1 bg-gray-800 text-gray-300 rounded-full text-sm font-medium">{district.archiveCount}</span> : <span className="text-gray-600 text-sm">—</span>}</td>
                     <td className="px-4 py-4 text-center">{getTrendIcon(district.trend, district.trendPercent)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            {data.length > 10 && (
-              <div className="px-6 py-3 bg-gray-800 text-center text-sm text-gray-500">+{data.length - 10} autres districts</div>
-            )}
+            {data.length > 10 && <div className="px-6 py-3 bg-gray-800 text-center text-sm text-gray-500">+{data.length - 10} autres districts</div>}
           </div>
         )}
       </div>
@@ -681,69 +418,35 @@ const districtsByCity = {
   const submitFeedback = async () => {
     if (!feedbackMsg.trim()) return;
     const code = sessionStorage.getItem('ktrix_beta_code');
-    const profileInfo = selectedProperty
-      ? `[Profil: ${selectedProperty.title || selectedProperty.id || 'inconnu'}]`
-      : '';
-    const fullMessage = profileInfo
-      ? `${profileInfo}\n${feedbackMsg.trim()}`
-      : feedbackMsg.trim();
-    await fetch('/api/feedback', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ beta_code: code, message: fullMessage, reply_email: feedbackEmail || null })
-    });
+    const profileInfo = selectedProperty ? `[Profil: ${selectedProperty.title || selectedProperty.id || 'inconnu'}]` : '';
+    const fullMessage = profileInfo ? `${profileInfo}\n${feedbackMsg.trim()}` : feedbackMsg.trim();
+    await fetch('/api/feedback', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ beta_code: code, message: fullMessage, reply_email: feedbackEmail || null }) });
     setFeedbackSent(true);
-    setTimeout(() => {
-      setShowFeedback(false);
-      setFeedbackSent(false);
-      setFeedbackMsg('');
-      setFeedbackEmail('');
-    }, 2000);
+    setTimeout(() => { setShowFeedback(false); setFeedbackSent(false); setFeedbackMsg(''); setFeedbackEmail(''); }, 2000);
   };
 
-  // PATCH 3 — Guard authReady : spinner pendant l'init auth
-  if (!authReady) {
-    return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <Loader className="w-8 h-8 animate-spin text-blue-400" />
-      </div>
-    );
-  }
+  if (!authReady) { return <div className="min-h-screen bg-gray-950 flex items-center justify-center"><Loader className="w-8 h-8 animate-spin text-blue-400" /></div>; }
 
   return (
     <div className="min-h-screen bg-gray-950">
-      {/* Header */}
       <header className="bg-gray-950/90 backdrop-blur-md border-b border-gray-800 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
-            <button onClick={() => router.push('/')} className="p-2 hover:bg-gray-800 rounded-lg text-blue-400">
-              <Home className="w-5 h-5" />
-            </button>
+            <button onClick={() => router.push('/')} className="p-2 hover:bg-gray-800 rounded-lg text-blue-400"><Home className="w-5 h-5" /></button>
             <div className="flex items-center gap-2">
               <img src="https://raw.githubusercontent.com/f8902621-byte/traxhome-mvp/main/Ktrixlogo.png" alt="K Trix" className="w-20 h-20 object-contain" />
               <span className="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded-full font-medium border border-emerald-500/30">MVP</span>
             </div>
             <button onClick={() => router.push('/monitoring')} className="px-3 py-1 bg-gray-800 text-gray-400 rounded-lg text-sm hover:bg-gray-700 border border-gray-700" title="Monitoring">🔍</button>
-            <button onClick={() => setShowSearch(!showSearch)} className="px-3 md:px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-lg font-medium flex items-center gap-2 shadow-lg shadow-blue-500/20">
-              <Search className="w-4 h-4" />
-              <span className="hidden md:inline">{t.searchParams}</span>
-            </button>
-            <button onClick={() => setShowSavedSearches(!showSavedSearches)} className="px-3 md:px-4 py-2 bg-amber-500/10 text-amber-400 rounded-lg font-medium border border-amber-500/20">
-              ⭐ <span className="hidden md:inline">{t.savedSearches}</span> ({savedSearches.length})
-            </button>
+            <button onClick={() => setShowSearch(!showSearch)} className="px-3 md:px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-lg font-medium flex items-center gap-2 shadow-lg shadow-blue-500/20"><Search className="w-4 h-4" /><span className="hidden md:inline">{t.searchParams}</span></button>
+            <button onClick={() => setShowSavedSearches(!showSavedSearches)} className="px-3 md:px-4 py-2 bg-amber-500/10 text-amber-400 rounded-lg font-medium border border-amber-500/20">⭐ <span className="hidden md:inline">{t.savedSearches}</span> ({savedSearches.length})</button>
           </div>
           <div className="flex items-center gap-4">
             <select value={language} onChange={(e) => setLanguage(e.target.value)} className="px-3 py-2 border border-gray-700 rounded-lg bg-gray-900 text-gray-300">
-              <option value="vn">🇻🇳 VN</option>
-              <option value="en">🇬🇧 EN</option>
-              <option value="fr">🇫🇷 FR</option>
+              <option value="vn">🇻🇳 VN</option><option value="en">🇬🇧 EN</option><option value="fr">🇫🇷 FR</option>
             </select>
-            {testerName && (
-              <span style={{fontSize: 13, color: '#00d4ff', fontWeight: 600}}>👤 {testerName}</span>
-            )}
-            {daysRemaining === null && testerName && (
-              <div style={{padding: '6px 12px', borderRadius: 20, fontSize: 12, fontWeight: 700, background: 'rgba(0,212,255,0.10)', border: '1px solid rgba(0,212,255,0.25)', color: '#00d4ff'}}>∞ Admin</div>
-            )}
+            {testerName && <span style={{fontSize: 13, color: '#00d4ff', fontWeight: 600}}>👤 {testerName}</span>}
+            {daysRemaining === null && testerName && <div style={{padding: '6px 12px', borderRadius: 20, fontSize: 12, fontWeight: 700, background: 'rgba(0,212,255,0.10)', border: '1px solid rgba(0,212,255,0.25)', color: '#00d4ff'}}>∞ Admin</div>}
             {daysRemaining !== null && (
               <div style={{padding: '6px 12px', borderRadius: 20, fontSize: 12, fontWeight: 700, background: daysRemaining <= 3 ? 'rgba(255,51,102,0.15)' : daysRemaining <= 7 ? 'rgba(255,140,0,0.15)' : 'rgba(0,212,255,0.10)', border: `1px solid ${daysRemaining <= 3 ? 'rgba(255,51,102,0.4)' : daysRemaining <= 7 ? 'rgba(255,140,0,0.4)' : 'rgba(0,212,255,0.25)'}`, color: daysRemaining <= 3 ? '#ff3366' : daysRemaining <= 7 ? '#ff8c00' : '#00d4ff'}}>
                 {daysRemaining <= 3 ? '🚨' : daysRemaining <= 7 ? '⏳' : '✅'}
@@ -754,31 +457,18 @@ const districtsByCity = {
         </div>
       </header>
 
-      {/* Saved Searches */}
       {showSavedSearches && (
         <div className="max-w-6xl mx-auto px-4 py-6">
           <div className="bg-gray-900 rounded-xl border border-gray-800 p-6">
             <h2 className="text-xl font-bold text-white mb-4">⭐ {t.savedSearches}</h2>
-            {savedSearches.length === 0 ? (
-              <p className="text-gray-500">{t.noSavedSearches}</p>
-            ) : (
+            {savedSearches.length === 0 ? <p className="text-gray-500">{t.noSavedSearches}</p> : (
               <div className="space-y-3">
                 {savedSearches.map((search) => (
                   <div key={search.id} className="flex items-center justify-between p-4 bg-gray-800 rounded-lg border border-gray-700">
-                    <div>
-                      <p className="font-medium text-white">{search.name}</p>
-                      <p className="text-sm text-gray-500">{search.created_at ? new Date(search.created_at).toLocaleDateString() : search.date}</p>
-                    </div>
+                    <div><p className="font-medium text-white">{search.name}</p><p className="text-sm text-gray-500">{search.created_at ? new Date(search.created_at).toLocaleDateString() : search.date}</p></div>
                     <div className="flex gap-2">
                       <button onClick={() => { setSearchParams(search.params); setShowSavedSearches(false); }} className="px-4 py-2 bg-blue-500/10 text-blue-400 rounded-lg border border-blue-500/20">{t.loadSearch}</button>
-                      <button onClick={async () => {
-                        const code = sessionStorage.getItem('ktrix_beta_code');
-                        if (!code) return;
-                        try {
-                          await fetch('/api/saved-searches', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: search.id, code }) });
-                          setSavedSearches(prev => prev.filter(s => s.id !== search.id));
-                        } catch (err) { console.error('[SAVED] Delete error:', err); }
-                      }} className="px-3 py-2 bg-red-500/10 text-red-400 rounded-lg border border-red-500/20 hover:bg-red-500/20">✕</button>
+                      <button onClick={async () => { const code = sessionStorage.getItem('ktrix_beta_code'); if (!code) return; try { await fetch('/api/saved-searches', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: search.id, code }) }); setSavedSearches(prev => prev.filter(s => s.id !== search.id)); } catch (err) { console.error('[SAVED] Delete error:', err); } }} className="px-3 py-2 bg-red-500/10 text-red-400 rounded-lg border border-red-500/20 hover:bg-red-500/20">✕</button>
                     </div>
                   </div>
                 ))}
@@ -790,7 +480,6 @@ const districtsByCity = {
 
       <AdBanner language={language} />
 
-      {/* Search Form */}
       {showSearch && (
         <div className="max-w-6xl mx-auto px-4 py-6">
           <div className="bg-gray-900 rounded-xl border border-gray-800 p-6 space-y-6" onKeyDown={(e) => { if (e.key === 'Enter' && !loading) handleSearch(); }}>
@@ -799,8 +488,7 @@ const districtsByCity = {
               <div className="flex flex-wrap gap-2">
                 {availableSources.map((source) => (
                   <button key={source.id} type="button" onClick={() => { if (!source.active) return; const newSources = searchParams.sources.includes(source.id) ? searchParams.sources.filter(s => s !== source.id) : [...searchParams.sources, source.id]; setSearchParams({ ...searchParams, sources: newSources }); }} disabled={!source.active} className={`px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 ${!source.active ? 'bg-gray-800 text-gray-600 cursor-not-allowed' : searchParams.sources.includes(source.id) ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700'}`}>
-                    {searchParams.sources.includes(source.id) && <span>✓</span>}
-                    {source.name} {!source.active && `(${t.comingSoon})`}
+                    {searchParams.sources.includes(source.id) && <span>✓</span>}{source.name} {!source.active && `(${t.comingSoon})`}
                   </button>
                 ))}
               </div>
@@ -808,9 +496,7 @@ const districtsByCity = {
             <div>
               <label className="block text-sm font-medium text-gray-400 mb-2">📊 {t.maxResults}</label>
               <div className="flex gap-2">
-                {[50, 100, 200, 300].map((num) => (
-                  <button key={num} type="button" onClick={() => setSearchParams({ ...searchParams, maxResults: num })} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${searchParams.maxResults === num ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700'}`}>{num}</button>
-                ))}
+                {[50, 100, 200, 300].map((num) => (<button key={num} type="button" onClick={() => setSearchParams({ ...searchParams, maxResults: num })} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${searchParams.maxResults === num ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700'}`}>{num}</button>))}
               </div>
             </div>
             <div className="flex gap-4">
@@ -854,24 +540,15 @@ const districtsByCity = {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
                 <label className="block text-sm font-bold text-gray-300 mb-2">{t.priceMin}</label>
-                <div className="flex items-center gap-2">
-                  <input type="number" step="0.1" min="0" max="500" value={searchParams.priceMin} onChange={(e) => setSearchParams({...searchParams, priceMin: e.target.value})} className="w-24 px-3 py-2.5 border border-gray-700 rounded-lg bg-gray-800 text-right text-gray-200" placeholder="0" />
-                  <span className="text-gray-500 font-medium">Tỷ</span>
-                </div>
+                <div className="flex items-center gap-2"><input type="number" step="0.1" min="0" max="500" value={searchParams.priceMin} onChange={(e) => setSearchParams({...searchParams, priceMin: e.target.value})} className="w-24 px-3 py-2.5 border border-gray-700 rounded-lg bg-gray-800 text-right text-gray-200" placeholder="0" /><span className="text-gray-500 font-medium">Tỷ</span></div>
               </div>
               <div>
                 <label className="block text-sm font-bold text-gray-300 mb-2">{t.priceMax} <span className="text-orange-400">*</span></label>
-                <div className="flex items-center gap-2">
-                  <input type="number" step="0.1" min="0" max="500" value={searchParams.priceMax} onChange={(e) => setSearchParams({...searchParams, priceMax: e.target.value})} className="w-24 px-3 py-2.5 border border-gray-700 rounded-lg bg-gray-800 text-right text-gray-200" placeholder="10" />
-                  <span className="text-gray-500 font-medium">Tỷ</span>
-                </div>
+                <div className="flex items-center gap-2"><input type="number" step="0.1" min="0" max="500" value={searchParams.priceMax} onChange={(e) => setSearchParams({...searchParams, priceMax: e.target.value})} className="w-24 px-3 py-2.5 border border-gray-700 rounded-lg bg-gray-800 text-right text-gray-200" placeholder="10" /><span className="text-gray-500 font-medium">Tỷ</span></div>
               </div>
               <div>
                 <label className="block text-sm font-bold text-gray-300 mb-2">{t.livingArea}</label>
-                <div className="flex gap-2">
-                  <input type="number" value={searchParams.livingAreaMin} onChange={(e) => setSearchParams({...searchParams, livingAreaMin: e.target.value})} className="w-full px-3 py-2.5 border border-gray-700 rounded-lg bg-gray-800 text-gray-200" placeholder={t.min} />
-                  <input type="number" value={searchParams.livingAreaMax} onChange={(e) => setSearchParams({...searchParams, livingAreaMax: e.target.value})} className="w-full px-3 py-2.5 border border-gray-700 rounded-lg bg-gray-800 text-gray-200" placeholder={t.max} />
-                </div>
+                <div className="flex gap-2"><input type="number" value={searchParams.livingAreaMin} onChange={(e) => setSearchParams({...searchParams, livingAreaMin: e.target.value})} className="w-full px-3 py-2.5 border border-gray-700 rounded-lg bg-gray-800 text-gray-200" placeholder={t.min} /><input type="number" value={searchParams.livingAreaMax} onChange={(e) => setSearchParams({...searchParams, livingAreaMax: e.target.value})} className="w-full px-3 py-2.5 border border-gray-700 rounded-lg bg-gray-800 text-gray-200" placeholder={t.max} /></div>
               </div>
               <div>
                 <label className="block text-sm font-bold text-gray-300 mb-2">{t.bedrooms}</label>
@@ -879,39 +556,17 @@ const districtsByCity = {
               </div>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-bold text-gray-300 mb-2">🚿 {t.bathrooms}</label>
-                <input type="number" value={searchParams.bathrooms} onChange={(e) => setSearchParams({...searchParams, bathrooms: e.target.value})} className="w-full px-4 py-2.5 border border-gray-700 rounded-lg bg-gray-800 text-gray-200" placeholder="1" />
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-gray-300 mb-2">{t.daysListed}</label>
-                <input type="number" value={searchParams.daysListed} onChange={(e) => setSearchParams({...searchParams, daysListed: e.target.value})} className="w-full px-4 py-2.5 border border-gray-700 rounded-lg bg-gray-800 text-gray-200" placeholder="30" />
-              </div>
+              <div><label className="block text-sm font-bold text-gray-300 mb-2">🚿 {t.bathrooms}</label><input type="number" value={searchParams.bathrooms} onChange={(e) => setSearchParams({...searchParams, bathrooms: e.target.value})} className="w-full px-4 py-2.5 border border-gray-700 rounded-lg bg-gray-800 text-gray-200" placeholder="1" /></div>
+              <div><label className="block text-sm font-bold text-gray-300 mb-2">{t.daysListed}</label><input type="number" value={searchParams.daysListed} onChange={(e) => setSearchParams({...searchParams, daysListed: e.target.value})} className="w-full px-4 py-2.5 border border-gray-700 rounded-lg bg-gray-800 text-gray-200" placeholder="30" /></div>
               <div>
                 <label className="block text-sm font-bold text-gray-300 mb-2">{t.legalStatus}</label>
                 <select value={searchParams.legalStatus} onChange={(e) => setSearchParams({...searchParams, legalStatus: e.target.value})} className="w-full px-4 py-2.5 border border-gray-700 rounded-lg bg-gray-800 text-gray-200">
-                  <option value="">{t.legalAll}</option>
-                  <option value="sohong">{t.legalSoHong}</option>
-                  <option value="hopdong">{t.legalHopdong}</option>
-                  <option value="dangcho">{t.legalDangcho}</option>
+                  <option value="">{t.legalAll}</option><option value="sohong">{t.legalSoHong}</option><option value="hopdong">{t.legalHopdong}</option><option value="dangcho">{t.legalDangcho}</option>
                 </select>
               </div>
-              <div className="flex items-end mt-4">
-                <label className="flex items-center gap-2 cursor-pointer pb-2">
-                  <input type="checkbox" checked={searchParams.hasParking} onChange={(e) => setSearchParams({...searchParams, hasParking: e.target.checked})} className="w-5 h-5 rounded bg-gray-800 border-gray-600 text-blue-500" />
-                  <span className="text-sm font-medium text-gray-300">🚗 {t.hasParking}</span>
-                </label>
-              </div>
-              <div className="flex items-end">
-                <label className="flex items-center gap-2 cursor-pointer pb-2">
-                  <input type="checkbox" checked={searchParams.hasPool} onChange={(e) => setSearchParams({...searchParams, hasPool: e.target.checked})} className="w-5 h-5 rounded bg-gray-800 border-gray-600 text-blue-500" />
-                  <span className="text-sm font-medium text-gray-300">🏊 {t.hasPool}</span>
-                </label>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2">🛣️ {t.streetWidth}</label>
-                <input type="number" value={searchParams.streetWidthMin} onChange={(e) => setSearchParams({...searchParams, streetWidthMin: e.target.value})} placeholder="4" className="w-full px-3 py-2.5 border border-gray-700 rounded-lg bg-gray-800 text-gray-200" />
-              </div>
+              <div className="flex items-end mt-4"><label className="flex items-center gap-2 cursor-pointer pb-2"><input type="checkbox" checked={searchParams.hasParking} onChange={(e) => setSearchParams({...searchParams, hasParking: e.target.checked})} className="w-5 h-5 rounded bg-gray-800 border-gray-600 text-blue-500" /><span className="text-sm font-medium text-gray-300">🚗 {t.hasParking}</span></label></div>
+              <div className="flex items-end"><label className="flex items-center gap-2 cursor-pointer pb-2"><input type="checkbox" checked={searchParams.hasPool} onChange={(e) => setSearchParams({...searchParams, hasPool: e.target.checked})} className="w-5 h-5 rounded bg-gray-800 border-gray-600 text-blue-500" /><span className="text-sm font-medium text-gray-300">🏊 {t.hasPool}</span></label></div>
+              <div><label className="block text-sm font-medium text-gray-400 mb-2">🛣️ {t.streetWidth}</label><input type="number" value={searchParams.streetWidthMin} onChange={(e) => setSearchParams({...searchParams, streetWidthMin: e.target.value})} placeholder="4" className="w-full px-3 py-2.5 border border-gray-700 rounded-lg bg-gray-800 text-gray-200" /></div>
             </div>
             <div>
               <label className="block text-sm font-bold text-orange-400 mb-1">🔥 {t.keywords}</label>
@@ -927,17 +582,11 @@ const districtsByCity = {
                   </label>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {urgentKeywords.map((kw, i) => (
-                    <button key={i} onClick={() => toggleKeyword(kw)} className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${searchParams.keywords.includes(kw.vn) ? 'bg-orange-500 text-white shadow-md shadow-orange-500/20' : 'bg-gray-800 text-gray-300 border border-gray-700 hover:border-orange-500/30'}`}>{kw[language]}</button>
-                  ))}
+                  {urgentKeywords.map((kw, i) => (<button key={i} onClick={() => toggleKeyword(kw)} className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${searchParams.keywords.includes(kw.vn) ? 'bg-orange-500 text-white shadow-md shadow-orange-500/20' : 'bg-gray-800 text-gray-300 border border-gray-700 hover:border-orange-500/30'}`}>{kw[language]}</button>))}
                 </div>
               </div>
             </div>
-            {error && (
-              <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 flex items-center gap-2 text-red-400">
-                <AlertCircle className="w-5 h-5" />{error}
-              </div>
-            )}
+            {error && <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 flex items-center gap-2 text-red-400"><AlertCircle className="w-5 h-5" />{error}</div>}
             <div className="flex justify-between items-center pt-4 border-t border-gray-800 bg-gray-800/50 -mx-6 -mb-6 px-6 py-4 rounded-b-xl">
               <div><p className="text-sm font-semibold text-amber-400">⚠️ {t.required}</p></div>
               <div className="flex gap-2">
@@ -952,7 +601,6 @@ const districtsByCity = {
         </div>
       )}
 
-      {/* Results */}
       {!showSearch && (
         <div className="max-w-7xl mx-auto px-4 py-6">
           {results.length > 0 && (
@@ -962,20 +610,14 @@ const districtsByCity = {
                 <div className="flex-1">
                   <p className="text-sm font-bold text-blue-300 mb-2">📊 {t.searchCriteria}</p>
                   <div className="flex flex-wrap gap-2">
-                    {getSearchCriteriaSummary().map((criterion, i) => (
-                      <span key={i} className="px-3 py-1 bg-gray-800 text-blue-300 rounded-full text-xs font-medium border border-blue-500/20">{criterion}</span>
-                    ))}
+                    {getSearchCriteriaSummary().map((criterion, i) => (<span key={i} className="px-3 py-1 bg-gray-800 text-blue-300 rounded-full text-xs font-medium border border-blue-500/20">{criterion}</span>))}
                     <span className="px-3 py-1 bg-blue-600 text-white rounded-full text-xs font-bold">{results.length} {t.results}</span>
                   </div>
                 </div>
               </div>
             </div>
           )}
-          {alonhadatLoading && (
-            <div style={{padding: '12px 20px', background: 'rgba(0,212,255,0.1)', border: '1px solid rgba(0,212,255,0.3)', borderRadius: 12, margin: '8px 0', textAlign: 'center'}}>
-              <span style={{color: '#00d4ff', fontSize: 14}}>⏳ {language === 'vn' ? 'Đang tìm thêm kết quả từ Alonhadat...' : language === 'fr' ? 'Recherche Alonhadat en cours...' : 'Searching Alonhadat...'}</span>
-            </div>
-          )}
+          {alonhadatLoading && <div style={{padding: '12px 20px', background: 'rgba(0,212,255,0.1)', border: '1px solid rgba(0,212,255,0.3)', borderRadius: 12, margin: '8px 0', textAlign: 'center'}}><span style={{color: '#00d4ff', fontSize: 14}}>⏳ {language === 'vn' ? 'Đang tìm thêm kết quả từ Alonhadat...' : language === 'fr' ? 'Recherche Alonhadat en cours...' : 'Searching Alonhadat...'}</span></div>}
           {Object.keys(sourceStats).length > 0 && (
             <div className="bg-gray-900 rounded-xl border border-gray-800 p-4 mb-4">
               <p className="text-sm font-bold text-gray-300 mb-3">🌐 {t.sourceResults}</p>
@@ -987,37 +629,22 @@ const districtsByCity = {
                     {filterSource === source && <p className="text-xs text-blue-400 mt-1 font-medium">✓ Filtré</p>}
                   </button>
                 ))}
-                {filterSource && (
-                  <button onClick={() => setFilterSource(null)} className="mt-3 w-full text-sm text-gray-500 hover:text-gray-300 py-2 bg-gray-800 rounded-lg border border-gray-700">✕ Afficher toutes les sources</button>
-                )}
+                {filterSource && <button onClick={() => setFilterSource(null)} className="mt-3 w-full text-sm text-gray-500 hover:text-gray-300 py-2 bg-gray-800 rounded-lg border border-gray-700">✕ Afficher toutes les sources</button>}
               </div>
             </div>
           )}
           <MarketStatsTable data={marketStats} />
           {bdsStatus === 'polling' && (
             <div className="mb-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl flex items-center justify-between shadow-lg animate-pulse">
-              <div className="flex items-center gap-3">
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                <span className="font-medium">🔄 Recherche Batdongsan en cours... {bdsProgress}%</span>
-                {bdsCount > 0 && <span className="bg-white/20 px-2 py-1 rounded-full text-sm">{bdsCount} trouvées</span>}
-              </div>
+              <div className="flex items-center gap-3"><div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div><span className="font-medium">🔄 Recherche Batdongsan en cours... {bdsProgress}%</span>{bdsCount > 0 && <span className="bg-white/20 px-2 py-1 rounded-full text-sm">{bdsCount} trouvées</span>}</div>
             </div>
           )}
-          {bdsStatus === 'completed' && bdsCount > 0 && (
-            <div className="mb-4 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white px-6 py-3 rounded-xl flex items-center gap-3 shadow-lg">
-              <span>✅</span><span className="font-medium">{bdsCount} annonces Batdongsan ajoutées !</span>
-            </div>
-          )}
+          {bdsStatus === 'completed' && bdsCount > 0 && <div className="mb-4 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white px-6 py-3 rounded-xl flex items-center gap-3 shadow-lg"><span>✅</span><span className="font-medium">{bdsCount} annonces Batdongsan ajoutées !</span></div>}
           {loading ? (
             <div className="flex flex-col items-center justify-center py-20">
               <div className="w-80 mb-6">
-                <div className="flex justify-between mb-2">
-                  <span className="text-sm font-medium text-blue-400">{searchProgress < 30 ? t.progressConnecting : searchProgress < 60 ? t.progressFetching : searchProgress < 85 ? t.progressScoring : searchProgress < 100 ? t.progressFinalizing : t.progressDone}</span>
-                  <span className="text-sm font-bold text-blue-400">{Math.round(searchProgress)}%</span>
-                </div>
-                <div className="w-full bg-gray-800 rounded-full h-3 overflow-hidden">
-                  <div className="bg-gradient-to-r from-blue-500 to-cyan-400 h-3 rounded-full transition-all duration-500" style={{width: `${searchProgress}%`}}></div>
-                </div>
+                <div className="flex justify-between mb-2"><span className="text-sm font-medium text-blue-400">{searchProgress < 30 ? t.progressConnecting : searchProgress < 60 ? t.progressFetching : searchProgress < 85 ? t.progressScoring : searchProgress < 100 ? t.progressFinalizing : t.progressDone}</span><span className="text-sm font-bold text-blue-400">{Math.round(searchProgress)}%</span></div>
+                <div className="w-full bg-gray-800 rounded-full h-3 overflow-hidden"><div className="bg-gradient-to-r from-blue-500 to-cyan-400 h-3 rounded-full transition-all duration-500" style={{width: `${searchProgress}%`}}></div></div>
               </div>
               <p className="text-gray-500 text-sm">{t.progressTime}</p>
             </div>
@@ -1029,14 +656,10 @@ const districtsByCity = {
                     <div className="flex items-center gap-4">
                       <h2 className="text-2xl font-bold text-white">{results.length} {t.results}</h2>
                       <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="px-3 py-2 border border-gray-700 rounded-lg bg-gray-800 text-gray-300">
-                        <option value="score">{t.sortScore}</option>
-                        <option value="priceAsc">{t.sortPriceAsc}</option>
-                        <option value="priceDesc">{t.sortPriceDesc}</option>
+                        <option value="score">{t.sortScore}</option><option value="priceAsc">{t.sortPriceAsc}</option><option value="priceDesc">{t.sortPriceDesc}</option>
                       </select>
                     </div>
-                    <button onClick={exportToExcel} className="px-4 py-2 bg-teal-500/10 text-teal-400 rounded-lg flex items-center gap-2 border border-teal-500/20">
-                      <Download className="w-4 h-4" />{t.export}
-                    </button>
+                    <button onClick={exportToExcel} className="px-4 py-2 bg-teal-500/10 text-teal-400 rounded-lg flex items-center gap-2 border border-teal-500/20"><Download className="w-4 h-4" />{t.export}</button>
                   </div>
                   <div className="grid grid-cols-2 gap-4 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
                     <div><p className="text-sm text-gray-400">{t.lowestPrice}</p><p className="text-2xl font-bold text-blue-400">{formatPrice(stats.lowestPrice)}</p></div>
@@ -1052,30 +675,19 @@ const districtsByCity = {
                       {prop.isNew && <div className="absolute top-2 left-2 bg-cyan-500/90 text-white px-3 py-1 rounded-full text-xs font-bold animate-pulse">{t.newListing}</div>}
                       {prop.urgentKeywords && prop.urgentKeywords.length > 0 && <div className="absolute top-2 right-2 bg-orange-500 text-white px-3 py-1 rounded-full text-xs font-bold animate-pulse">🔥 {prop.urgentKeywords[0]}</div>}
                       {prop.legalStatus && <div className="absolute bottom-2 left-2 bg-blue-500/80 text-white px-2 py-1 rounded text-xs font-bold">📋 {prop.legalStatus}</div>}
-<div className="absolute bottom-2 right-2 bg-gray-900/80 text-gray-300 px-2 py-1 rounded text-xs font-bold backdrop-blur-sm">{prop.source}</div>
+                      <div className="absolute bottom-2 right-2 bg-gray-900/80 text-gray-300 px-2 py-1 rounded text-xs font-bold backdrop-blur-sm">{prop.source}</div>
                       {prop.facebookGroupUrl && (
-                        
+                        <a
                           href={prop.facebookGroupUrl}
                           target="_blank"
                           rel="noopener noreferrer"
                           onClick={(e) => e.stopPropagation()}
-                          className="absolute bottom-2 left-2 flex items-center gap-1 bg-blue-700/90 text-white px-2 py-1 rounded text-xs font-bold backdrop-blur-sm hover:bg-blue-600 transition"
+                          className="absolute bottom-8 left-2 flex items-center gap-1 bg-blue-700/90 text-white px-2 py-1 rounded text-xs font-bold backdrop-blur-sm hover:bg-blue-600 transition"
                         >
                           <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
                           {prop.facebookGroupName || 'Facebook'}
                         </a>
                       )}
-                    </div>
-</div>
-    target="_blank"
-    rel="noopener noreferrer"
-    onClick={(e) => e.stopPropagation()}
-    className="absolute bottom-2 left-2 flex items-center gap-1 bg-blue-700/90 text-white px-2 py-1 rounded text-xs font-bold backdrop-blur-sm hover:bg-blue-600 transition"
-  >
-    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-    {prop.facebookGroupName || 'Facebook'}
-  </a>
-)}
                     </div>
                     <div className="p-4">
                       <h3 className="font-bold text-lg mb-2 line-clamp-2 text-white">{prop.title}</h3>
@@ -1089,13 +701,8 @@ const districtsByCity = {
                         {prop.pricePerSqm && prop.pricePerSqm > 0 && <p className="text-sm text-gray-500">{Math.round(prop.pricePerSqm / 1000000)} tr/m²</p>}
                       </div>
                       <div className="mb-3">
-                        <div className="flex justify-between mb-1">
-                          <span className="text-xs text-gray-500">{t.score}</span>
-                          <span className="text-sm font-bold text-gray-300">{prop.score}%</span>
-                        </div>
-                        <div className="w-full bg-gray-800 rounded-full h-2">
-                          <div className="h-2 rounded-full bg-gradient-to-r from-blue-500 to-cyan-400" style={{ width: `${prop.score}%` }} />
-                        </div>
+                        <div className="flex justify-between mb-1"><span className="text-xs text-gray-500">{t.score}</span><span className="text-sm font-bold text-gray-300">{prop.score}%</span></div>
+                        <div className="w-full bg-gray-800 rounded-full h-2"><div className="h-2 rounded-full bg-gradient-to-r from-blue-500 to-cyan-400" style={{ width: `${prop.score}%` }} /></div>
                       </div>
                       <div className="grid grid-cols-2 gap-2 text-sm text-gray-400 mb-3">
                         <div>📐 {(() => { if (prop.area || prop.floorArea) return `${Math.round((prop.area || prop.floorArea) * 10) / 10}m²`; if (prop.nlpAnalysis && prop.nlpAnalysis.extractedArea) return `${prop.nlpAnalysis.extractedArea}m²`; return '?m²'; })()}</div>
@@ -1113,15 +720,11 @@ const districtsByCity = {
               </div>
             </>
           ) : (
-            <div className="text-center py-20">
-              <AlertCircle className="w-16 h-16 text-gray-700 mx-auto mb-4" />
-              <p className="text-xl text-gray-500">{t.noResults}</p>
-            </div>
+            <div className="text-center py-20"><AlertCircle className="w-16 h-16 text-gray-700 mx-auto mb-4" /><p className="text-xl text-gray-500">{t.noResults}</p></div>
           )}
         </div>
       )}
 
-      {/* Property Detail Modal */}
       {selectedProperty && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setSelectedProperty(null)}>
           <div className="bg-gray-900 rounded-2xl max-w-4xl w-full max-h-[92vh] overflow-y-auto border border-gray-800" onClick={(e) => e.stopPropagation()}>
@@ -1138,91 +741,27 @@ const districtsByCity = {
               <button onClick={() => setSelectedProperty(null)} className="p-2 hover:bg-gray-800 rounded-full text-xl text-gray-400 hover:text-white">✕</button>
             </div>
             <div className="p-6 space-y-6">
-              {selectedProperty.imageUrl && (
-                <div className="rounded-xl overflow-hidden">
-                  <img src={selectedProperty.imageUrl} alt={selectedProperty.title} className="w-full h-56 object-cover" />
-                </div>
-              )}
+              {selectedProperty.imageUrl && <div className="rounded-xl overflow-hidden"><img src={selectedProperty.imageUrl} alt={selectedProperty.title} className="w-full h-56 object-cover" /></div>}
               <div>
                 <h3 className="text-xl font-bold text-white mb-1">{selectedProperty.title}</h3>
-                {selectedProperty.matchedKeywords && selectedProperty.matchedKeywords.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mb-2">
-                    {selectedProperty.matchedKeywords.map((kw, idx) => <span key={idx} className="px-2 py-0.5 text-xs font-bold bg-orange-500/20 text-orange-400 rounded-full border border-orange-500/30">🔥 {kw}</span>)}
-                  </div>
-                )}
-                <div className="flex items-baseline gap-3">
-                  <span className="text-3xl font-bold text-blue-400">{formatPrice(selectedProperty.price)}</span>
-                  {selectedProperty.area > 0 && <span className="text-base text-gray-500">({Math.round(selectedProperty.price / selectedProperty.area / 1000000)} tr/m²)</span>}
-                </div>
+                {selectedProperty.matchedKeywords && selectedProperty.matchedKeywords.length > 0 && (<div className="flex flex-wrap gap-1 mb-2">{selectedProperty.matchedKeywords.map((kw, idx) => <span key={idx} className="px-2 py-0.5 text-xs font-bold bg-orange-500/20 text-orange-400 rounded-full border border-orange-500/30">🔥 {kw}</span>)}</div>)}
+                <div className="flex items-baseline gap-3"><span className="text-3xl font-bold text-blue-400">{formatPrice(selectedProperty.price)}</span>{selectedProperty.area > 0 && <span className="text-base text-gray-500">({Math.round(selectedProperty.price / selectedProperty.area / 1000000)} tr/m²)</span>}</div>
               </div>
               <style dangerouslySetInnerHTML={{__html: NEON_CSS}} />
-              <div style={{margin: '12px 0'}}>
-                <NeedleGauge score={selectedProperty.score || 0} label={language === 'vn' ? '🎯 Điểm đàm phán' : language === 'fr' ? '🎯 Score de négociation' : '🎯 Negotiation Score'} />
-              </div>
-              {selectedProperty.pricePosition && (
-                <div style={{margin: '12px 0'}}>
-                  <PriceDistribution propertyPrice={Math.round(selectedProperty.pricePosition.itemPricePerM2 / 1000000)} min={Math.round(selectedProperty.pricePosition.districtMin / 1000000)} median={Math.round(selectedProperty.pricePosition.districtMedian / 1000000)} max={Math.round(selectedProperty.pricePosition.districtMax / 1000000)} count={selectedProperty.pricePosition.districtCount} title={language === 'vn' ? '📊 Phân tích giá' : language === 'fr' ? '📊 Analyse Prix vs Marché' : '📊 Price vs Market'} />
-                </div>
-              )}
-              {!selectedProperty.pricePosition && (() => {
-                let area = selectedProperty.area;
-                if (!area) {
-                  const nlp = selectedProperty.nlpAnalysis || {};
-                  if (nlp.extractedArea) { area = nlp.extractedArea; } else {
-                    const text = (selectedProperty.title || '') + ' ' + (selectedProperty.description || '');
-                    const dimMatch = text.match(/(\d+[.,]?\d*)\s*x\s*(\d+[.,]?\d*)/i);
-                    if (dimMatch) area = parseFloat(dimMatch[1].replace(',', '.')) * parseFloat(dimMatch[2].replace(',', '.'));
-                    const areaMatch = text.match(/(\d+[.,]?\d*)\s*m2/i);
-                    if (!area && areaMatch) area = parseFloat(areaMatch[1].replace(',', '.'));
-                  }
-                }
-                return area && selectedProperty.price ? (
-                  <div style={{background: `linear-gradient(135deg, ${NEON.card} 0%, rgba(0,212,255,0.03) 100%)`, border: `1px solid rgba(0,212,255,0.15)`, borderRadius: 16, padding: 16, margin: '12px 0', textAlign: 'center'}}>
-                    <p style={{color: '#f0f8ff', fontSize: 14, fontWeight: 700, margin: '0 0 8px', letterSpacing: 1, textTransform: 'uppercase'}}>📊 Price vs Market</p>
-                    <p style={{color: NEON.cyan, fontSize: 20, fontWeight: 800, margin: '8px 0'}}>{Math.round(selectedProperty.price / 1000000 / area)} tr/m²</p>
-                    <p style={{color: 'rgba(240,248,255,0.5)', fontSize: 13, margin: 0}}>{language === 'vn' ? 'Giá tính từ diện tích đất' : language === 'fr' ? 'Prix calculé depuis la surface' : 'Price calculated from land area'}</p>
-                  </div>
-                ) : (
-                  <div style={{background: `linear-gradient(135deg, ${NEON.card} 0%, rgba(0,212,255,0.03) 100%)`, border: `1px solid rgba(0,212,255,0.15)`, borderRadius: 16, padding: 16, margin: '12px 0', textAlign: 'center'}}>
-                    <p style={{color: '#f0f8ff', fontSize: 14, fontWeight: 700, margin: '0 0 8px', letterSpacing: 1, textTransform: 'uppercase'}}>📊 Price vs Market</p>
-                    <p style={{color: 'rgba(240,248,255,0.5)', fontSize: 13, margin: 0}}>{language === 'vn' ? '⚠️ Diện tích không có' : language === 'fr' ? '⚠️ Surface non renseignée' : '⚠️ Area not provided'}</p>
-                  </div>
-                );
-              })()}
+              <div style={{margin: '12px 0'}}><NeedleGauge score={selectedProperty.score || 0} label={language === 'vn' ? '🎯 Điểm đàm phán' : language === 'fr' ? '🎯 Score de négociation' : '🎯 Negotiation Score'} /></div>
+              {selectedProperty.pricePosition && (<div style={{margin: '12px 0'}}><PriceDistribution propertyPrice={Math.round(selectedProperty.pricePosition.itemPricePerM2 / 1000000)} min={Math.round(selectedProperty.pricePosition.districtMin / 1000000)} median={Math.round(selectedProperty.pricePosition.districtMedian / 1000000)} max={Math.round(selectedProperty.pricePosition.districtMax / 1000000)} count={selectedProperty.pricePosition.districtCount} title={language === 'vn' ? '📊 Phân tích giá' : language === 'fr' ? '📊 Analyse Prix vs Marché' : '📊 Price vs Market'} /></div>)}
+              {!selectedProperty.pricePosition && (() => { let area = selectedProperty.area; if (!area) { const nlp = selectedProperty.nlpAnalysis || {}; if (nlp.extractedArea) { area = nlp.extractedArea; } else { const text = (selectedProperty.title || '') + ' ' + (selectedProperty.description || ''); const dimMatch = text.match(/(\d+[.,]?\d*)\s*x\s*(\d+[.,]?\d*)/i); if (dimMatch) area = parseFloat(dimMatch[1].replace(',', '.')) * parseFloat(dimMatch[2].replace(',', '.')); const areaMatch = text.match(/(\d+[.,]?\d*)\s*m2/i); if (!area && areaMatch) area = parseFloat(areaMatch[1].replace(',', '.')); } } return area && selectedProperty.price ? (<div style={{background: `linear-gradient(135deg, ${NEON.card} 0%, rgba(0,212,255,0.03) 100%)`, border: `1px solid rgba(0,212,255,0.15)`, borderRadius: 16, padding: 16, margin: '12px 0', textAlign: 'center'}}><p style={{color: '#f0f8ff', fontSize: 14, fontWeight: 700, margin: '0 0 8px', letterSpacing: 1, textTransform: 'uppercase'}}>📊 Price vs Market</p><p style={{color: NEON.cyan, fontSize: 20, fontWeight: 800, margin: '8px 0'}}>{Math.round(selectedProperty.price / 1000000 / area)} tr/m²</p><p style={{color: 'rgba(240,248,255,0.5)', fontSize: 13, margin: 0}}>{language === 'vn' ? 'Giá tính từ diện tích đất' : language === 'fr' ? 'Prix calculé depuis la surface' : 'Price calculated from land area'}</p></div>) : (<div style={{background: `linear-gradient(135deg, ${NEON.card} 0%, rgba(0,212,255,0.03) 100%)`, border: `1px solid rgba(0,212,255,0.15)`, borderRadius: 16, padding: 16, margin: '12px 0', textAlign: 'center'}}><p style={{color: '#f0f8ff', fontSize: 14, fontWeight: 700, margin: '0 0 8px', letterSpacing: 1, textTransform: 'uppercase'}}>📊 Price vs Market</p><p style={{color: 'rgba(240,248,255,0.5)', fontSize: 13, margin: 0}}>{language === 'vn' ? '⚠️ Diện tích không có' : language === 'fr' ? '⚠️ Surface non renseignée' : '⚠️ Area not provided'}</p></div>); })()}
               <div style={{margin: '12px 0'}}>
                 <div style={{background: `linear-gradient(135deg, ${NEON.card} 0%, rgba(0,212,255,0.03) 100%)`, border: `1px solid ${NEON.border}`, borderRadius: 16, padding: 16, position: 'relative', overflow: 'hidden'}}>
                   <div style={{position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundImage: `linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px)`, backgroundSize: '20px 20px', pointerEvents: 'none'}} />
-                  <div style={{color: NEON.white, fontSize: 14, fontWeight: 700, textAlign: 'center', margin: '0 0 14px', letterSpacing: 1, textTransform: 'uppercase'}}>
-                    📋 {language === 'vn' ? 'Hồ sơ bất động sản' : language === 'fr' ? 'Profil du bien' : 'Property Profile'}
-                    {enriching && <span style={{fontSize: 12, color: '#00d4ff', marginLeft: 8, fontWeight: 400}}>⏳ {language === 'vn' ? 'Đang tải...' : language === 'fr' ? 'Chargement...' : 'Loading...'}</span>}
-                  </div>
-                  {enriching && (
-                    <div style={{padding: '12px 20px', background: 'rgba(255,140,0,0.15)', border: '1px solid rgba(255,140,0,0.4)', borderRadius: 12, textAlign: 'center', marginBottom: 12}}>
-                      <span style={{color: '#ff8c00', fontSize: 14, fontWeight: 600}}>🔍 {language === 'vn' ? 'Đang xác minh dữ liệu từ Alonhadat...' : language === 'fr' ? 'Vérification des données Alonhadat...' : 'Verifying data from Alonhadat...'}</span>
-                    </div>
-                  )}
-                  {selectedProperty._enriched && !enriching && (
-                    <div style={{padding: '8px 16px', background: 'rgba(0,255,136,0.1)', border: '1px solid rgba(0,255,136,0.3)', borderRadius: 10, textAlign: 'center', marginBottom: 12}}>
-                      <span style={{color: '#00ff88', fontSize: 13}}>✅ {language === 'vn' ? 'Dữ liệu đã được xác minh' : language === 'fr' ? 'Données vérifiées' : 'Data verified'}</span>
-                    </div>
-                  )}
+                  <div style={{color: NEON.white, fontSize: 14, fontWeight: 700, textAlign: 'center', margin: '0 0 14px', letterSpacing: 1, textTransform: 'uppercase'}}>📋 {language === 'vn' ? 'Hồ sơ bất động sản' : language === 'fr' ? 'Profil du bien' : 'Property Profile'}{enriching && <span style={{fontSize: 12, color: '#00d4ff', marginLeft: 8, fontWeight: 400}}>⏳ {language === 'vn' ? 'Đang tải...' : language === 'fr' ? 'Chargement...' : 'Loading...'}</span>}</div>
+                  {enriching && <div style={{padding: '12px 20px', background: 'rgba(255,140,0,0.15)', border: '1px solid rgba(255,140,0,0.4)', borderRadius: 12, textAlign: 'center', marginBottom: 12}}><span style={{color: '#ff8c00', fontSize: 14, fontWeight: 600}}>🔍 {language === 'vn' ? 'Đang xác minh dữ liệu từ Alonhadat...' : language === 'fr' ? 'Vérification des données Alonhadat...' : 'Verifying data from Alonhadat...'}</span></div>}
+                  {selectedProperty._enriched && !enriching && <div style={{padding: '8px 16px', background: 'rgba(0,255,136,0.1)', border: '1px solid rgba(0,255,136,0.3)', borderRadius: 10, textAlign: 'center', marginBottom: 12}}><span style={{color: '#00ff88', fontSize: 13}}>✅ {language === 'vn' ? 'Dữ liệu đã được xác minh' : language === 'fr' ? 'Données vérifiées' : 'Data verified'}</span></div>}
                   <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8}}>
-                    <div style={{background: 'rgba(0,212,255,0.06)', borderRadius: 10, padding: '10px 12px', border: '1px solid rgba(0,212,255,0.1)'}}>
-                      <span style={{color: '#888', fontSize: 11}}>🛣️ {language === 'vn' ? 'Loại đường phố' : language === 'fr' ? 'Type de rue' : 'Road Type'}</span>
-                      <p style={{color: NEON.white, fontSize: 14, fontWeight: 600, margin: '4px 0 0'}}>{(() => { const nlp = selectedProperty.nlpAnalysis || {}; const accessMap = {'goc_mt': 'Góc MT', 'nhieu_mt': '2+ MT', 'mat_tien': 'Mặt tiền', 'goc': 'Góc', 'hxh': 'Hẻm xe hơi', 'hem': 'Hẻm', 'kiet': 'Kiệt', 'ngo': 'Ngõ'}; const parts = []; if (nlp.extractedStreetAccess) parts.push(accessMap[nlp.extractedStreetAccess] || nlp.extractedStreetAccess); if (nlp.extractedStreetWidth || selectedProperty.streetWidth) parts.push(`Đường ${nlp.extractedStreetWidth || selectedProperty.streetWidth}m`); if (nlp.extractedFacade || selectedProperty.facadeWidth) parts.push(`Ngang ${nlp.extractedFacade || selectedProperty.facadeWidth}m`); return parts.length > 0 ? parts.join(' • ') : '—'; })()}</p>
-                    </div>
-                    <div style={{background: 'rgba(0,212,255,0.06)', borderRadius: 10, padding: '10px 12px', border: '1px solid rgba(0,212,255,0.1)'}}>
-                      <span style={{color: '#888', fontSize: 11}}>📐 {language === 'vn' ? 'Kích thước' : language === 'fr' ? 'Dimensions' : 'Dimensions'}</span>
-                      <p style={{color: NEON.white, fontSize: 14, fontWeight: 600, margin: '4px 0 0'}}>{(() => { const nlp = selectedProperty.nlpAnalysis || {}; if (nlp.extractedWidth && nlp.extractedDepth) return `${nlp.extractedWidth}×${nlp.extractedDepth}m (${nlp.extractedArea}m²)`; if (nlp.extractedArea) return `${nlp.extractedArea} m²`; if (selectedProperty.area) return `${Math.round(selectedProperty.area * 10) / 10} m²`; return '—'; })()}</p>
-                    </div>
-                    <div style={{background: 'rgba(0,212,255,0.06)', borderRadius: 10, padding: '10px 12px', border: '1px solid rgba(0,212,255,0.1)'}}>
-                      <span style={{color: '#888', fontSize: 11}}>📜 {language === 'vn' ? 'Pháp lý' : language === 'fr' ? 'Statut légal' : 'Legal Status'}</span>
-                      <p style={{color: (() => { const nlp = selectedProperty.nlpAnalysis || {}; const colorMap = {'so_hong_rieng': NEON.green, 'so_hong': NEON.green, 'hop_dong': NEON.orange, 'gpxd': NEON.orange, 'giay_tay': NEON.red, 'cho_so': NEON.orange, 'vi_bang': NEON.red}; if (nlp.extractedLegalStatus && colorMap[nlp.extractedLegalStatus]) return colorMap[nlp.extractedLegalStatus]; return '#888'; })(), fontSize: 14, fontWeight: 600, margin: '4px 0 0'}}>{(() => { const nlp = selectedProperty.nlpAnalysis || {}; const legalMap = {'so_hong_rieng': '✅ Sổ hồng riêng', 'so_hong': '✅ Sổ hồng / Sổ đỏ', 'hop_dong': '📄 Hợp đồng mua bán', 'gpxd': '📄 Giấy phép XD', 'giay_tay': '⚠️ Giấy tay', 'cho_so': '⏳ Đang chờ sổ', 'vi_bang': '⚠️ Vi bằng'}; if (nlp.extractedLegalStatus && legalMap[nlp.extractedLegalStatus]) return legalMap[nlp.extractedLegalStatus]; if (selectedProperty.legalStatus) return selectedProperty.legalStatus; return '—'; })()}</p>
-                    </div>
-                    <div style={{background: 'rgba(0,212,255,0.06)', borderRadius: 10, padding: '10px 12px', border: '1px solid rgba(0,212,255,0.1)'}}>
-                      <span style={{color: '#888', fontSize: 11}}>🏢 {language === 'vn' ? 'Kết cấu' : language === 'fr' ? 'Structure' : 'Structure'}</span>
-                      <p style={{color: NEON.white, fontSize: 14, fontWeight: 600, margin: '4px 0 0'}}>{(() => { const nlp = selectedProperty.nlpAnalysis || {}; const parts = []; const floors = selectedProperty.floors || nlp.extractedFloors; if (floors && floors > 0) parts.push(`${floors} tầng`); const beds = selectedProperty.bedrooms || nlp.extractedBedrooms; if (beds && beds > 0) parts.push(`${beds} PN`); const facade = selectedProperty.facadeWidth || nlp.extractedFacade; if (facade && facade > 0) parts.push(`Ngang ${facade}m`); return parts.length > 0 ? parts.join(' • ') : '—'; })()}</p>
-                    </div>
+                    <div style={{background: 'rgba(0,212,255,0.06)', borderRadius: 10, padding: '10px 12px', border: '1px solid rgba(0,212,255,0.1)'}}><span style={{color: '#888', fontSize: 11}}>🛣️ {language === 'vn' ? 'Loại đường phố' : language === 'fr' ? 'Type de rue' : 'Road Type'}</span><p style={{color: NEON.white, fontSize: 14, fontWeight: 600, margin: '4px 0 0'}}>{(() => { const nlp = selectedProperty.nlpAnalysis || {}; const accessMap = {'goc_mt': 'Góc MT', 'nhieu_mt': '2+ MT', 'mat_tien': 'Mặt tiền', 'goc': 'Góc', 'hxh': 'Hẻm xe hơi', 'hem': 'Hẻm', 'kiet': 'Kiệt', 'ngo': 'Ngõ'}; const parts = []; if (nlp.extractedStreetAccess) parts.push(accessMap[nlp.extractedStreetAccess] || nlp.extractedStreetAccess); if (nlp.extractedStreetWidth || selectedProperty.streetWidth) parts.push(`Đường ${nlp.extractedStreetWidth || selectedProperty.streetWidth}m`); if (nlp.extractedFacade || selectedProperty.facadeWidth) parts.push(`Ngang ${nlp.extractedFacade || selectedProperty.facadeWidth}m`); return parts.length > 0 ? parts.join(' • ') : '—'; })()}</p></div>
+                    <div style={{background: 'rgba(0,212,255,0.06)', borderRadius: 10, padding: '10px 12px', border: '1px solid rgba(0,212,255,0.1)'}}><span style={{color: '#888', fontSize: 11}}>📐 {language === 'vn' ? 'Kích thước' : language === 'fr' ? 'Dimensions' : 'Dimensions'}</span><p style={{color: NEON.white, fontSize: 14, fontWeight: 600, margin: '4px 0 0'}}>{(() => { const nlp = selectedProperty.nlpAnalysis || {}; if (nlp.extractedWidth && nlp.extractedDepth) return `${nlp.extractedWidth}×${nlp.extractedDepth}m (${nlp.extractedArea}m²)`; if (nlp.extractedArea) return `${nlp.extractedArea} m²`; if (selectedProperty.area) return `${Math.round(selectedProperty.area * 10) / 10} m²`; return '—'; })()}</p></div>
+                    <div style={{background: 'rgba(0,212,255,0.06)', borderRadius: 10, padding: '10px 12px', border: '1px solid rgba(0,212,255,0.1)'}}><span style={{color: '#888', fontSize: 11}}>📜 {language === 'vn' ? 'Pháp lý' : language === 'fr' ? 'Statut légal' : 'Legal Status'}</span><p style={{color: (() => { const nlp = selectedProperty.nlpAnalysis || {}; const colorMap = {'so_hong_rieng': NEON.green, 'so_hong': NEON.green, 'hop_dong': NEON.orange, 'gpxd': NEON.orange, 'giay_tay': NEON.red, 'cho_so': NEON.orange, 'vi_bang': NEON.red}; if (nlp.extractedLegalStatus && colorMap[nlp.extractedLegalStatus]) return colorMap[nlp.extractedLegalStatus]; return '#888'; })(), fontSize: 14, fontWeight: 600, margin: '4px 0 0'}}>{(() => { const nlp = selectedProperty.nlpAnalysis || {}; const legalMap = {'so_hong_rieng': '✅ Sổ hồng riêng', 'so_hong': '✅ Sổ hồng / Sổ đỏ', 'hop_dong': '📄 Hợp đồng mua bán', 'gpxd': '📄 Giấy phép XD', 'giay_tay': '⚠️ Giấy tay', 'cho_so': '⏳ Đang chờ sổ', 'vi_bang': '⚠️ Vi bằng'}; if (nlp.extractedLegalStatus && legalMap[nlp.extractedLegalStatus]) return legalMap[nlp.extractedLegalStatus]; if (selectedProperty.legalStatus) return selectedProperty.legalStatus; return '—'; })()}</p></div>
+                    <div style={{background: 'rgba(0,212,255,0.06)', borderRadius: 10, padding: '10px 12px', border: '1px solid rgba(0,212,255,0.1)'}}><span style={{color: '#888', fontSize: 11}}>🏢 {language === 'vn' ? 'Kết cấu' : language === 'fr' ? 'Structure' : 'Structure'}</span><p style={{color: NEON.white, fontSize: 14, fontWeight: 600, margin: '4px 0 0'}}>{(() => { const nlp = selectedProperty.nlpAnalysis || {}; const parts = []; const floors = selectedProperty.floors || nlp.extractedFloors; if (floors && floors > 0) parts.push(`${floors} tầng`); const beds = selectedProperty.bedrooms || nlp.extractedBedrooms; if (beds && beds > 0) parts.push(`${beds} PN`); const facade = selectedProperty.facadeWidth || nlp.extractedFacade; if (facade && facade > 0) parts.push(`Ngang ${facade}m`); return parts.length > 0 ? parts.join(' • ') : '—'; })()}</p></div>
                   </div>
                 </div>
               </div>
@@ -1241,9 +780,7 @@ const districtsByCity = {
                 <div style={{background: 'linear-gradient(135deg, #0d1225 0%, rgba(255,140,0,0.03) 100%)', border: '1px solid rgba(255,140,0,0.15)', borderRadius: 16, padding: 16, margin: '12px 0', position: 'relative', overflow: 'hidden'}}>
                   <div style={{position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundImage: 'linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px)', backgroundSize: '20px 20px', pointerEvents: 'none'}} />
                   <p style={{color: '#f0f8ff', fontSize: 14, fontWeight: 700, margin: '0 0 12px', letterSpacing: 1, textTransform: 'uppercase'}}>🚨 {language === 'vn' ? 'Cảnh báo & Cơ hội' : language === 'fr' ? 'Alertes & Opportunités' : 'Alerts & Opportunities'}</p>
-                  <div style={{display: 'flex', flexWrap: 'wrap', gap: 8}}>
-                    {selectedProperty.scoreDetails.nlpFactors.map((factor, i) => <AlertBadge key={i} text={factor.label || factor.text || factor} type={factor.type === 'positive' || factor.type === 'opportunity' ? 'good' : factor.type === 'risk' || factor.type === 'warning' ? 'risk' : 'alert'} />)}
-                  </div>
+                  <div style={{display: 'flex', flexWrap: 'wrap', gap: 8}}>{selectedProperty.scoreDetails.nlpFactors.map((factor, i) => <AlertBadge key={i} text={factor.label || factor.text || factor} type={factor.type === 'positive' || factor.type === 'opportunity' ? 'good' : factor.type === 'risk' || factor.type === 'warning' ? 'risk' : 'alert'} />)}</div>
                 </div>
               )}
               <div style={{background: 'linear-gradient(135deg, rgba(0,212,255,0.08) 0%, rgba(0,255,136,0.05) 100%)', border: '1px solid rgba(0,212,255,0.25)', borderRadius: 16, padding: 16, margin: '12px 0', position: 'relative', overflow: 'hidden'}}>
@@ -1262,10 +799,7 @@ const districtsByCity = {
                 <p className="text-xs text-gray-500 mb-1">📍 {language === 'fr' ? 'Adresse (cliquer pour Google Maps)' : 'Address (click for Google Maps)'}</p>
                 <p className="font-medium text-gray-200">{selectedProperty.address || `${selectedProperty.district || ''}, ${selectedProperty.ward || ''}, ${selectedProperty.city || ''}`}</p>
               </div>
-              <div className="flex items-center justify-between text-sm text-gray-500">
-                <span>🌐 {selectedProperty.source}</span>
-                {selectedProperty.postedOn && <span>📅 {selectedProperty.postedOn}</span>}
-              </div>
+              <div className="flex items-center justify-between text-sm text-gray-500"><span>🌐 {selectedProperty.source}</span>{selectedProperty.postedOn && <span>📅 {selectedProperty.postedOn}</span>}</div>
               <div className="mt-6 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl">
                 <div className="flex items-start gap-3">
                   <span className="text-lg mt-0.5">⚖️</span>
@@ -1280,7 +814,6 @@ const districtsByCity = {
                   </div>
                 </div>
               </div>
-              {/* Feedback inline dans le modal — toujours lié au profil ouvert */}
               <div className="border-t border-gray-800 pt-4">
                 {feedbackSent ? (
                   <div style={{textAlign: 'center', color: '#a3e635', fontSize: '16px', padding: '12px'}}>✅ {language === 'fr' ? 'Merci pour ton feedback !' : language === 'vn' ? 'Cảm ơn phản hồi của bạn!' : 'Thanks for your feedback!'}</div>
@@ -1309,15 +842,9 @@ const districtsByCity = {
         </div>
       )}
 
-      {/* Bouton flottant — feedback général sur l'app (hors profil) */}
       {!selectedProperty && (
         <>
-          <button
-            onClick={() => setShowFeedback(true)}
-            style={{position: 'fixed', bottom: '24px', right: '24px', zIndex: 1000, background: '#6366f1', color: 'white', border: 'none', borderRadius: '50px', padding: '12px 20px', cursor: 'pointer', fontSize: '14px', fontWeight: '600', boxShadow: '0 4px 15px rgba(99,102,241,0.4)', display: 'flex', alignItems: 'center', gap: '8px'}}
-          >
-            💬 Feedback
-          </button>
+          <button onClick={() => setShowFeedback(true)} style={{position: 'fixed', bottom: '24px', right: '24px', zIndex: 1000, background: '#6366f1', color: 'white', border: 'none', borderRadius: '50px', padding: '12px 20px', cursor: 'pointer', fontSize: '14px', fontWeight: '600', boxShadow: '0 4px 15px rgba(99,102,241,0.4)', display: 'flex', alignItems: 'center', gap: '8px'}}>💬 Feedback</button>
           {showFeedback && (
             <div style={{position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
               <div style={{background: '#1e1e2e', borderRadius: '16px', padding: '32px', width: '100%', maxWidth: '460px', boxShadow: '0 20px 60px rgba(0,0,0,0.5)'}}>
