@@ -1052,7 +1052,7 @@ const districtsByCity = {
                       {prop.isNew && <div className="absolute top-2 left-2 bg-cyan-500/90 text-white px-3 py-1 rounded-full text-xs font-bold animate-pulse">{t.newListing}</div>}
                       {prop.urgentKeywords && prop.urgentKeywords.length > 0 && <div className="absolute top-2 right-2 bg-orange-500 text-white px-3 py-1 rounded-full text-xs font-bold animate-pulse">🔥 {prop.urgentKeywords[0]}</div>}
                       {prop.legalStatus && <div className="absolute bottom-2 left-2 bg-blue-500/80 text-white px-2 py-1 rounded text-xs font-bold">📋 {prop.legalStatus}</div>}
-                    <div className="absolute bottom-2 right-2 bg-gray-900/80 text-gray-300 px-2 py-1 rounded text-xs font-bold backdrop-blur-sm">{prop.source}</div>
+                   <div className="absolute bottom-2 right-2 bg-gray-900/80 text-gray-300 px-2 py-1 rounded text-xs font-bold backdrop-blur-sm">{prop.source}</div>
 {prop.facebookGroupUrl && (
   
     href={prop.facebookGroupUrl}
@@ -1066,9 +1066,6 @@ const districtsByCity = {
   </a>
 )}
 </div>
-{prop.facebookGroupUrl && (
-  
-    href={prop.facebookGroupUrl}
     target="_blank"
     rel="noopener noreferrer"
     onClick={(e) => e.stopPropagation()}
