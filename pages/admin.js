@@ -1,6 +1,6 @@
 import * as XLSX from 'xlsx';
 import { useState, useEffect } from 'react';
-import { Lock, RefreshCw, ToggleLeft, ToggleRight, Clock, MessageSquare, Shield, AlertCircle, Check, X } from 'lucide-react';
+import { Lock, RefreshCw, ToggleLeft, ToggleRight, Clock, MessageSquare, Shield, AlertCircle, Check, X, Facebook } from 'lucide-react';
 
 export default function AdminPage() {
   const [password, setPassword] = useState('');
@@ -15,6 +15,12 @@ export default function AdminPage() {
   const [feedbacks, setFeedbacks] = useState([]);
   const [loadingFeedbacks, setLoadingFeedbacks] = useState(false);
 
+  // ── NOUVEAUX ÉTATS PARTENAIRES ──
+  const [partners, setPartners] = useState([]);
+  const [showCreatePartner, setShowCreatePartner] = useState(false);
+  const [newPartner, setNewPartner] = useState({ group_name: '', group_url: '', city: '', notes: '' });
+  const [createdCode, setCreatedCode] = useState('');
+
   useEffect(() => {
     const savedPwd = localStorage.getItem('ktrix_admin_pwd');
     if (savedPwd) {
@@ -22,6 +28,7 @@ export default function AdminPage() {
       fetchTesters(savedPwd);
       fetchSavedSearches(savedPwd);
       fetchFeedbacks(savedPwd);
+      fetchPartners(savedPwd);
     }
   }, []);
 
@@ -55,6 +62,47 @@ export default function AdminPage() {
     setLoadingFeedbacks(false);
   };
 
+  // ── NOUVEAU : Fetch partenaires ──
+  const fetchPartners = async (pwd) => {
+    try {
+      const res = await fetch('/api/admin-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: pwd || password, action: 'list_partners' }),
+      });
+      const data = await res.json();
+      if (Array.isArray(data.partners)) setPartners(data.partners);
+    } catch (err) {
+      console.error('Error fetching partners:', err);
+    }
+  };
+
+  // ── NOUVEAU : Créer un partenaire ──
+  const handleCreatePartner = async () => {
+    if (!newPartner.group_name || !newPartner.group_url) {
+      alert('Nom du groupe et URL sont requis');
+      return;
+    }
+    const pwd = password || localStorage.getItem('ktrix_admin_pwd');
+    try {
+      const res = await fetch('/api/admin-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: pwd, action: 'create_partner', data: newPartner }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setCreatedCode(data.code);
+        fetchPartners(pwd);
+        setNewPartner({ group_name: '', group_url: '', city: '', notes: '' });
+      } else {
+        alert('Erreur : ' + (data.error || 'inconnue'));
+      }
+    } catch (err) {
+      console.error('Error creating partner:', err);
+    }
+  };
+
   const fetchTesters = async (pwd) => {
     setLoading(true);
     setError('');
@@ -73,6 +121,7 @@ export default function AdminPage() {
         setAuthenticated(true);
         fetchSavedSearches(pwd);
         fetchFeedbacks(pwd);
+        fetchPartners(pwd);
       }
     } catch (err) {
       setError('Connection error');
@@ -94,6 +143,7 @@ export default function AdminPage() {
       body: JSON.stringify({ password: pwd, action: 'toggle', code }),
     });
     fetchTesters(pwd);
+    fetchPartners(pwd);
   };
 
   const handleReset = async (code) => {
@@ -149,96 +199,53 @@ export default function AdminPage() {
 
   const handleExport = () => {
     const wb = XLSX.utils.book_new();
-
-    testers.filter(t => t.email).forEach(tester => {
+    testers.filter(t => t.email && t.email !== 'EMPTY' && t.email !== '').forEach(tester => {
       const testerFeedbacks = feedbacks.filter(f => f.beta_code === tester.code);
       const testerSearches = savedSearches.filter(s => s.beta_code === tester.code);
-
-      // ── Bloc infos tester (col A = label, col B = valeur) ──
       const rows = [
-        ['Code',        tester.code],
-        ['Prénom',      tester.first_name || ''],
-        ['Nom',         tester.last_name || ''],
-        ['Email',       tester.email || ''],
-        ['Secteur',     tester.sector || ''],
-        ['Age',         tester.age || ''],
+        ['Code', tester.code], ['Prénom', tester.first_name || ''], ['Nom', tester.last_name || ''],
+        ['Email', tester.email || ''], ['Secteur', tester.sector || ''], ['Age', tester.age || ''],
         ['Inscription', tester.registered_at ? new Date(tester.registered_at).toLocaleDateString('fr-FR') : ''],
-        ['Expiration',  tester.expires_at   ? new Date(tester.expires_at).toLocaleDateString('fr-FR')   : ''],
-        ['Recherches',  tester.search_count || 0],
-        ['Statut',      tester.is_active ? 'Actif' : 'Inactif'],
-        ['Notes admin', tester.notes || ''],
-        [],
+        ['Expiration', tester.expires_at ? new Date(tester.expires_at).toLocaleDateString('fr-FR') : ''],
+        ['Recherches', tester.search_count || 0], ['Statut', tester.is_active ? 'Actif' : 'Inactif'],
+        ['Notes admin', tester.notes || ''], [],
       ];
-
-      // ── Bloc feedbacks : 1 feedback = 1 ligne, col A = date, col B = message, col C = email réponse ──
       rows.push(['── FEEDBACKS ──', '', '']);
-      if (testerFeedbacks.length === 0) {
-        rows.push(['(aucun feedback)', '', '']);
-      } else {
+      if (testerFeedbacks.length === 0) { rows.push(['(aucun feedback)', '', '']); }
+      else {
         rows.push(['Date', 'Message', 'Email réponse']);
         testerFeedbacks.forEach(fb => {
-          rows.push([
-            new Date(fb.created_at).toLocaleDateString('fr-FR', {
-              day: '2-digit', month: '2-digit', year: 'numeric',
-              hour: '2-digit', minute: '2-digit'
-            }),
-            fb.message || '',
-            fb.reply_email && fb.reply_email !== 'EMPTY' ? fb.reply_email : '',
-          ]);
+          rows.push([new Date(fb.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }), fb.message || '', fb.reply_email && fb.reply_email !== 'EMPTY' ? fb.reply_email : '']);
         });
       }
-
       rows.push([]);
-
-      // ── Bloc recherches sauvegardées ──
       rows.push(['── RECHERCHES SAUVEGARDÉES ──', '', '']);
-      if (testerSearches.length === 0) {
-        rows.push(['(aucune)', '', '']);
-      } else {
+      if (testerSearches.length === 0) { rows.push(['(aucune)', '', '']); }
+      else {
         rows.push(['Nom', 'Paramètres', 'Date']);
         testerSearches.forEach(s => {
-          rows.push([
-            s.name || '—',
-            s.params
-              ? Object.entries(s.params)
-                  .filter(([, v]) => v && v !== '' && v !== 'all')
-                  .map(([k, v]) => `${k}: ${v}`)
-                  .join(' · ')
-              : '—',
-            new Date(s.created_at).toLocaleDateString('fr-FR'),
-          ]);
+          rows.push([s.name || '—', s.params ? Object.entries(s.params).filter(([, v]) => v && v !== '' && v !== 'all').map(([k, v]) => `${k}: ${v}`).join(' · ') : '—', new Date(s.created_at).toLocaleDateString('fr-FR')]);
         });
       }
-
       const ws = XLSX.utils.aoa_to_sheet(rows);
-
-      // Largeurs : A=22, B=70 (messages), C=30 (email)
       ws['!cols'] = [{ wch: 22 }, { wch: 70 }, { wch: 30 }];
-
-      // Wrap text sur toute la colonne B pour les messages longs
       const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
       for (let R = range.s.r; R <= range.e.r; R++) {
         const cellAddr = XLSX.utils.encode_cell({ r: R, c: 1 });
-        if (ws[cellAddr] && ws[cellAddr].v) {
-          if (!ws[cellAddr].s) ws[cellAddr].s = {};
-          ws[cellAddr].s.alignment = { wrapText: true };
-        }
+        if (ws[cellAddr] && ws[cellAddr].v) { if (!ws[cellAddr].s) ws[cellAddr].s = {}; ws[cellAddr].s.alignment = { wrapText: true }; }
       }
-
       XLSX.utils.book_append_sheet(wb, ws, (tester.first_name || tester.code).slice(0, 31));
     });
-
     XLSX.writeFile(wb, `ktrix-beta-${new Date().toISOString().slice(0, 10)}.xlsx`);
   };
 
-  const registered = testers.filter(t => t.email && t.email !== '' && t.email !== 'EMPTY');
-  const available = testers.filter(t => !t.email || t.email === '' || t.email === 'EMPTY');
-  const expired = testers.filter(t => t.expires_at && new Date(t.expires_at) < new Date());
-  const withFeedback = testers.filter(t => t.feedback && t.feedback.trim() !== '');
+  const betaTesters = testers.filter(t => t.code_type !== 'partner');
+  const registered = betaTesters.filter(t => t.email && t.email !== '' && t.email !== 'EMPTY');
+  const available = betaTesters.filter(t => !t.email || t.email === '' || t.email === 'EMPTY');
+  const expired = betaTesters.filter(t => t.expires_at && new Date(t.expires_at) < new Date());
 
   const formatDate = (d) => d ? new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '-';
   const isExpired = (d) => d && new Date(d) < new Date();
-
   const getDaysLeft = (expires_at) => {
     if (!expires_at) return null;
     const diff = new Date(expires_at) - new Date();
@@ -258,24 +265,9 @@ export default function AdminPage() {
             <p className="text-gray-500 text-sm mt-1">Beta Testers Management</p>
           </div>
           <div className="bg-gray-900 rounded-xl border border-gray-800 p-6">
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => { setPassword(e.target.value); setError(''); }}
-              onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
-              placeholder="Admin password"
-              className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white text-center focus:outline-none focus:border-red-500 transition mb-4"
-              autoFocus
-            />
-            {error && (
-              <div className="flex items-center gap-2 text-red-400 text-sm mb-4 justify-center">
-                <AlertCircle className="w-4 h-4" />
-                <span>{error}</span>
-              </div>
-            )}
-            <button onClick={handleLogin} disabled={loading} className="w-full py-3 bg-red-500 text-white font-bold rounded-lg hover:bg-red-600 transition disabled:opacity-50">
-              {loading ? 'Loading...' : 'Access'}
-            </button>
+            <input type="password" value={password} onChange={(e) => { setPassword(e.target.value); setError(''); }} onKeyDown={(e) => e.key === 'Enter' && handleLogin()} placeholder="Admin password" className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white text-center focus:outline-none focus:border-red-500 transition mb-4" autoFocus />
+            {error && (<div className="flex items-center gap-2 text-red-400 text-sm mb-4 justify-center"><AlertCircle className="w-4 h-4" /><span>{error}</span></div>)}
+            <button onClick={handleLogin} disabled={loading} className="w-full py-3 bg-red-500 text-white font-bold rounded-lg hover:bg-red-600 transition disabled:opacity-50">{loading ? 'Loading...' : 'Access'}</button>
           </div>
         </div>
       </div>
@@ -292,16 +284,11 @@ export default function AdminPage() {
             <h1 className="text-lg font-bold text-white">K Trix Admin</h1>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={() => { const pwd = password || localStorage.getItem('ktrix_admin_pwd'); fetchTesters(pwd); fetchFeedbacks(pwd); }} className="flex items-center gap-2 px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-300 hover:bg-gray-700 transition">
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-              Refresh
+            <button onClick={() => { const pwd = password || localStorage.getItem('ktrix_admin_pwd'); fetchTesters(pwd); fetchFeedbacks(pwd); fetchPartners(pwd); }} className="flex items-center gap-2 px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-300 hover:bg-gray-700 transition">
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />Refresh
             </button>
-            <button onClick={handleResetAll} className="flex items-center gap-2 px-4 py-2 bg-red-900 border border-red-700 rounded-lg text-sm text-red-300 hover:bg-red-800 transition">
-              🗑️ RAZ Données
-            </button>
-            <button onClick={handleExport} className="flex items-center gap-2 px-4 py-2 bg-emerald-800 border border-emerald-700 rounded-lg text-sm text-emerald-300 hover:bg-emerald-700 transition">
-              📊 Export Excel
-            </button>
+            <button onClick={handleResetAll} className="flex items-center gap-2 px-4 py-2 bg-red-900 border border-red-700 rounded-lg text-sm text-red-300 hover:bg-red-800 transition">🗑️ RAZ Données</button>
+            <button onClick={handleExport} className="flex items-center gap-2 px-4 py-2 bg-emerald-800 border border-emerald-700 rounded-lg text-sm text-emerald-300 hover:bg-emerald-700 transition">📊 Export Excel</button>
           </div>
         </div>
       </header>
@@ -309,9 +296,9 @@ export default function AdminPage() {
       <main className="max-w-7xl mx-auto px-4 py-6">
 
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-8">
           <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-            <p className="text-2xl font-bold text-white">{testers.length}</p>
+            <p className="text-2xl font-bold text-white">{betaTesters.length}</p>
             <p className="text-gray-500 text-sm">Total Codes</p>
           </div>
           <div className="bg-gray-900 border border-emerald-500/20 rounded-xl p-4">
@@ -330,12 +317,139 @@ export default function AdminPage() {
             <p className="text-2xl font-bold text-purple-400">{feedbacks.length}</p>
             <p className="text-gray-500 text-sm">Feedbacks</p>
           </div>
+          <div className="bg-gray-900 border border-blue-500/20 rounded-xl p-4">
+            <p className="text-2xl font-bold text-blue-400">{partners.length}</p>
+            <p className="text-gray-500 text-sm">Partenaires FB</p>
+          </div>
         </div>
 
-        {/* Testers Table */}
+        {/* ── SECTION PARTENAIRES FB ── */}
+        <div className="bg-gray-900 border border-blue-500/20 rounded-xl overflow-hidden mb-8">
+          <div className="p-4 border-b border-blue-500/20 flex items-center justify-between">
+            <h2 className="text-white font-bold flex items-center gap-2">
+              <Facebook className="w-4 h-4 text-blue-400" />
+              Partenaires Facebook ({partners.length})
+            </h2>
+            <button onClick={() => { setShowCreatePartner(!showCreatePartner); setCreatedCode(''); }} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-500 transition">
+              + Nouveau partenaire
+            </button>
+          </div>
+
+          {/* Formulaire création */}
+          {showCreatePartner && (
+            <div className="p-4 bg-blue-500/5 border-b border-blue-500/20 space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">Nom du groupe *</label>
+                  <input
+                    placeholder="Cộng đồng BĐS Hồ Chí Minh"
+                    value={newPartner.group_name}
+                    onChange={e => setNewPartner({ ...newPartner, group_name: e.target.value })}
+                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:border-blue-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">URL du groupe *</label>
+                  <input
+                    placeholder="https://www.facebook.com/groups/..."
+                    value={newPartner.group_url}
+                    onChange={e => setNewPartner({ ...newPartner, group_url: e.target.value })}
+                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:border-blue-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">Ville</label>
+                  <input
+                    placeholder="Hồ Chí Minh"
+                    value={newPartner.city}
+                    onChange={e => setNewPartner({ ...newPartner, city: e.target.value })}
+                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:border-blue-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">Notes (admin)</label>
+                  <input
+                    placeholder="Ex: 248K membres, admin: Hoài Hồ"
+                    value={newPartner.notes}
+                    onChange={e => setNewPartner({ ...newPartner, notes: e.target.value })}
+                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:border-blue-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+              <button
+                onClick={handleCreatePartner}
+                disabled={!newPartner.group_name || !newPartner.group_url}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-500 transition disabled:opacity-50"
+              >
+                Créer le code partenaire
+              </button>
+
+              {/* Code généré */}
+              {createdCode && (
+                <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl">
+                  <p className="text-emerald-400 font-bold mb-1">✅ Code partenaire créé :</p>
+                  <p className="font-mono text-2xl text-white font-bold tracking-wider">{createdCode}</p>
+                  <p className="text-gray-500 text-xs mt-2">→ Accès permanent · À envoyer à l'admin du groupe</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Table partenaires */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-800 text-gray-400">
+                  <th className="text-left p-3 font-medium">Code</th>
+                  <th className="text-left p-3 font-medium">Groupe</th>
+                  <th className="text-left p-3 font-medium">URL</th>
+                  <th className="text-left p-3 font-medium">Ville</th>
+                  <th className="text-center p-3 font-medium">Recherches</th>
+                  <th className="text-left p-3 font-medium">Notes</th>
+                  <th className="text-center p-3 font-medium">Statut</th>
+                  <th className="text-left p-3 font-medium">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {partners.length === 0 ? (
+                  <tr><td colSpan={8} className="p-6 text-center text-gray-500">Aucun partenaire pour l'instant — cliquez sur "+ Nouveau partenaire" pour en créer un</td></tr>
+                ) : (
+                  partners.map(p => (
+                    <tr key={p.id} className={`border-b border-gray-800/50 hover:bg-gray-800/20 transition ${!p.is_active ? 'opacity-40' : ''}`}>
+                      <td className="p-3 font-mono text-xs text-blue-400">{p.code}</td>
+                      <td className="p-3 text-white font-medium">{p.partner_group_name}</td>
+                      <td className="p-3">
+                        <a href={p.partner_group_url} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline text-xs truncate block max-w-48">
+                          {p.partner_group_url}
+                        </a>
+                      </td>
+                      <td className="p-3 text-gray-400 text-xs">{p.city || '—'}</td>
+                      <td className="p-3 text-center">
+                        <span className={`font-bold ${p.search_count > 0 ? 'text-emerald-400' : 'text-gray-600'}`}>{p.search_count || 0}</span>
+                      </td>
+                      <td className="p-3 text-gray-500 text-xs max-w-[160px] truncate">{p.notes || '—'}</td>
+                      <td className="p-3 text-center">
+                        {p.is_active
+                          ? <span className="inline-block w-2.5 h-2.5 bg-emerald-400 rounded-full"></span>
+                          : <span className="inline-block w-2.5 h-2.5 bg-red-400 rounded-full"></span>}
+                      </td>
+                      <td className="p-3">
+                        <button onClick={() => handleToggle(p.code)} className="px-3 py-1 bg-gray-800 text-gray-400 rounded-lg text-xs hover:bg-gray-700 transition border border-gray-700">
+                          {p.is_active ? 'Désactiver' : 'Activer'}
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Beta Testers Table */}
         <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden mb-8">
           <div className="p-4 border-b border-gray-800">
-            <h2 className="text-white font-bold">Beta Testers ({registered.length} / {testers.length})</h2>
+            <h2 className="text-white font-bold">Beta Testers ({registered.length} / {betaTesters.length})</h2>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -355,114 +469,57 @@ export default function AdminPage() {
                 </tr>
               </thead>
               <tbody>
-                {testers.map((tester) => {
+                {betaTesters.map((tester) => {
                   const isReg = tester.email && tester.email !== '' && tester.email !== 'EMPTY';
                   const isExp = isExpired(tester.expires_at);
                   const daysLeft = getDaysLeft(tester.expires_at);
                   const testerFeedbacks = feedbacks.filter(f => f.beta_code === tester.code);
                   const hasFeedback = testerFeedbacks.length > 0 || (tester.feedback && tester.feedback.trim() !== '');
-                  const latestFeedback = testerFeedbacks.length > 0
-                    ? testerFeedbacks[0].message
-                    : tester.feedback || '';
+                  const latestFeedback = testerFeedbacks.length > 0 ? testerFeedbacks[0].message : tester.feedback || '';
                   return (
                     <tr key={tester.id} className={`border-b border-gray-800/50 hover:bg-gray-800/20 transition ${!tester.is_active ? 'opacity-40' : ''} ${isExp ? 'bg-red-500/5' : ''}`}>
                       <td className="p-3 font-mono text-xs text-cyan-400">{tester.code}</td>
-                      <td className="p-3">
-                        {isReg ? (
-                          <span className="text-white">{tester.last_name} {tester.first_name || ''}</span>
-                        ) : (
-                          <span className="text-gray-600 italic">Disponible</span>
-                        )}
-                      </td>
+                      <td className="p-3">{isReg ? <span className="text-white">{tester.last_name} {tester.first_name || ''}</span> : <span className="text-gray-600 italic">Disponible</span>}</td>
                       <td className="p-3 text-gray-400 text-xs">{isReg ? tester.email : '-'}</td>
                       <td className="p-3 text-gray-400">{isReg ? tester.sector : '-'}</td>
-                      <td className="p-3 text-center">
-                        <span className={`font-bold ${tester.search_count > 0 ? 'text-emerald-400' : 'text-gray-600'}`}>
-                          {tester.search_count || 0}
-                        </span>
-                      </td>
+                      <td className="p-3 text-center"><span className={`font-bold ${tester.search_count > 0 ? 'text-emerald-400' : 'text-gray-600'}`}>{tester.search_count || 0}</span></td>
                       <td className="p-3 text-gray-500 text-xs">{formatDate(tester.registered_at)}</td>
                       <td className="p-3 text-xs">
                         {isReg ? (
                           <span className={isExp ? 'text-red-400 font-bold' : daysLeft <= 3 ? 'text-orange-400 font-bold' : 'text-gray-500'}>
-                            {formatDate(tester.expires_at)}
-                            {isExp ? ' ⚠️' : daysLeft !== null && daysLeft <= 7 ? ` (${daysLeft}j)` : ''}
+                            {formatDate(tester.expires_at)}{isExp ? ' ⚠️' : daysLeft !== null && daysLeft <= 7 ? ` (${daysLeft}j)` : ''}
                           </span>
                         ) : '-'}
                       </td>
-                      <td className="p-3 text-center">
-                        {tester.is_active ? (
-                          <span className="inline-block w-2.5 h-2.5 bg-emerald-400 rounded-full"></span>
-                        ) : (
-                          <span className="inline-block w-2.5 h-2.5 bg-red-400 rounded-full"></span>
-                        )}
-                      </td>
-
-                      {/* Notes inline */}
+                      <td className="p-3 text-center">{tester.is_active ? <span className="inline-block w-2.5 h-2.5 bg-emerald-400 rounded-full"></span> : <span className="inline-block w-2.5 h-2.5 bg-red-400 rounded-full"></span>}</td>
                       <td className="p-3 max-w-[160px]">
                         {noteEdit.code === tester.code ? (
                           <div className="flex items-center gap-1">
-                            <input
-                              type="text"
-                              value={noteEdit.text}
-                              onChange={(e) => setNoteEdit({ ...noteEdit, text: e.target.value })}
-                              onKeyDown={(e) => e.key === 'Enter' && handleNote(tester.code)}
-                              className="flex-1 px-2 py-1 bg-gray-800 border border-blue-500 rounded text-white text-xs focus:outline-none"
-                              autoFocus
-                            />
-                            <button onClick={() => handleNote(tester.code)} className="p-1 text-emerald-400 hover:text-emerald-300">
-                              <Check className="w-3 h-3" />
-                            </button>
-                            <button onClick={() => setNoteEdit({ code: null, text: '' })} className="p-1 text-gray-500 hover:text-gray-300">
-                              <X className="w-3 h-3" />
-                            </button>
+                            <input type="text" value={noteEdit.text} onChange={(e) => setNoteEdit({ ...noteEdit, text: e.target.value })} onKeyDown={(e) => e.key === 'Enter' && handleNote(tester.code)} className="flex-1 px-2 py-1 bg-gray-800 border border-blue-500 rounded text-white text-xs focus:outline-none" autoFocus />
+                            <button onClick={() => handleNote(tester.code)} className="p-1 text-emerald-400 hover:text-emerald-300"><Check className="w-3 h-3" /></button>
+                            <button onClick={() => setNoteEdit({ code: null, text: '' })} className="p-1 text-gray-500 hover:text-gray-300"><X className="w-3 h-3" /></button>
                           </div>
                         ) : (
-                          <span
-                            onClick={() => setNoteEdit({ code: tester.code, text: tester.notes || '' })}
-                            className="text-xs text-gray-400 cursor-pointer hover:text-white transition truncate block"
-                            title={tester.notes || 'Cliquer pour ajouter une note'}
-                          >
+                          <span onClick={() => setNoteEdit({ code: tester.code, text: tester.notes || '' })} className="text-xs text-gray-400 cursor-pointer hover:text-white transition truncate block" title={tester.notes || 'Cliquer pour ajouter une note'}>
                             {tester.notes || <span className="text-gray-700 italic">+ note</span>}
                           </span>
                         )}
                       </td>
-
-                      {/* Feedback */}
                       <td className="p-3 max-w-[160px]">
                         {hasFeedback ? (
-                          <button
-                            onClick={() => setFeedbackView({ code: tester.code, text: latestFeedback })}
-                            className="flex items-center gap-1.5 text-left group"
-                            title="Voir le feedback complet"
-                          >
+                          <button onClick={() => setFeedbackView({ code: tester.code, text: latestFeedback })} className="flex items-center gap-1.5 text-left group" title="Voir le feedback complet">
                             <span className="inline-block w-2 h-2 bg-purple-400 rounded-full flex-shrink-0"></span>
-                            {testerFeedbacks.length > 1 && (
-                              <span className="text-purple-500 text-xs font-bold">{testerFeedbacks.length}</span>
-                            )}
-                            <span className="text-purple-300 text-xs truncate max-w-28 group-hover:text-purple-200 transition">
-                              {latestFeedback.slice(0, 35)}…
-                            </span>
+                            {testerFeedbacks.length > 1 && <span className="text-purple-500 text-xs font-bold">{testerFeedbacks.length}</span>}
+                            <span className="text-purple-300 text-xs truncate max-w-28 group-hover:text-purple-200 transition">{latestFeedback.slice(0, 35)}…</span>
                           </button>
-                        ) : (
-                          <span className="text-gray-700 text-xs">—</span>
-                        )}
+                        ) : <span className="text-gray-700 text-xs">—</span>}
                       </td>
-
                       <td className="p-3">
                         <div className="flex items-center gap-1">
-                          <button onClick={() => handleToggle(tester.code)} title={tester.is_active ? 'Désactiver' : 'Activer'} className="p-1.5 rounded hover:bg-gray-800 transition">
-                            {tester.is_active ? <ToggleRight className="w-4 h-4 text-emerald-400" /> : <ToggleLeft className="w-4 h-4 text-gray-500" />}
-                          </button>
-                          <button onClick={() => handleExtend(tester.code, 180)} title="Prolonger 6 mois" className="p-1.5 rounded hover:bg-gray-800 transition">
-                            <Clock className="w-4 h-4 text-blue-400" />
-                          </button>
-                          <button onClick={() => setNoteEdit({ code: tester.code, text: tester.notes || '' })} title="Note" className="p-1.5 rounded hover:bg-gray-800 transition">
-                            <MessageSquare className="w-4 h-4 text-gray-400" />
-                          </button>
-                          <button onClick={() => handleReset(tester.code)} title="Reset" className="p-1.5 rounded hover:bg-gray-800 transition">
-                            <RefreshCw className="w-4 h-4 text-orange-400" />
-                          </button>
+                          <button onClick={() => handleToggle(tester.code)} title={tester.is_active ? 'Désactiver' : 'Activer'} className="p-1.5 rounded hover:bg-gray-800 transition">{tester.is_active ? <ToggleRight className="w-4 h-4 text-emerald-400" /> : <ToggleLeft className="w-4 h-4 text-gray-500" />}</button>
+                          <button onClick={() => handleExtend(tester.code, 180)} title="Prolonger 6 mois" className="p-1.5 rounded hover:bg-gray-800 transition"><Clock className="w-4 h-4 text-blue-400" /></button>
+                          <button onClick={() => setNoteEdit({ code: tester.code, text: tester.notes || '' })} title="Note" className="p-1.5 rounded hover:bg-gray-800 transition"><MessageSquare className="w-4 h-4 text-gray-400" /></button>
+                          <button onClick={() => handleReset(tester.code)} title="Reset" className="p-1.5 rounded hover:bg-gray-800 transition"><RefreshCw className="w-4 h-4 text-orange-400" /></button>
                         </div>
                       </td>
                     </tr>
@@ -473,7 +530,7 @@ export default function AdminPage() {
           </div>
         </div>
 
-        {/* Section Feedbacks dédiée */}
+        {/* Feedbacks */}
         <div className="bg-gray-900 border border-purple-500/20 rounded-xl overflow-hidden mb-8">
           <div className="p-4 border-b border-purple-500/20 flex items-center justify-between">
             <h2 className="text-white font-bold flex items-center gap-2">
@@ -503,23 +560,14 @@ export default function AdminPage() {
                   feedbacks.map((fb) => (
                     <tr key={fb.id} className="border-b border-gray-800/50 hover:bg-gray-800/30">
                       <td className="p-3 font-mono text-xs text-cyan-400">{fb.beta_code}</td>
-                      <td className="p-3 text-white max-w-md">
-                        <p className="text-sm leading-relaxed">{fb.message}</p>
-                      </td>
+                      <td className="p-3 text-white max-w-md"><p className="text-sm leading-relaxed">{fb.message}</p></td>
                       <td className="p-3 text-xs">
                         {fb.reply_email && fb.reply_email !== 'EMPTY' ? (
-                          <a href={`mailto:${fb.reply_email}`} className="text-blue-400 hover:text-blue-300 transition">
-                            ✉️ {fb.reply_email}
-                          </a>
-                        ) : (
-                          <span className="text-gray-600">—</span>
-                        )}
+                          <a href={`mailto:${fb.reply_email}`} className="text-blue-400 hover:text-blue-300 transition">✉️ {fb.reply_email}</a>
+                        ) : <span className="text-gray-600">—</span>}
                       </td>
                       <td className="p-3 text-gray-500 text-xs whitespace-nowrap">
-                        {new Date(fb.created_at).toLocaleDateString('fr-FR', {
-                          day: '2-digit', month: '2-digit', year: 'numeric',
-                          hour: '2-digit', minute: '2-digit'
-                        })}
+                        {new Date(fb.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                       </td>
                     </tr>
                   ))
@@ -560,18 +608,12 @@ export default function AdminPage() {
                       <td className="p-3 text-gray-400 text-xs max-w-xs truncate">
                         {s.params ? (
                           <span title={JSON.stringify(s.params, null, 2)}>
-                            {Object.entries(s.params)
-                              .filter(([, v]) => v && v !== '' && v !== 'all')
-                              .map(([k, v]) => `${k}: ${v}`)
-                              .join(' · ') || '—'}
+                            {Object.entries(s.params).filter(([, v]) => v && v !== '' && v !== 'all').map(([k, v]) => `${k}: ${v}`).join(' · ') || '—'}
                           </span>
                         ) : '—'}
                       </td>
                       <td className="p-3 text-gray-500 text-xs whitespace-nowrap">
-                        {new Date(s.created_at).toLocaleDateString('fr-FR', {
-                          day: '2-digit', month: '2-digit', year: 'numeric',
-                          hour: '2-digit', minute: '2-digit'
-                        })}
+                        {new Date(s.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                       </td>
                     </tr>
                   ))
@@ -583,7 +625,7 @@ export default function AdminPage() {
 
       </main>
 
-      {/* Feedback View Modal */}
+      {/* Feedback Modal */}
       {feedbackView.code && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
           <div className="bg-gray-900 border border-purple-500/30 rounded-xl p-6 w-full max-w-lg">
@@ -598,35 +640,22 @@ export default function AdminPage() {
               {feedbacks.filter(f => f.beta_code === feedbackView.code).length > 0 ? (
                 feedbacks.filter(f => f.beta_code === feedbackView.code).map((fb, i) => (
                   <div key={fb.id} className={i > 0 ? 'pt-3 border-t border-gray-700' : ''}>
-                    <p className="text-purple-400 text-xs mb-1">
-                      {new Date(fb.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                    </p>
+                    <p className="text-purple-400 text-xs mb-1">{new Date(fb.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
                     <p className="text-white text-sm">{fb.message}</p>
-                    {fb.reply_email && fb.reply_email !== 'EMPTY' && (
-                      <a href={`mailto:${fb.reply_email}`} className="text-blue-400 text-xs mt-1 block hover:text-blue-300">
-                        ✉️ {fb.reply_email}
-                      </a>
-                    )}
+                    {fb.reply_email && fb.reply_email !== 'EMPTY' && <a href={`mailto:${fb.reply_email}`} className="text-blue-400 text-xs mt-1 block hover:text-blue-300">✉️ {fb.reply_email}</a>}
                   </div>
                 ))
               ) : (
                 feedbackView.text.split('\n\n').map((entry, i) => (
                   <div key={i} className={i > 0 ? 'pt-3 border-t border-gray-700' : ''}>
                     {entry.match(/^\[(.+?)\]/) ? (
-                      <>
-                        <p className="text-purple-400 text-xs mb-1">{entry.match(/^\[(.+?)\]/)[1]}</p>
-                        <p className="text-white text-sm">{entry.replace(/^\[.+?\]\s*/, '')}</p>
-                      </>
-                    ) : (
-                      <p className="text-white text-sm">{entry}</p>
-                    )}
+                      <><p className="text-purple-400 text-xs mb-1">{entry.match(/^\[(.+?)\]/)[1]}</p><p className="text-white text-sm">{entry.replace(/^\[.+?\]\s*/, '')}</p></>
+                    ) : <p className="text-white text-sm">{entry}</p>}
                   </div>
                 ))
               )}
             </div>
-            <button onClick={() => setFeedbackView({ code: null, text: '' })} className="w-full mt-4 py-2 bg-gray-800 text-gray-300 rounded-lg font-medium hover:bg-gray-700 transition border border-gray-700">
-              Fermer
-            </button>
+            <button onClick={() => setFeedbackView({ code: null, text: '' })} className="w-full mt-4 py-2 bg-gray-800 text-gray-300 rounded-lg font-medium hover:bg-gray-700 transition border border-gray-700">Fermer</button>
           </div>
         </div>
       )}
