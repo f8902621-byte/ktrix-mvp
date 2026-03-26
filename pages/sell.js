@@ -393,7 +393,7 @@ export default function SellPage() {
             <div className="flex items-center gap-2 mb-1">
               <Facebook className={`w-5 h-5 ${mode === 'facebook' ? 'text-blue-400' : 'text-gray-500'}`} />
               <span className={`font-bold text-sm ${mode === 'facebook' ? 'text-blue-300' : 'text-gray-400'}`}>{t.modeFacebook}</span>
-              {mode === 'facebook' && <span className="ml-auto text-xs bg-blue-500 text-white px-2 py-0.5 rounded-full">⚡ Rapide</span>}
+              {mode === 'facebook' && <span className="ml-auto text-xs bg-blue-500 text-white px-2 py-0.5 rounded-full">⚡ {language === 'vn' ? 'Nhanh' : language === 'fr' ? 'Rapide' : 'Quick'}</span>}
             </div>
             <p className="text-xs text-gray-500">{t.modeFacebookDesc}</p>
           </button>
