@@ -315,51 +315,63 @@ export default function SearchPage() {
   const currentDistricts = districtsByCity[searchParams.city] || [];
   const currentWards = wardsByDistrict[searchParams.district] || [];
 
-  const handleSearch = async () => {
-   if (!searchParams.city || searchParams.priceMax === null || searchParams.priceMax === undefined || searchParams.priceMax === '' || Number(searchParams.priceMax) <= 0) { setError(t.required); return; }
+const handleSearch = async () => {
+    if (!searchParams.city || searchParams.priceMax === null || searchParams.priceMax === undefined || searchParams.priceMax === '' || Number(searchParams.priceMax) <= 0) { setError(t.required); return; }
     const betaCode = typeof window !== 'undefined' ? sessionStorage.getItem('ktrix_beta_code') : null;
     if (betaCode) fetch('/api/track-search', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: betaCode }) });
     setLoading(true); setSearchProgress(0);
     const progressInterval = setInterval(() => { setSearchProgress(prev => { if (prev < 30) return prev + 3; if (prev < 60) return prev + 2; if (prev < 85) return prev + 1; if (prev < 95) return prev + 0.3; return prev; }); }, 1000);
     setError(null); setShowSearch(false); setBdsTaskId(null); setBdsStatus('idle'); setBdsProgress(0); setBdsCount(0); setSourceStats({}); setMarketStats([]);
     try {
-      // Fetch FB listings from Supabase si sélectionné
       const allSources = searchParams.sources || ['chotot', 'alonhadat'];
-if (allSources.includes('facebook')) {
-  fetch('/api/search-fb-listings', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      city: searchParams.city,
-      district: searchParams.district,
-      propertyType: searchParams.propertyType,
-      priceMax: searchParams.priceMax,
-      priceMin: searchParams.priceMin,
-    }),
-  })
-    .then(res => res.json())
-    .then(data => {
-      if (data.results && data.results.length > 0) {
-        setResults(prev => [...prev, ...data.results]);
-        setSourceStats(prev => ({
-          ...prev,
-          facebook: data.results.length,
-        }));
+
+      // Fetch FB listings from Supabase si sélectionné (fire and forget)
+      if (allSources.includes('facebook')) {
+        fetch('/api/search-fb-listings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            city: searchParams.city,
+            district: searchParams.district,
+            propertyType: searchParams.propertyType,
+            priceMax: searchParams.priceMax,
+            priceMin: searchParams.priceMin,
+          }),
+        })
+          .then(res => res.json())
+          .then(data => {
+            if (data.results && data.results.length > 0) {
+              setResults(prev => [...prev, ...data.results]);
+              setSourceStats(prev => ({ ...prev, facebook: data.results.length }));
+            }
+          })
+          .catch(err => console.error('[FB] fetch error:', err));
       }
-    })
-    .catch(err => console.error('[FB] fetch error:', err));
-}
-      const fastSources = allSources.filter(s => s !== 'alonhadat');
-      const slowSources = allSources.filter(s => s === 'alonhadat');
-      const searchBody = { ...searchParams, keywords: searchParams.keywords || [], keywordsOnly: searchParams.keywordsOnly || false, sortBy: sortBy === 'priceAsc' ? 'price_asc' : sortBy === 'priceDesc' ? 'price_desc' : 'score_desc' };
+
+      // Sources pour /api/search = seulement chotot + alonhadat (jamais facebook)
+      const apiSources = allSources.filter(s => s !== 'facebook');
+      const fastSources = apiSources.filter(s => s !== 'alonhadat');
+      const slowSources = apiSources.filter(s => s === 'alonhadat');
+
+      const searchBody = { ...searchParams, sources: apiSources, keywords: searchParams.keywords || [], keywordsOnly: searchParams.keywordsOnly || false, sortBy: sortBy === 'priceAsc' ? 'price_asc' : sortBy === 'priceDesc' ? 'price_desc' : 'score_desc' };
+
       if (fastSources.length > 0) {
         const fastResponse = await fetch('/api/search', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...searchBody, sources: fastSources }) });
         const fastData = await fastResponse.json();
         if (!fastResponse.ok) throw new Error(fastData.error || 'Search error');
-        setResults(fastData.results || []); setStats(fastData.stats);
+        setResults(prev => {
+          const fb = prev.filter(r => r.source === 'facebook');
+          return [...fb, ...(fastData.results || [])];
+        });
+        setStats(fastData.stats);
         if (fastData.marketStats && fastData.marketStats.length > 0) setMarketStats(fastData.marketStats);
-        if (fastData.results && fastData.results.length > 0) { const statsBySource = {}; fastData.results.forEach(result => { const source = result.source || 'unknown'; if (!statsBySource[source]) statsBySource[source] = 0; statsBySource[source]++; }); setSourceStats(statsBySource); }
+        if (fastData.results && fastData.results.length > 0) {
+          const statsBySource = {};
+          fastData.results.forEach(result => { const source = result.source || 'unknown'; if (!statsBySource[source]) statsBySource[source] = 0; statsBySource[source]++; });
+          setSourceStats(prev => ({ ...prev, ...statsBySource }));
+        }
       }
+
       setAlonhadatLoading(slowSources.length > 0);
       if (slowSources.length > 0 && fastSources.length > 0) {
         fetch('/api/search', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...searchBody, sources: slowSources }) })
@@ -372,6 +384,7 @@ if (allSources.includes('facebook')) {
             setAlonhadatLoading(false);
           }).catch(err => { console.error('Alonhadat background error:', err); setAlonhadatLoading(false); });
       }
+
       if (fastSources.length === 0 && slowSources.length > 0) {
         const response = await fetch('/api/search', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...searchBody, sources: slowSources }) });
         const data = await response.json();
@@ -380,6 +393,12 @@ if (allSources.includes('facebook')) {
         if (data.marketStats && data.marketStats.length > 0) setMarketStats(data.marketStats);
         if (data.results && data.results.length > 0) { const statsBySource = {}; data.results.forEach(result => { const source = result.source || 'unknown'; if (!statsBySource[source]) statsBySource[source] = 0; statsBySource[source]++; }); setSourceStats(statsBySource); }
       }
+
+      // Si aucune source API (seulement facebook coché)
+      if (apiSources.length === 0) {
+        setStats({ lowestPrice: 0, highestPrice: 0, totalResults: 0 });
+      }
+
     } catch (err) { setError(err.message); } finally { clearInterval(progressInterval); setSearchProgress(100); setLoading(false); }
   };
 
