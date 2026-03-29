@@ -324,6 +324,7 @@ export default function SearchPage() {
     setError(null); setShowSearch(false); setBdsTaskId(null); setBdsStatus('idle'); setBdsProgress(0); setBdsCount(0); setSourceStats({}); setMarketStats([]);
     try {
       // Fetch FB listings from Supabase si sélectionné
+      const allSources = searchParams.sources || ['chotot', 'alonhadat'];
 if (allSources.includes('facebook')) {
   fetch('/api/search-fb-listings', {
     method: 'POST',
