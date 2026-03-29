@@ -283,6 +283,7 @@ export default function SearchPage() {
   const availableSources = [
     { id: 'chotot', name: 'Chotot.com', active: true },
     { id: 'alonhadat', name: 'Alonhadat.com.vn', active: true },
+    { id: 'facebook', name: 'Facebook Groups', active: true }
   ];
 
   const vietnamCities = [
@@ -322,7 +323,31 @@ export default function SearchPage() {
     const progressInterval = setInterval(() => { setSearchProgress(prev => { if (prev < 30) return prev + 3; if (prev < 60) return prev + 2; if (prev < 85) return prev + 1; if (prev < 95) return prev + 0.3; return prev; }); }, 1000);
     setError(null); setShowSearch(false); setBdsTaskId(null); setBdsStatus('idle'); setBdsProgress(0); setBdsCount(0); setSourceStats({}); setMarketStats([]);
     try {
-      const allSources = searchParams.sources || ['chotot', 'alonhadat'];
+      // Fetch FB listings from Supabase si sélectionné
+if (allSources.includes('facebook')) {
+  fetch('/api/search-fb-listings', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      city: searchParams.city,
+      district: searchParams.district,
+      propertyType: searchParams.propertyType,
+      priceMax: searchParams.priceMax,
+      priceMin: searchParams.priceMin,
+    }),
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.results && data.results.length > 0) {
+        setResults(prev => [...prev, ...data.results]);
+        setSourceStats(prev => ({
+          ...prev,
+          facebook: data.results.length,
+        }));
+      }
+    })
+    .catch(err => console.error('[FB] fetch error:', err));
+}
       const fastSources = allSources.filter(s => s !== 'alonhadat');
       const slowSources = allSources.filter(s => s === 'alonhadat');
       const searchBody = { ...searchParams, keywords: searchParams.keywords || [], keywordsOnly: searchParams.keywordsOnly || false, sortBy: sortBy === 'priceAsc' ? 'price_asc' : sortBy === 'priceDesc' ? 'price_desc' : 'score_desc' };
@@ -671,7 +696,25 @@ export default function SearchPage() {
                 {sortResults(results).filter(r => !filterSource || r.source === filterSource).map((prop, i) => (
                   <div key={`${prop.id}-${prop.source}-${i}`} className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden hover:border-gray-700 transition">
                     <div className="relative h-48 bg-gray-800">
-                      <img src={prop.imageUrl} alt={prop.title} className="w-full h-full object-cover" />
+                      {prop.imageUrl ? (
+  <img
+    src={prop.imageUrl}
+    alt={prop.title}
+    className="w-full h-full object-cover"
+    onError={(e) => { e.target.style.display = 'none'; }}
+  />
+) : (
+  // Placeholder visuel pour listings FB (pas de photo)
+  <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-blue-900/30 to-gray-800">
+    <svg className="w-10 h-10 text-blue-500/50 mb-2" fill="currentColor" viewBox="0 0 24 24">
+      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+    </svg>
+    <span className="text-xs text-blue-400/60 font-medium">Facebook Group</span>
+    {prop.facebook_group_name && (
+      <span className="text-xs text-gray-500 mt-1 px-3 text-center line-clamp-2">{prop.facebook_group_name}</span>
+    )}
+  </div>
+)}
                       {prop.isNew && <div className="absolute top-2 left-2 bg-cyan-500/90 text-white px-3 py-1 rounded-full text-xs font-bold animate-pulse">{t.newListing}</div>}
                       {prop.urgentKeywords && prop.urgentKeywords.length > 0 && <div className="absolute top-2 right-2 bg-orange-500 text-white px-3 py-1 rounded-full text-xs font-bold animate-pulse">🔥 {prop.urgentKeywords[0]}</div>}
                       {prop.legalStatus && <div className="absolute bottom-2 left-2 bg-blue-500/80 text-white px-2 py-1 rounded text-xs font-bold">📋 {prop.legalStatus}</div>}
