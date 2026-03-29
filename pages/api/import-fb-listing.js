@@ -18,7 +18,7 @@ function extractTextFromHtml(html) {
     .replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"')
     .trim()
-    .slice(0, 8000); // Limite pour Claude
+    .slice(0, 8000);
 }
 
 // Appel Claude pour extraire les données immobilières
@@ -80,7 +80,6 @@ Règles :
   const data = await response.json();
   const text = data.content?.[0]?.text || '';
 
-  // Extraire le JSON de la réponse
   const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (!jsonMatch) throw new Error('No JSON in response');
 
@@ -92,47 +91,58 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { listingUrl, groupUrl, groupName, betaCode } = req.body;
+  const { listingUrl, postText, groupUrl, groupName, betaCode } = req.body;
 
-  if (!listingUrl || !groupUrl) {
-    return res.status(400).json({ error: 'listingUrl and groupUrl are required' });
+  if (!groupUrl) {
+    return res.status(400).json({ error: 'groupUrl is required' });
+  }
+
+  if (!postText && !listingUrl) {
+    return res.status(400).json({ error: 'Either postText or listingUrl is required' });
   }
 
   try {
-    // ── Étape 1 : Fetch la page FB ──
     let rawText = '';
-    try {
-      const fetchRes = await fetch(listingUrl, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; KTrixBot/1.0)',
-          'Accept': 'text/html,application/xhtml+xml',
-          'Accept-Language': 'vi-VN,vi;q=0.9,en;q=0.8',
-        },
-        signal: AbortSignal.timeout(10000), // 10s timeout
-      });
 
-      if (!fetchRes.ok) throw new Error(`HTTP ${fetchRes.status}`);
-      const html = await fetchRes.text();
-      rawText = extractTextFromHtml(html);
-    } catch (fetchErr) {
-      console.error('Fetch error:', fetchErr.message);
-      return res.status(422).json({
-        error: 'fetch_failed',
-        message: 'Could not fetch the Facebook page. The post may be private or unavailable.',
-      });
+    // ── Étape 1 : Utiliser postText si fourni, sinon tenter le fetch ──
+    if (postText && postText.trim().length > 50) {
+      // Cas principal : l'utilisateur a collé le texte directement
+      rawText = postText.trim().slice(0, 8000);
+    } else if (listingUrl) {
+      // Fallback : tenter le scraping (marche parfois sur mobile/liens publics)
+      try {
+        const fetchRes = await fetch(listingUrl, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (compatible; KTrixBot/1.0)',
+            'Accept': 'text/html,application/xhtml+xml',
+            'Accept-Language': 'vi-VN,vi;q=0.9,en;q=0.8',
+          },
+          signal: AbortSignal.timeout(10000),
+        });
+
+        if (!fetchRes.ok) throw new Error(`HTTP ${fetchRes.status}`);
+        const html = await fetchRes.text();
+        rawText = extractTextFromHtml(html);
+      } catch (fetchErr) {
+        console.error('Fetch error:', fetchErr.message);
+        return res.status(422).json({
+          error: 'fetch_failed',
+          message: 'Could not fetch the Facebook page. Please paste the post text directly.',
+        });
+      }
     }
 
-    if (rawText.length < 50) {
+    if (!rawText || rawText.length < 50) {
       return res.status(422).json({
         error: 'empty_content',
-        message: 'The page content is too short or empty.',
+        message: 'The content is too short or empty. Please paste the full post text.',
       });
     }
 
     // ── Étape 2 : Extraction NLP via Claude ──
     let extracted;
     try {
-      extracted = await extractListingData(rawText, listingUrl);
+      extracted = await extractListingData(rawText, listingUrl || '');
     } catch (nlpErr) {
       console.error('NLP error:', nlpErr.message);
       return res.status(500).json({ error: 'nlp_failed', message: 'AI extraction failed.' });
@@ -141,7 +151,7 @@ export default async function handler(req, res) {
     if (extracted.error === 'not_a_listing') {
       return res.status(422).json({
         error: 'not_a_listing',
-        message: 'This URL does not appear to contain a real estate listing.',
+        message: 'This content does not appear to contain a real estate listing.',
       });
     }
 
@@ -170,7 +180,7 @@ export default async function handler(req, res) {
       legal_status: extracted.legal_status || null,
       direction: extracted.direction || null,
       furnishing: extracted.furnishing || null,
-      url: listingUrl,
+      url: listingUrl || null,
       facebook_group_url: groupUrl,
       facebook_group_name: groupName || null,
       contact_phone: extracted.contact_phone || null,
@@ -181,11 +191,21 @@ export default async function handler(req, res) {
     };
 
     // ── Étape 4 : Sauvegarder dans Supabase ──
-    const { data: saved, error: dbError } = await supabase
-      .from('listings')
-      .upsert(listing, { onConflict: 'url' })
-      .select()
-      .single();
+    // Upsert sur url si disponible, sinon insert simple
+    let saved, dbError;
+    if (listingUrl) {
+      ({ data: saved, error: dbError } = await supabase
+        .from('listings')
+        .upsert(listing, { onConflict: 'url' })
+        .select()
+        .single());
+    } else {
+      ({ data: saved, error: dbError } = await supabase
+        .from('listings')
+        .insert(listing)
+        .select()
+        .single());
+    }
 
     if (dbError) {
       console.error('DB error:', dbError);
