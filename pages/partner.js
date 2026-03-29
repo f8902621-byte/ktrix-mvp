@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/router';
-import { Facebook, Users, TrendingUp, Languages, ArrowRight, CheckCircle, Star, Loader, MapPin, Home } from 'lucide-react';
+import { Facebook, Users, TrendingUp, Languages, ArrowRight, CheckCircle, Star, Loader, MapPin, Plus, Trash2 } from 'lucide-react';
+
+const EMPTY_LISTING = () => ({ postText: '', listingUrl: '', status: 'idle', result: null, error: null });
 
 export default function PartnerPage() {
   const router = useRouter();
@@ -11,12 +13,11 @@ export default function PartnerPage() {
   const [codeValid, setCodeValid] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [partnerData, setPartnerData] = useState(null);
-  const [fbData, setFbData] = useState({ postText: '', listingUrl: '', groupUrl: '', groupName: '' });
-  const [importing, setImporting] = useState(false);
-  const [importError, setImportError] = useState('');
-  const [preview, setPreview] = useState(null);
-  const [publishing, setPublishing] = useState(false);
-  const [published, setPublished] = useState(false);
+  const [groupUrl, setGroupUrl] = useState('');
+  const [groupName, setGroupName] = useState('');
+  const [listings, setListings] = useState([EMPTY_LISTING()]);
+  const [submitting, setSubmitting] = useState(false);
+  const [done, setDone] = useState(false);
 
   const t = {
     vn: {
@@ -31,30 +32,29 @@ export default function PartnerPage() {
       code_placeholder: 'KTRIX-FB-XXXX', code_verify: 'Xác minh', code_verifying: 'Đang xác minh...',
       code_error: 'Mã không hợp lệ. Vui lòng kiểm tra lại.',
       code_success: 'Mã hợp lệ! Chào mừng bạn đến với K Trix.',
-      form_title: 'Đăng tin đăng của bạn',
-      form_desc: 'Sao chép và dán nội dung bài đăng Facebook — K Trix tự động phân tích bằng AI.',
-      post_text: 'Nội dung bài đăng *',
-      post_text_placeholder: 'Dán toàn bộ nội dung bài đăng Facebook vào đây...\n\nVí dụ:\nBán mặt tiền Bát Nàn Q2 270m2\nGiá 28 tỷ thương lượng\nLH: 0909 123 456',
-      post_text_hint: 'Sao chép toàn bộ nội dung bài đăng (bao gồm giá, diện tích, địa chỉ, liên hệ)',
-      listing_url: 'Link bài đăng Facebook (tùy chọn)',
-      listing_placeholder: 'https://www.facebook.com/groups/.../posts/...',
-      listing_hint: 'Chỉ để làm link tham chiếu, không dùng để đọc nội dung',
+      form_title: 'Đăng nhiều tin cùng lúc',
+      form_desc: 'Dán nội dung và URL từng bài đăng Facebook. Thêm bao nhiêu tin cũng được.',
       group_url: 'Link nhóm Facebook *', group_placeholder: 'https://www.facebook.com/groups/...',
       group_promo: '🎁 Nhóm của bạn sẽ được hiển thị trên K Trix — quảng bá miễn phí!',
       group_name: 'Tên nhóm (tùy chọn)', group_name_placeholder: 'Cộng đồng BĐS Hồ Chí Minh',
-      import_btn: '✨ Đọc và phân tích bài đăng', importing: 'AI đang phân tích...',
-      import_error_empty: 'Vui lòng dán nội dung bài đăng vào ô trên.',
-      import_error_not_listing: 'Nội dung này không phải là tin đăng bất động sản.',
-      import_error_generic: 'Có lỗi xảy ra. Vui lòng thử lại.',
-      preview_title: 'Xem trước thẻ K Trix',
-      preview_desc: 'Đây là cách tin đăng của bạn sẽ hiển thị trong kết quả tìm kiếm:',
-      publish_btn: 'Đăng lên K Trix ✓', publishing: 'Đang đăng...',
-      modify_btn: 'Sửa nội dung',
-      published_title: '✅ Đã đăng thành công!',
-      published_desc: 'Tin đăng của bạn sẽ xuất hiện trong kết quả tìm kiếm K Trix.',
-      publish_more: 'Đăng thêm tin',
+      listing_label: 'Tin đăng',
+      post_text: 'Nội dung bài đăng *',
+      post_text_placeholder: 'Dán toàn bộ nội dung bài đăng Facebook vào đây...',
+      listing_url: 'URL bài đăng *',
+      listing_url_placeholder: 'https://www.facebook.com/groups/.../posts/...',
+      listing_url_hint: 'Clik chuột phải vào thời gian đăng → "Sao chép địa chỉ liên kết"',
+      add_listing: '+ Thêm tin đăng',
+      submit_all: '✨ Phân tích & Đăng tất cả',
+      submitting_label: 'Đang xử lý...',
+      progress_label: 'Đang phân tích',
       no_code: 'Chưa có mã đối tác?', no_code_link: 'Liên hệ với chúng tôi',
-      back: 'Quay lại', price_unit: 'Tỷ', area_unit: 'm²', bedrooms_label: 'PN', bathrooms_label: 'WC',
+      back: 'Quay lại',
+      done_title: '✅ Hoàn tất!',
+      done_desc: (ok, fail) => `${ok} tin đã đăng thành công${fail > 0 ? `, ${fail} tin thất bại` : ''}.`,
+      publish_more: 'Đăng thêm tin',
+      remove: 'Xóa',
+      error_empty: 'Vui lòng điền nội dung và URL bài đăng.',
+      error_group: 'Vui lòng điền link nhóm Facebook.',
     },
     en: {
       hero_badge: 'Partner Program', hero_title: "Expand your group's reach",
@@ -68,30 +68,29 @@ export default function PartnerPage() {
       code_placeholder: 'KTRIX-FB-XXXX', code_verify: 'Verify', code_verifying: 'Verifying...',
       code_error: 'Invalid code. Please check and try again.',
       code_success: 'Valid code! Welcome to K Trix.',
-      form_title: 'Post your listing',
-      form_desc: 'Copy and paste your Facebook post content — K Trix analyzes it automatically with AI.',
-      post_text: 'Post content *',
-      post_text_placeholder: 'Paste the full Facebook post text here...\n\nExample:\nSelling frontage Bát Nàn Q2 270m2\nPrice 28 billion negotiable\nContact: 0909 123 456',
-      post_text_hint: 'Copy the full post (include price, area, address, contact)',
-      listing_url: 'Facebook post URL (optional)',
-      listing_placeholder: 'https://www.facebook.com/groups/.../posts/...',
-      listing_hint: 'Used as a reference link only, not for reading content',
+      form_title: 'Bulk listing import',
+      form_desc: 'Paste the content and URL of each Facebook post. Add as many as you want.',
       group_url: 'Your Facebook group URL *', group_placeholder: 'https://www.facebook.com/groups/...',
       group_promo: '🎁 Your group will be displayed on K Trix — free promotion!',
       group_name: 'Group name (optional)', group_name_placeholder: 'Ho Chi Minh Real Estate Community',
-      import_btn: '✨ Read & analyze listing', importing: 'AI is analyzing...',
-      import_error_empty: 'Please paste the post content in the field above.',
-      import_error_not_listing: 'This content does not appear to be a real estate listing.',
-      import_error_generic: 'An error occurred. Please try again.',
-      preview_title: 'K Trix card preview',
-      preview_desc: 'This is how your listing will appear in search results:',
-      publish_btn: 'Publish on K Trix ✓', publishing: 'Publishing...',
-      modify_btn: 'Edit content',
-      published_title: '✅ Successfully published!',
-      published_desc: 'Your listing will appear in K Trix search results.',
-      publish_more: 'Post another listing',
+      listing_label: 'Listing',
+      post_text: 'Post content *',
+      post_text_placeholder: 'Paste the full Facebook post text here...',
+      listing_url: 'Post URL *',
+      listing_url_placeholder: 'https://www.facebook.com/groups/.../posts/...',
+      listing_url_hint: 'Right-click the post timestamp → "Copy link address"',
+      add_listing: '+ Add another listing',
+      submit_all: '✨ Analyze & Publish all',
+      submitting_label: 'Processing...',
+      progress_label: 'Analyzing',
       no_code: "Don't have a partner code?", no_code_link: 'Contact us',
-      back: 'Back', price_unit: 'Tỷ', area_unit: 'm²', bedrooms_label: 'BR', bathrooms_label: 'BA',
+      back: 'Back',
+      done_title: '✅ All done!',
+      done_desc: (ok, fail) => `${ok} listing${ok !== 1 ? 's' : ''} published${fail > 0 ? `, ${fail} failed` : ''}.`,
+      publish_more: 'Import more listings',
+      remove: 'Remove',
+      error_empty: 'Please fill in the post content and URL.',
+      error_group: 'Please enter your Facebook group URL.',
     },
     fr: {
       hero_badge: 'Programme Partenaire', hero_title: 'Élargissez la portée de votre groupe',
@@ -105,30 +104,29 @@ export default function PartnerPage() {
       code_placeholder: 'KTRIX-FB-XXXX', code_verify: 'Vérifier', code_verifying: 'Vérification...',
       code_error: 'Code invalide. Veuillez vérifier et réessayer.',
       code_success: 'Code valide ! Bienvenue sur K Trix.',
-      form_title: 'Publiez votre annonce',
-      form_desc: "Copiez-collez le contenu de votre post Facebook — K Trix l'analyse automatiquement avec l'IA.",
-      post_text: 'Contenu du post *',
-      post_text_placeholder: 'Collez ici le texte complet du post Facebook...\n\nExemple :\nVente façade Bát Nàn Q2 270m2\nPrix 28 milliards négociable\nContact : 0909 123 456',
-      post_text_hint: 'Copiez le post complet (prix, surface, adresse, contact)',
-      listing_url: 'URL du post Facebook (optionnel)',
-      listing_placeholder: 'https://www.facebook.com/groups/.../posts/...',
-      listing_hint: 'Utilisé uniquement comme lien de référence',
+      form_title: "Import groupé d'annonces",
+      form_desc: "Collez le contenu et l'URL de chaque post Facebook. Ajoutez autant d'annonces que vous voulez.",
       group_url: 'URL de votre groupe *', group_placeholder: 'https://www.facebook.com/groups/...',
       group_promo: '🎁 Votre groupe sera affiché sur K Trix — promotion gratuite !',
       group_name: 'Nom du groupe (optionnel)', group_name_placeholder: 'Communauté Immobilière Ho Chi Minh',
-      import_btn: "✨ Lire et analyser l'annonce", importing: "L'IA analyse...",
-      import_error_empty: 'Veuillez coller le contenu du post dans le champ ci-dessus.',
-      import_error_not_listing: "Ce contenu ne semble pas être une annonce immobilière.",
-      import_error_generic: 'Une erreur est survenue. Veuillez réessayer.',
-      preview_title: 'Aperçu carte K Trix',
-      preview_desc: 'Voici comment votre annonce apparaîtra dans les résultats :',
-      publish_btn: 'Publier sur K Trix ✓', publishing: 'Publication...',
-      modify_btn: 'Modifier le contenu',
-      published_title: '✅ Publié avec succès !',
-      published_desc: 'Votre annonce apparaîtra dans les résultats de recherche K Trix.',
-      publish_more: 'Publier une autre annonce',
+      listing_label: 'Annonce',
+      post_text: 'Contenu du post *',
+      post_text_placeholder: 'Collez ici le texte complet du post Facebook...',
+      listing_url: 'URL du post *',
+      listing_url_placeholder: 'https://www.facebook.com/groups/.../posts/...',
+      listing_url_hint: "Clic droit sur l'horodatage → \"Copier l'adresse du lien\"",
+      add_listing: '+ Ajouter une annonce',
+      submit_all: '✨ Analyser & Publier tout',
+      submitting_label: 'Traitement en cours...',
+      progress_label: 'Analyse',
       no_code: "Pas de code partenaire ?", no_code_link: 'Contactez-nous',
-      back: 'Retour', price_unit: 'Tỷ', area_unit: 'm²', bedrooms_label: 'ch.', bathrooms_label: 'SDB',
+      back: 'Retour',
+      done_title: '✅ Terminé !',
+      done_desc: (ok, fail) => `${ok} annonce${ok !== 1 ? 's' : ''} publiée${ok !== 1 ? 's' : ''}${fail > 0 ? `, ${fail} échouée${fail !== 1 ? 's' : ''}` : ''}.`,
+      publish_more: "Importer d'autres annonces",
+      remove: 'Supprimer',
+      error_empty: "Veuillez remplir le contenu et l'URL du post.",
+      error_group: 'Veuillez entrer l\'URL de votre groupe Facebook.',
     },
   }[language];
 
@@ -147,7 +145,8 @@ export default function PartnerPage() {
         setCodeValid(true);
         setPartnerData(data.tester);
         if (data.tester?.partner_group_url) {
-          setFbData(prev => ({ ...prev, groupUrl: data.tester.partner_group_url, groupName: data.tester.partner_group_name || '' }));
+          setGroupUrl(data.tester.partner_group_url);
+          setGroupName(data.tester.partner_group_name || '');
         }
       } else {
         setCodeError(t.code_error);
@@ -156,96 +155,83 @@ export default function PartnerPage() {
     setVerifying(false);
   };
 
-  const handleImport = async () => {
-    if (!fbData.postText.trim() || !fbData.groupUrl) return;
-    setImporting(true);
-    setImportError('');
-    setPreview(null);
-    try {
-      const res = await fetch('/api/import-fb-listing', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          postText: fbData.postText.trim(),
-          listingUrl: fbData.listingUrl.trim() || undefined,
-          groupUrl: fbData.groupUrl,
-          groupName: fbData.groupName,
-          betaCode: code,
-        }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setPreview(data.listing);
-      } else {
-        if (data.error === 'empty_content') setImportError(t.import_error_empty);
-        else if (data.error === 'not_a_listing') setImportError(t.import_error_not_listing);
-        else setImportError(t.import_error_generic);
-      }
-    } catch { setImportError(t.import_error_generic); }
-    setImporting(false);
+  const updateListing = (index, field, value) => {
+    setListings(prev => prev.map((l, i) => i === index ? { ...l, [field]: value } : l));
   };
+
+  const addListing = () => setListings(prev => [...prev, EMPTY_LISTING()]);
+
+  const removeListing = (index) => {
+    if (listings.length === 1) return;
+    setListings(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSubmitAll = async () => {
+    if (!groupUrl.trim()) { alert(t.error_group); return; }
+    for (let i = 0; i < listings.length; i++) {
+      if (!listings[i].postText.trim() || !listings[i].listingUrl.trim()) {
+        alert(`${t.listing_label} ${i + 1}: ${t.error_empty}`);
+        return;
+      }
+    }
+
+    setSubmitting(true);
+    setDone(false);
+    setListings(prev => prev.map(l => ({ ...l, status: 'pending', result: null, error: null })));
+
+    for (let i = 0; i < listings.length; i++) {
+      setListings(prev => prev.map((l, idx) => idx === i ? { ...l, status: 'processing' } : l));
+
+      try {
+        const res = await fetch('/api/import-fb-listing', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            postText: listings[i].postText.trim(),
+            listingUrl: listings[i].listingUrl.trim(),
+            groupUrl: groupUrl.trim(),
+            groupName: groupName.trim() || undefined,
+            betaCode: code,
+          }),
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          setListings(prev => prev.map((l, idx) => idx === i ? { ...l, status: 'success', result: data.listing } : l));
+        } else {
+          const errMap = {
+            not_a_listing: language === 'vn' ? 'Không phải tin BĐS' : language === 'fr' ? 'Pas une annonce immo' : 'Not a real estate listing',
+            empty_content: language === 'vn' ? 'Nội dung quá ngắn' : language === 'fr' ? 'Contenu trop court' : 'Content too short',
+            nlp_failed: language === 'vn' ? 'Lỗi AI' : language === 'fr' ? 'Erreur IA' : 'AI error',
+          };
+          setListings(prev => prev.map((l, idx) => idx === i ? { ...l, status: 'error', error: errMap[data.error] || data.message || 'Error' } : l));
+        }
+      } catch {
+        setListings(prev => prev.map((l, idx) => idx === i ? { ...l, status: 'error', error: 'Network error' } : l));
+      }
+
+      if (i < listings.length - 1) await new Promise(r => setTimeout(r, 600));
+    }
+
+    setSubmitting(false);
+    setDone(true);
+  };
+
+  const resetForm = () => { setListings([EMPTY_LISTING()]); setDone(false); };
+
+  const successCount = listings.filter(l => l.status === 'success').length;
+  const failCount = listings.filter(l => l.status === 'error').length;
+  const totalProcessed = successCount + failCount;
 
   const formatPrice = (price) => {
-    if (!price) return '—';
-    if (price >= 1000) return `${(price / 1000).toFixed(1)} ${t.price_unit}`;
-    return `${price} Triệu`;
+    if (!price) return null;
+    if (price >= 1000) return `${(price / 1000).toFixed(1)} Tỷ`;
+    return `${price} Tr`;
   };
-
-  const FbBadge = ({ name, url }) => (
-    <a href={url} target="_blank" rel="noopener noreferrer"
-      className="inline-flex items-center gap-1.5 bg-blue-700/80 text-white px-2 py-1 rounded text-xs font-bold hover:bg-blue-600 transition">
-      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-      </svg>
-      {name || 'Facebook'}
-    </a>
-  );
-
-  const ListingCard = ({ listing }) => (
-    <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden max-w-sm">
-      <div className="h-36 bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center relative">
-        <Home className="w-10 h-10 text-gray-600" />
-        <div className="absolute top-2 left-2">
-          {listing.legal_status && <span className="text-xs bg-blue-900/80 text-blue-300 px-2 py-0.5 rounded font-medium border border-blue-700/50">{listing.legal_status}</span>}
-        </div>
-        <div className="absolute top-2 right-2 text-xs text-gray-500 bg-gray-900/80 px-2 py-0.5 rounded">facebook</div>
-      </div>
-      <div className="p-4">
-        <p className="text-white font-medium text-sm mb-2 line-clamp-2">{listing.title}</p>
-        {listing.facebook_group_name && <div className="mb-2"><FbBadge name={listing.facebook_group_name} url={listing.facebook_group_url} /></div>}
-        <p className="text-orange-400 font-bold text-lg mb-1">{formatPrice(listing.price)}</p>
-        <div className="flex items-center gap-3 text-gray-400 text-xs mb-2">
-          {listing.area && <span>📐 {listing.area} {t.area_unit}</span>}
-          {listing.bedrooms && <span>🛏 {listing.bedrooms} {t.bedrooms_label}</span>}
-          {listing.bathrooms && <span>🚿 {listing.bathrooms} {t.bathrooms_label}</span>}
-        </div>
-        {(listing.district || listing.city) && (
-          <div className="flex items-center gap-1 text-gray-500 text-xs">
-            <MapPin className="w-3 h-3" />
-            <span>{[listing.district, listing.city].filter(Boolean).join(', ')}</span>
-          </div>
-        )}
-        {listing.negotiation_score && (
-          <div className="mt-2 flex items-center gap-2">
-            <span className="text-xs text-gray-500">Score</span>
-            <div className="flex-1 bg-gray-700 rounded-full h-1.5">
-              <div className="bg-gradient-to-r from-orange-500 to-amber-400 h-1.5 rounded-full" style={{ width: `${listing.negotiation_score}%` }}></div>
-            </div>
-            <span className="text-xs text-gray-400">{listing.negotiation_score}%</span>
-          </div>
-        )}
-        {listing.url && (
-          <a href={listing.url} target="_blank" rel="noopener noreferrer"
-            className="mt-3 w-full py-2 bg-blue-600/20 text-blue-400 rounded-lg text-xs font-medium flex items-center justify-center gap-1 hover:bg-blue-600/30 transition border border-blue-600/20">
-            {language === 'vn' ? 'Xem bài gốc →' : language === 'fr' ? "Voir l'annonce originale →" : 'View original post →'}
-          </a>
-        )}
-      </div>
-    </div>
-  );
 
   return (
     <div className="min-h-screen bg-gray-950">
+      {/* Header */}
       <header className="bg-gray-950/90 backdrop-blur-md border-b border-gray-800 sticky top-0 z-50">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => router.push('/')}>
@@ -266,6 +252,7 @@ export default function PartnerPage() {
         </div>
       </header>
 
+      {/* Step 1 — Landing */}
       {step === 1 && (
         <>
           <section className="max-w-5xl mx-auto px-4 py-16 text-center">
@@ -302,8 +289,11 @@ export default function PartnerPage() {
         </>
       )}
 
+      {/* Step 2 — Form */}
       {step === 2 && (
         <div className="max-w-2xl mx-auto px-4 py-12 space-y-5">
+
+          {/* Code verification */}
           {!codeValid && (
             <div className="bg-gray-900 border border-blue-500/30 rounded-xl p-8">
               <div className="flex items-center gap-3 mb-4">
@@ -331,6 +321,7 @@ export default function PartnerPage() {
 
           {codeValid && (
             <>
+              {/* Code badge */}
               <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl px-5 py-4 flex items-center gap-3">
                 <CheckCircle className="w-5 h-5 text-emerald-400 flex-shrink-0" />
                 <div>
@@ -339,108 +330,172 @@ export default function PartnerPage() {
                 </div>
               </div>
 
-              {!published ? (
-                <div className="bg-gray-900 border border-blue-500/30 rounded-xl p-6 space-y-5">
-                  <div>
-                    <h2 className="text-xl font-bold text-white mb-1">{t.form_title}</h2>
-                    <p className="text-gray-500 text-sm">{t.form_desc}</p>
-                  </div>
+              {/* Group info */}
+              <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 space-y-4">
+                <div>
+                  <label className="block text-sm font-bold text-gray-300 mb-2">{t.group_url}</label>
+                  <input type="url" value={groupUrl} onChange={e => setGroupUrl(e.target.value)}
+                    className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-gray-200 focus:border-blue-500 focus:outline-none transition disabled:opacity-60"
+                    placeholder={t.group_placeholder} disabled={submitting} />
+                  <p className="text-emerald-400 text-xs mt-1.5 font-medium">{t.group_promo}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-300 mb-2">{t.group_name}</label>
+                  <input type="text" value={groupName} onChange={e => setGroupName(e.target.value)}
+                    className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-gray-200 focus:border-blue-500 focus:outline-none transition disabled:opacity-60"
+                    placeholder={t.group_name_placeholder} disabled={submitting} />
+                </div>
+              </div>
 
-                  {/* ── Champ principal : texte du post ── */}
-                  <div>
-                    <label className="block text-sm font-bold text-gray-300 mb-2">{t.post_text}</label>
-                    <textarea
-                      value={fbData.postText}
-                      onChange={e => setFbData({ ...fbData, postText: e.target.value })}
-                      placeholder={t.post_text_placeholder}
-                      rows={6}
-                      disabled={!!preview}
-                      className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-gray-200 focus:border-blue-500 focus:outline-none transition resize-y placeholder-gray-600 text-sm leading-relaxed disabled:opacity-60"
-                    />
-                    <div className="flex items-center justify-between mt-1.5">
-                      <p className="text-gray-600 text-xs">{t.post_text_hint}</p>
-                      {fbData.postText.length > 0 && (
-                        <span className="text-gray-600 text-xs">{fbData.postText.length} chars</span>
+              {/* Bulk listings form */}
+              <div className="bg-gray-900 border border-blue-500/30 rounded-xl p-6">
+                <h2 className="text-xl font-bold text-white mb-1">{t.form_title}</h2>
+                <p className="text-gray-500 text-sm mb-6">{t.form_desc}</p>
+
+                <div className="space-y-5">
+                  {listings.map((listing, index) => (
+                    <div key={index} className={`border rounded-xl p-5 transition-all duration-300 ${
+                      listing.status === 'success' ? 'border-emerald-500/40 bg-emerald-500/5' :
+                      listing.status === 'error' ? 'border-red-500/40 bg-red-500/5' :
+                      listing.status === 'processing' ? 'border-blue-400/50 bg-blue-500/5' :
+                      'border-gray-700 bg-gray-800/40'
+                    }`}>
+                      {/* Block header */}
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="w-6 h-6 rounded-full bg-blue-600/20 border border-blue-500/30 text-blue-400 text-xs font-bold flex items-center justify-center flex-shrink-0">
+                            {index + 1}
+                          </span>
+                          <span className="text-sm font-semibold text-gray-300">{t.listing_label} {index + 1}</span>
+                          {listing.status === 'processing' && (
+                            <span className="flex items-center gap-1 text-blue-400 text-xs">
+                              <Loader className="w-3 h-3 animate-spin" /> {t.progress_label}...
+                            </span>
+                          )}
+                          {listing.status === 'success' && (
+                            <span className="text-emerald-400 text-xs font-bold truncate max-w-xs">
+                              ✅ {listing.result?.title?.slice(0, 35)}{listing.result?.title?.length > 35 ? '...' : ''}
+                            </span>
+                          )}
+                          {listing.status === 'error' && (
+                            <span className="text-red-400 text-xs font-bold">❌ {listing.error}</span>
+                          )}
+                        </div>
+                        {listings.length > 1 && !submitting && listing.status === 'idle' && (
+                          <button onClick={() => removeListing(index)}
+                            className="p-1.5 text-gray-600 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition flex-shrink-0">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Success mini-card */}
+                      {listing.status === 'success' && listing.result && (
+                        <div className="flex items-center gap-3 p-3 bg-emerald-500/10 rounded-lg border border-emerald-500/20 mb-3">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-white text-sm font-medium truncate">{listing.result.title}</p>
+                            <div className="flex items-center gap-3 mt-1 text-xs text-gray-400">
+                              {listing.result.price && <span className="text-emerald-400 font-bold">{formatPrice(listing.result.price)}</span>}
+                              {listing.result.area && <span>📐 {listing.result.area}m²</span>}
+                              {listing.result.district && <span><MapPin className="w-3 h-3 inline mr-0.5" />{listing.result.district}</span>}
+                            </div>
+                          </div>
+                          <a href={listing.listingUrl} target="_blank" rel="noopener noreferrer"
+                            className="text-blue-400 text-xs hover:underline flex-shrink-0 font-medium">
+                            FB →
+                          </a>
+                        </div>
+                      )}
+
+                      {/* Input fields */}
+                      {listing.status !== 'success' && (
+                        <div className="space-y-3">
+                          <div>
+                            <label className="block text-xs font-semibold text-gray-400 mb-1.5">{t.post_text}</label>
+                            <textarea
+                              value={listing.postText}
+                              onChange={e => updateListing(index, 'postText', e.target.value)}
+                              placeholder={t.post_text_placeholder}
+                              rows={4}
+                              disabled={submitting}
+                              className="w-full px-3 py-2.5 bg-gray-900 border border-gray-700 rounded-lg text-gray-200 focus:border-blue-500 focus:outline-none transition resize-y placeholder-gray-600 text-sm leading-relaxed disabled:opacity-60"
+                            />
+                            {listing.postText.length > 0 && (
+                              <p className="text-gray-600 text-xs mt-1 text-right">{listing.postText.length} chars</p>
+                            )}
+                          </div>
+                          <div>
+                            <label className="block text-xs font-semibold text-gray-400 mb-1.5">{t.listing_url}</label>
+                            <input
+                              type="url"
+                              value={listing.listingUrl}
+                              onChange={e => updateListing(index, 'listingUrl', e.target.value)}
+                              placeholder={t.listing_url_placeholder}
+                              disabled={submitting}
+                              className="w-full px-3 py-2.5 bg-gray-900 border border-gray-700 rounded-lg text-gray-200 focus:border-blue-500 focus:outline-none transition placeholder-gray-600 text-sm disabled:opacity-60"
+                            />
+                            <p className="text-gray-600 text-xs mt-1">💡 {t.listing_url_hint}</p>
+                          </div>
+                        </div>
                       )}
                     </div>
-                  </div>
-
-                  {/* ── URL optionnelle ── */}
-                  <div>
-                    <label className="block text-sm font-bold text-gray-300 mb-2">{t.listing_url}</label>
-                    <input
-                      type="url"
-                      value={fbData.listingUrl}
-                      onChange={e => setFbData({ ...fbData, listingUrl: e.target.value })}
-                      className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-gray-200 focus:border-blue-500 focus:outline-none transition placeholder-gray-600 disabled:opacity-60"
-                      placeholder={t.listing_placeholder}
-                      disabled={!!preview}
-                    />
-                    <p className="text-gray-600 text-xs mt-1.5">{t.listing_hint}</p>
-                  </div>
-
-                  {/* ── Groupe ── */}
-                  <div>
-                    <label className="block text-sm font-bold text-gray-300 mb-2">{t.group_url}</label>
-                    <input type="url" value={fbData.groupUrl} onChange={e => setFbData({...fbData, groupUrl: e.target.value})}
-                      className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-gray-200 focus:border-blue-500 focus:outline-none transition disabled:opacity-60"
-                      placeholder={t.group_placeholder} disabled={!!preview} />
-                    <p className="text-emerald-400 text-xs mt-1.5 font-medium">{t.group_promo}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-bold text-gray-300 mb-2">{t.group_name}</label>
-                    <input type="text" value={fbData.groupName} onChange={e => setFbData({...fbData, groupName: e.target.value})}
-                      className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-gray-200 focus:border-blue-500 focus:outline-none transition disabled:opacity-60"
-                      placeholder={t.group_name_placeholder} disabled={!!preview} />
-                  </div>
-
-                  {importError && (
-                    <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
-                      <p className="text-red-400 text-sm">⚠️ {importError}</p>
-                    </div>
-                  )}
-
-                  {preview && (
-                    <div>
-                      <p className="text-sm font-bold text-gray-300 mb-1">{t.preview_title}</p>
-                      <p className="text-xs text-gray-500 mb-4">{t.preview_desc}</p>
-                      <ListingCard listing={preview} />
-                    </div>
-                  )}
-
-                  {!preview ? (
-                    <button
-                      onClick={handleImport}
-                      disabled={importing || !fbData.postText.trim() || !fbData.groupUrl}
-                      className="w-full py-4 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl font-bold text-lg flex items-center justify-center gap-3 shadow-lg shadow-blue-500/20 hover:from-blue-500 hover:to-cyan-400 disabled:opacity-50 disabled:cursor-not-allowed transition">
-                      {importing ? <><Loader className="w-5 h-5 animate-spin" />{t.importing}</> : t.import_btn}
-                    </button>
-                  ) : (
-                    <div className="flex gap-3">
-                      <button onClick={() => { setPreview(null); setImportError(''); }}
-                        className="flex-1 py-3 bg-gray-800 text-gray-300 rounded-xl font-bold border border-gray-700 hover:bg-gray-700 transition">
-                        {t.modify_btn}
-                      </button>
-                      <button onClick={() => setPublished(true)} disabled={publishing}
-                        className="flex-1 py-3 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white rounded-xl font-bold hover:from-emerald-500 hover:to-emerald-400 disabled:opacity-50 transition">
-                        {publishing ? t.publishing : t.publish_btn}
-                      </button>
-                    </div>
-                  )}
+                  ))}
                 </div>
-              ) : (
-                <div className="text-center py-12 bg-gray-900 rounded-xl border border-emerald-500/20">
-                  <div className="w-20 h-20 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-emerald-500/30">
-                    <CheckCircle className="w-10 h-10 text-emerald-400" />
-                  </div>
-                  <h2 className="text-2xl font-bold text-white mb-3">{t.published_title}</h2>
-                  <p className="text-gray-400 mb-8">{t.published_desc}</p>
-                  <button onClick={() => { setPublished(false); setPreview(null); setFbData({...fbData, postText: '', listingUrl: ''}); }}
-                    className="px-6 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-500 transition">
-                    {t.publish_more}
+
+                {/* Add listing button */}
+                {!submitting && !done && (
+                  <button onClick={addListing}
+                    className="mt-4 w-full py-3 border-2 border-dashed border-gray-700 text-gray-500 rounded-xl hover:border-blue-500/50 hover:text-blue-400 hover:bg-blue-500/5 transition text-sm font-medium flex items-center justify-center gap-2">
+                    <Plus className="w-4 h-4" /> {t.add_listing}
                   </button>
-                </div>
-              )}
+                )}
+
+                {/* Progress bar */}
+                {submitting && (
+                  <div className="mt-6 p-4 bg-blue-500/5 border border-blue-500/20 rounded-xl">
+                    <div className="flex justify-between text-xs text-gray-400 mb-2">
+                      <span className="font-medium text-blue-400">{t.submitting_label}</span>
+                      <span>{totalProcessed} / {listings.length}</span>
+                    </div>
+                    <div className="w-full bg-gray-800 rounded-full h-2.5 overflow-hidden">
+                      <div
+                        className="h-2.5 bg-gradient-to-r from-blue-500 to-cyan-400 rounded-full transition-all duration-700"
+                        style={{ width: `${listings.length > 0 ? (totalProcessed / listings.length) * 100 : 0}%` }}
+                      />
+                    </div>
+                    <div className="flex gap-4 mt-2 text-xs">
+                      {successCount > 0 && <span className="text-emerald-400 font-medium">✅ {successCount} ok</span>}
+                      {failCount > 0 && <span className="text-red-400 font-medium">❌ {failCount} failed</span>}
+                    </div>
+                  </div>
+                )}
+
+                {/* Done state */}
+                {done && (
+                  <div className="mt-6 p-6 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-center">
+                    <p className="text-3xl mb-3">🎉</p>
+                    <p className="text-emerald-400 font-bold text-xl mb-2">{t.done_title}</p>
+                    <p className="text-gray-400 text-sm mb-5">{t.done_desc(successCount, failCount)}</p>
+                    <button onClick={resetForm}
+                      className="px-6 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-500 transition">
+                      {t.publish_more}
+                    </button>
+                  </div>
+                )}
+
+                {/* Submit button */}
+                {!done && (
+                  <button
+                    onClick={handleSubmitAll}
+                    disabled={submitting}
+                    className="mt-5 w-full py-4 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl font-bold text-lg flex items-center justify-center gap-3 shadow-lg shadow-blue-500/20 hover:from-blue-500 hover:to-cyan-400 disabled:opacity-50 disabled:cursor-not-allowed transition">
+                    {submitting
+                      ? <><Loader className="w-5 h-5 animate-spin" />{t.submitting_label}</>
+                      : t.submit_all
+                    }
+                  </button>
+                )}
+              </div>
             </>
           )}
 
