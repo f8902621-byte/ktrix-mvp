@@ -11,7 +11,7 @@ export default function PartnerPage() {
   const [codeValid, setCodeValid] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [partnerData, setPartnerData] = useState(null);
-  const [fbData, setFbData] = useState({ listingUrl: '', groupUrl: '', groupName: '' });
+  const [fbData, setFbData] = useState({ postText: '', listingUrl: '', groupUrl: '', groupName: '' });
   const [importing, setImporting] = useState(false);
   const [importError, setImportError] = useState('');
   const [preview, setPreview] = useState(null);
@@ -32,19 +32,24 @@ export default function PartnerPage() {
       code_error: 'Mã không hợp lệ. Vui lòng kiểm tra lại.',
       code_success: 'Mã hợp lệ! Chào mừng bạn đến với K Trix.',
       form_title: 'Đăng tin đăng của bạn',
-      form_desc: 'Dán link bài đăng Facebook — K Trix tự động đọc và tạo thẻ kết quả.',
-      listing_url: 'Link bài đăng Facebook *', listing_placeholder: 'https://www.facebook.com/groups/.../posts/...',
+      form_desc: 'Sao chép và dán nội dung bài đăng Facebook — K Trix tự động phân tích bằng AI.',
+      post_text: 'Nội dung bài đăng *',
+      post_text_placeholder: 'Dán toàn bộ nội dung bài đăng Facebook vào đây...\n\nVí dụ:\nBán mặt tiền Bát Nàn Q2 270m2\nGiá 28 tỷ thương lượng\nLH: 0909 123 456',
+      post_text_hint: 'Sao chép toàn bộ nội dung bài đăng (bao gồm giá, diện tích, địa chỉ, liên hệ)',
+      listing_url: 'Link bài đăng Facebook (tùy chọn)',
+      listing_placeholder: 'https://www.facebook.com/groups/.../posts/...',
+      listing_hint: 'Chỉ để làm link tham chiếu, không dùng để đọc nội dung',
       group_url: 'Link nhóm Facebook *', group_placeholder: 'https://www.facebook.com/groups/...',
       group_promo: '🎁 Nhóm của bạn sẽ được hiển thị trên K Trix — quảng bá miễn phí!',
       group_name: 'Tên nhóm (tùy chọn)', group_name_placeholder: 'Cộng đồng BĐS Hồ Chí Minh',
       import_btn: '✨ Đọc và phân tích bài đăng', importing: 'AI đang phân tích...',
-      import_error_fetch: 'Không thể đọc bài đăng này. Bài đăng có thể ở chế độ riêng tư.',
-      import_error_not_listing: 'Link này không chứa tin đăng bất động sản.',
+      import_error_empty: 'Vui lòng dán nội dung bài đăng vào ô trên.',
+      import_error_not_listing: 'Nội dung này không phải là tin đăng bất động sản.',
       import_error_generic: 'Có lỗi xảy ra. Vui lòng thử lại.',
       preview_title: 'Xem trước thẻ K Trix',
       preview_desc: 'Đây là cách tin đăng của bạn sẽ hiển thị trong kết quả tìm kiếm:',
       publish_btn: 'Đăng lên K Trix ✓', publishing: 'Đang đăng...',
-      modify_btn: 'Sửa link',
+      modify_btn: 'Sửa nội dung',
       published_title: '✅ Đã đăng thành công!',
       published_desc: 'Tin đăng của bạn sẽ xuất hiện trong kết quả tìm kiếm K Trix.',
       publish_more: 'Đăng thêm tin',
@@ -64,19 +69,24 @@ export default function PartnerPage() {
       code_error: 'Invalid code. Please check and try again.',
       code_success: 'Valid code! Welcome to K Trix.',
       form_title: 'Post your listing',
-      form_desc: 'Paste your Facebook post link — K Trix reads it automatically with AI.',
-      listing_url: 'Facebook post URL *', listing_placeholder: 'https://www.facebook.com/groups/.../posts/...',
+      form_desc: 'Copy and paste your Facebook post content — K Trix analyzes it automatically with AI.',
+      post_text: 'Post content *',
+      post_text_placeholder: 'Paste the full Facebook post text here...\n\nExample:\nSelling frontage Bát Nàn Q2 270m2\nPrice 28 billion negotiable\nContact: 0909 123 456',
+      post_text_hint: 'Copy the full post (include price, area, address, contact)',
+      listing_url: 'Facebook post URL (optional)',
+      listing_placeholder: 'https://www.facebook.com/groups/.../posts/...',
+      listing_hint: 'Used as a reference link only, not for reading content',
       group_url: 'Your Facebook group URL *', group_placeholder: 'https://www.facebook.com/groups/...',
       group_promo: '🎁 Your group will be displayed on K Trix — free promotion!',
       group_name: 'Group name (optional)', group_name_placeholder: 'Ho Chi Minh Real Estate Community',
       import_btn: '✨ Read & analyze listing', importing: 'AI is analyzing...',
-      import_error_fetch: 'Could not read this post. It may be private.',
-      import_error_not_listing: 'This link does not contain a real estate listing.',
+      import_error_empty: 'Please paste the post content in the field above.',
+      import_error_not_listing: 'This content does not appear to be a real estate listing.',
       import_error_generic: 'An error occurred. Please try again.',
       preview_title: 'K Trix card preview',
       preview_desc: 'This is how your listing will appear in search results:',
       publish_btn: 'Publish on K Trix ✓', publishing: 'Publishing...',
-      modify_btn: 'Change link',
+      modify_btn: 'Edit content',
       published_title: '✅ Successfully published!',
       published_desc: 'Your listing will appear in K Trix search results.',
       publish_more: 'Post another listing',
@@ -96,19 +106,24 @@ export default function PartnerPage() {
       code_error: 'Code invalide. Veuillez vérifier et réessayer.',
       code_success: 'Code valide ! Bienvenue sur K Trix.',
       form_title: 'Publiez votre annonce',
-      form_desc: "Collez le lien de votre post Facebook — K Trix le lit automatiquement avec l'IA.",
-      listing_url: 'URL du post Facebook *', listing_placeholder: 'https://www.facebook.com/groups/.../posts/...',
+      form_desc: "Copiez-collez le contenu de votre post Facebook — K Trix l'analyse automatiquement avec l'IA.",
+      post_text: 'Contenu du post *',
+      post_text_placeholder: 'Collez ici le texte complet du post Facebook...\n\nExemple :\nVente façade Bát Nàn Q2 270m2\nPrix 28 milliards négociable\nContact : 0909 123 456',
+      post_text_hint: 'Copiez le post complet (prix, surface, adresse, contact)',
+      listing_url: 'URL du post Facebook (optionnel)',
+      listing_placeholder: 'https://www.facebook.com/groups/.../posts/...',
+      listing_hint: 'Utilisé uniquement comme lien de référence',
       group_url: 'URL de votre groupe *', group_placeholder: 'https://www.facebook.com/groups/...',
       group_promo: '🎁 Votre groupe sera affiché sur K Trix — promotion gratuite !',
       group_name: 'Nom du groupe (optionnel)', group_name_placeholder: 'Communauté Immobilière Ho Chi Minh',
       import_btn: "✨ Lire et analyser l'annonce", importing: "L'IA analyse...",
-      import_error_fetch: 'Impossible de lire ce post. Il est peut-être privé.',
-      import_error_not_listing: "Ce lien ne contient pas d'annonce immobilière.",
+      import_error_empty: 'Veuillez coller le contenu du post dans le champ ci-dessus.',
+      import_error_not_listing: "Ce contenu ne semble pas être une annonce immobilière.",
       import_error_generic: 'Une erreur est survenue. Veuillez réessayer.',
       preview_title: 'Aperçu carte K Trix',
       preview_desc: 'Voici comment votre annonce apparaîtra dans les résultats :',
       publish_btn: 'Publier sur K Trix ✓', publishing: 'Publication...',
-      modify_btn: 'Changer le lien',
+      modify_btn: 'Modifier le contenu',
       published_title: '✅ Publié avec succès !',
       published_desc: 'Votre annonce apparaîtra dans les résultats de recherche K Trix.',
       publish_more: 'Publier une autre annonce',
@@ -142,7 +157,7 @@ export default function PartnerPage() {
   };
 
   const handleImport = async () => {
-    if (!fbData.listingUrl || !fbData.groupUrl) return;
+    if (!fbData.postText.trim() || !fbData.groupUrl) return;
     setImporting(true);
     setImportError('');
     setPreview(null);
@@ -150,13 +165,19 @@ export default function PartnerPage() {
       const res = await fetch('/api/import-fb-listing', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ listingUrl: fbData.listingUrl, groupUrl: fbData.groupUrl, groupName: fbData.groupName, betaCode: code }),
+        body: JSON.stringify({
+          postText: fbData.postText.trim(),
+          listingUrl: fbData.listingUrl.trim() || undefined,
+          groupUrl: fbData.groupUrl,
+          groupName: fbData.groupName,
+          betaCode: code,
+        }),
       });
       const data = await res.json();
       if (data.success) {
         setPreview(data.listing);
       } else {
-        if (data.error === 'fetch_failed') setImportError(t.import_error_fetch);
+        if (data.error === 'empty_content') setImportError(t.import_error_empty);
         else if (data.error === 'not_a_listing') setImportError(t.import_error_not_listing);
         else setImportError(t.import_error_generic);
       }
@@ -213,10 +234,12 @@ export default function PartnerPage() {
             <span className="text-xs text-gray-400">{listing.negotiation_score}%</span>
           </div>
         )}
-        <a href={listing.url} target="_blank" rel="noopener noreferrer"
-          className="mt-3 w-full py-2 bg-blue-600/20 text-blue-400 rounded-lg text-xs font-medium flex items-center justify-center gap-1 hover:bg-blue-600/30 transition border border-blue-600/20">
-          {language === 'vn' ? 'Xem bài gốc →' : language === 'fr' ? 'Voir l\'annonce originale →' : 'View original post →'}
-        </a>
+        {listing.url && (
+          <a href={listing.url} target="_blank" rel="noopener noreferrer"
+            className="mt-3 w-full py-2 bg-blue-600/20 text-blue-400 rounded-lg text-xs font-medium flex items-center justify-center gap-1 hover:bg-blue-600/30 transition border border-blue-600/20">
+            {language === 'vn' ? 'Xem bài gốc →' : language === 'fr' ? "Voir l'annonce originale →" : 'View original post →'}
+          </a>
+        )}
       </div>
     </div>
   );
@@ -322,23 +345,52 @@ export default function PartnerPage() {
                     <h2 className="text-xl font-bold text-white mb-1">{t.form_title}</h2>
                     <p className="text-gray-500 text-sm">{t.form_desc}</p>
                   </div>
+
+                  {/* ── Champ principal : texte du post ── */}
+                  <div>
+                    <label className="block text-sm font-bold text-gray-300 mb-2">{t.post_text}</label>
+                    <textarea
+                      value={fbData.postText}
+                      onChange={e => setFbData({ ...fbData, postText: e.target.value })}
+                      placeholder={t.post_text_placeholder}
+                      rows={6}
+                      disabled={!!preview}
+                      className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-gray-200 focus:border-blue-500 focus:outline-none transition resize-y placeholder-gray-600 text-sm leading-relaxed disabled:opacity-60"
+                    />
+                    <div className="flex items-center justify-between mt-1.5">
+                      <p className="text-gray-600 text-xs">{t.post_text_hint}</p>
+                      {fbData.postText.length > 0 && (
+                        <span className="text-gray-600 text-xs">{fbData.postText.length} chars</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* ── URL optionnelle ── */}
                   <div>
                     <label className="block text-sm font-bold text-gray-300 mb-2">{t.listing_url}</label>
-                    <input type="url" value={fbData.listingUrl} onChange={e => setFbData({...fbData, listingUrl: e.target.value})}
-                      className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-gray-200 focus:border-blue-500 focus:outline-none transition"
-                      placeholder={t.listing_placeholder} disabled={!!preview} />
+                    <input
+                      type="url"
+                      value={fbData.listingUrl}
+                      onChange={e => setFbData({ ...fbData, listingUrl: e.target.value })}
+                      className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-gray-200 focus:border-blue-500 focus:outline-none transition placeholder-gray-600 disabled:opacity-60"
+                      placeholder={t.listing_placeholder}
+                      disabled={!!preview}
+                    />
+                    <p className="text-gray-600 text-xs mt-1.5">{t.listing_hint}</p>
                   </div>
+
+                  {/* ── Groupe ── */}
                   <div>
                     <label className="block text-sm font-bold text-gray-300 mb-2">{t.group_url}</label>
                     <input type="url" value={fbData.groupUrl} onChange={e => setFbData({...fbData, groupUrl: e.target.value})}
-                      className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-gray-200 focus:border-blue-500 focus:outline-none transition"
+                      className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-gray-200 focus:border-blue-500 focus:outline-none transition disabled:opacity-60"
                       placeholder={t.group_placeholder} disabled={!!preview} />
                     <p className="text-emerald-400 text-xs mt-1.5 font-medium">{t.group_promo}</p>
                   </div>
                   <div>
                     <label className="block text-sm font-bold text-gray-300 mb-2">{t.group_name}</label>
                     <input type="text" value={fbData.groupName} onChange={e => setFbData({...fbData, groupName: e.target.value})}
-                      className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-gray-200 focus:border-blue-500 focus:outline-none transition"
+                      className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-gray-200 focus:border-blue-500 focus:outline-none transition disabled:opacity-60"
                       placeholder={t.group_name_placeholder} disabled={!!preview} />
                   </div>
 
@@ -357,7 +409,9 @@ export default function PartnerPage() {
                   )}
 
                   {!preview ? (
-                    <button onClick={handleImport} disabled={importing || !fbData.listingUrl || !fbData.groupUrl}
+                    <button
+                      onClick={handleImport}
+                      disabled={importing || !fbData.postText.trim() || !fbData.groupUrl}
                       className="w-full py-4 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl font-bold text-lg flex items-center justify-center gap-3 shadow-lg shadow-blue-500/20 hover:from-blue-500 hover:to-cyan-400 disabled:opacity-50 disabled:cursor-not-allowed transition">
                       {importing ? <><Loader className="w-5 h-5 animate-spin" />{t.importing}</> : t.import_btn}
                     </button>
@@ -381,7 +435,7 @@ export default function PartnerPage() {
                   </div>
                   <h2 className="text-2xl font-bold text-white mb-3">{t.published_title}</h2>
                   <p className="text-gray-400 mb-8">{t.published_desc}</p>
-                  <button onClick={() => { setPublished(false); setPreview(null); setFbData({...fbData, listingUrl: ''}); }}
+                  <button onClick={() => { setPublished(false); setPreview(null); setFbData({...fbData, postText: '', listingUrl: ''}); }}
                     className="px-6 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-500 transition">
                     {t.publish_more}
                   </button>
