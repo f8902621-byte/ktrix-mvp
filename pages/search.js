@@ -316,7 +316,7 @@ export default function SearchPage() {
   const currentWards = wardsByDistrict[searchParams.district] || [];
 
   const handleSearch = async () => {
-    if (!searchParams.city || !searchParams.propertyType || searchParams.priceMax === null || searchParams.priceMax === undefined || searchParams.priceMax === '' || Number(searchParams.priceMax) <= 0) { setError(t.required); return; }
+   if (!searchParams.city || searchParams.priceMax === null || searchParams.priceMax === undefined || searchParams.priceMax === '' || Number(searchParams.priceMax) <= 0) { setError(t.required); return; }
     const betaCode = typeof window !== 'undefined' ? sessionStorage.getItem('ktrix_beta_code') : null;
     if (betaCode) fetch('/api/track-search', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: betaCode }) });
     setLoading(true); setSearchProgress(0);
