@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start",
     "export": "next export"
+    "postbuild": "next-sitemap"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",
@@ -18,6 +19,7 @@
     "lucide-react": "^0.263.1",
     "recharts": "^2.8.0",
     "xlsx": "^0.18.5"
+    "next-sitemap": "^4.2.3"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.16",
