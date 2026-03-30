@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import SeoHead from '../components/SeoHead';
 import { useRouter } from 'next/router';
 import { Search, TrendingUp, Clock, Shield, ChevronRight, Globe, CheckCircle, Zap, Users, BarChart3, LogIn, AlertTriangle, Lightbulb, Trophy, Mail, ChevronDown } from 'lucide-react';
 import AdBanner from '../components/AdBanner';
@@ -323,6 +324,7 @@ roadmapMore: 'Et bien plus encore...',
 
   return (
     <div className="min-h-screen bg-gray-950 text-gray-100">
+    <SeoHead path="/" />
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 bg-gray-950/90 backdrop-blur-md border-b border-gray-800/50 z-50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
