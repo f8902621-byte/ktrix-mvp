@@ -5,7 +5,6 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-// Nettoie le HTML pour extraire le texte brut
 function extractTextFromHtml(html) {
   return html
     .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
@@ -21,7 +20,45 @@ function extractTextFromHtml(html) {
     .slice(0, 8000);
 }
 
-// Appel Claude pour extraire les données immobilières
+// Upload image base64 vers Supabase Storage
+async function uploadImage(base64Data, listingId) {
+  try {
+    // Extraire le type MIME et les données
+    const matches = base64Data.match(/^data:([^;]+);base64,(.+)$/);
+    if (!matches) return null;
+
+    const mimeType = matches[1];
+    const data = matches[2];
+    const ext = mimeType === 'image/png' ? 'png' : mimeType === 'image/webp' ? 'webp' : 'jpg';
+    const fileName = `${listingId}.${ext}`;
+
+    // Convertir base64 en Buffer
+    const buffer = Buffer.from(data, 'base64');
+
+    const { error } = await supabase.storage
+      .from('listing-images')
+      .upload(fileName, buffer, {
+        contentType: mimeType,
+        upsert: true,
+      });
+
+    if (error) {
+      console.error('Storage upload error:', error);
+      return null;
+    }
+
+    // Retourner l'URL publique
+    const { data: urlData } = supabase.storage
+      .from('listing-images')
+      .getPublicUrl(fileName);
+
+    return urlData.publicUrl;
+  } catch (err) {
+    console.error('Image upload error:', err.message);
+    return null;
+  }
+}
+
 async function extractListingData(rawText, listingUrl) {
   const prompt = `Tu es un expert en immobilier vietnamien. Analyse ce texte brut d'une annonce immobilière et extrait les informations structurées.
 
@@ -79,85 +116,65 @@ Règles :
 
   const data = await response.json();
   const text = data.content?.[0]?.text || '';
-
   const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (!jsonMatch) throw new Error('No JSON in response');
-
   return JSON.parse(jsonMatch[0]);
 }
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { listingUrl, postText, groupUrl, groupName, betaCode } = req.body;
+  const { listingUrl, postText, groupUrl, groupName, betaCode, imageBase64 } = req.body;
 
-  if (!groupUrl) {
-    return res.status(400).json({ error: 'groupUrl is required' });
-  }
-
-  if (!postText && !listingUrl) {
-    return res.status(400).json({ error: 'Either postText or listingUrl is required' });
-  }
+  if (!groupUrl) return res.status(400).json({ error: 'groupUrl is required' });
+  if (!postText && !listingUrl) return res.status(400).json({ error: 'Either postText or listingUrl is required' });
 
   try {
+    // ── Étape 1 : Texte brut ──
     let rawText = '';
-
-    // ── Étape 1 : Utiliser postText si fourni, sinon tenter le fetch ──
     if (postText && postText.trim().length > 50) {
-      // Cas principal : l'utilisateur a collé le texte directement
       rawText = postText.trim().slice(0, 8000);
     } else if (listingUrl) {
-      // Fallback : tenter le scraping (marche parfois sur mobile/liens publics)
       try {
         const fetchRes = await fetch(listingUrl, {
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (compatible; KTrixBot/1.0)',
-            'Accept': 'text/html,application/xhtml+xml',
-            'Accept-Language': 'vi-VN,vi;q=0.9,en;q=0.8',
-          },
+          headers: { 'User-Agent': 'Mozilla/5.0', 'Accept-Language': 'vi-VN,vi;q=0.9' },
           signal: AbortSignal.timeout(10000),
         });
-
         if (!fetchRes.ok) throw new Error(`HTTP ${fetchRes.status}`);
-        const html = await fetchRes.text();
-        rawText = extractTextFromHtml(html);
+        rawText = extractTextFromHtml(await fetchRes.text());
       } catch (fetchErr) {
-        console.error('Fetch error:', fetchErr.message);
-        return res.status(422).json({
-          error: 'fetch_failed',
-          message: 'Could not fetch the Facebook page. Please paste the post text directly.',
-        });
+        return res.status(422).json({ error: 'fetch_failed', message: 'Please paste the post text directly.' });
       }
     }
 
     if (!rawText || rawText.length < 50) {
-      return res.status(422).json({
-        error: 'empty_content',
-        message: 'The content is too short or empty. Please paste the full post text.',
-      });
+      return res.status(422).json({ error: 'empty_content', message: 'Content too short.' });
     }
 
-    // ── Étape 2 : Extraction NLP via Claude ──
+    // ── Étape 2 : NLP Claude ──
     let extracted;
     try {
       extracted = await extractListingData(rawText, listingUrl || '');
     } catch (nlpErr) {
-      console.error('NLP error:', nlpErr.message);
       return res.status(500).json({ error: 'nlp_failed', message: 'AI extraction failed.' });
     }
 
     if (extracted.error === 'not_a_listing') {
-      return res.status(422).json({
-        error: 'not_a_listing',
-        message: 'This content does not appear to contain a real estate listing.',
-      });
+      return res.status(422).json({ error: 'not_a_listing', message: 'Not a real estate listing.' });
     }
 
-    // ── Étape 3 : Construire l'objet listing ──
+    // ── Étape 3 : Construire le listing ──
     const listingId = `fb_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
     const priceInMillions = extracted.price || 0;
+    const today = new Date().toISOString().split('T')[0];
+    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+    // ── Étape 4 : Upload image si fournie ──
+    let thumbnailUrl = null;
+    if (imageBase64 && imageBase64.startsWith('data:image')) {
+      thumbnailUrl = await uploadImage(imageBase64, listingId);
+      console.log('Image uploaded:', thumbnailUrl);
+    }
 
     const listing = {
       id: listingId,
@@ -165,9 +182,7 @@ export default async function handler(req, res) {
       title: extracted.title || 'Annonce Facebook',
       price: priceInMillions,
       area: extracted.area || null,
-      price_per_m2: extracted.area && priceInMillions
-        ? Math.round(priceInMillions / extracted.area)
-        : null,
+      price_per_m2: extracted.area && priceInMillions ? Math.round(priceInMillions / extracted.area) : null,
       city: extracted.city || null,
       district: extracted.district || null,
       ward: extracted.ward || null,
@@ -181,17 +196,18 @@ export default async function handler(req, res) {
       direction: extracted.direction || null,
       furnishing: extracted.furnishing || null,
       url: listingUrl || null,
+      thumbnail: thumbnailUrl,
       facebook_group_url: groupUrl,
       facebook_group_name: groupName || null,
       contact_phone: extracted.contact_phone || null,
       negotiation_score: extracted.negotiation_score || 50,
       is_active: true,
-      first_seen: new Date().toISOString().split('T')[0],
-      last_seen: new Date().toISOString().split('T')[0],
+      first_seen: today,
+      last_seen: today,
+      expires_at: expiresAt,
     };
 
-    // ── Étape 4 : Sauvegarder dans Supabase ──
-    // Upsert sur url si disponible, sinon insert simple
+    // ── Étape 5 : Sauvegarder ──
     let saved, dbError;
     if (listingUrl) {
       ({ data: saved, error: dbError } = await supabase
@@ -212,7 +228,6 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'db_failed', message: 'Failed to save listing.' });
     }
 
-    // ── Étape 5 : Retourner le résultat ──
     return res.status(200).json({
       success: true,
       listing: {
@@ -230,7 +245,9 @@ export default async function handler(req, res) {
         facebook_group_name: listing.facebook_group_name,
         facebook_group_url: listing.facebook_group_url,
         url: listing.url,
+        thumbnail: thumbnailUrl,
         negotiation_score: listing.negotiation_score,
+        expires_at: expiresAt,
         description: extracted.description,
       },
     });
