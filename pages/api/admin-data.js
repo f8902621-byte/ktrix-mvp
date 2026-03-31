@@ -13,7 +13,6 @@ export default async function handler(req, res) {
   }
 
   try {
-    // GET all testers
     if (req.method === 'POST' && action === 'list') {
       const { data, error } = await supabase
         .from('beta_testers')
@@ -23,16 +22,13 @@ export default async function handler(req, res) {
       return res.status(200).json({ testers: data });
     }
 
-    // ── NOUVEAU : Créer un code partenaire FB ──
     if (action === 'create_partner') {
       const { group_name, group_url, city, notes } = actionData || {};
       if (!group_name || !group_url) {
         return res.status(400).json({ error: 'group_name and group_url are required' });
       }
-      // Générer un code unique KTRIX-FB-XXXX
       const suffix = Math.random().toString(36).substring(2, 6).toUpperCase();
       const newCode = `KTRIX-FB-${suffix}`;
-
       const { data: newPartner, error } = await supabase
         .from('beta_testers')
         .insert({
@@ -43,19 +39,17 @@ export default async function handler(req, res) {
           city: city || null,
           notes: notes || null,
           is_active: true,
-          email: 'PARTNER', // marqueur spécial
+          email: 'PARTNER',
           first_name: group_name,
           registered_at: new Date().toISOString(),
-          expires_at: null, // permanent
+          expires_at: null,
         })
         .select()
         .single();
-
       if (error) throw error;
       return res.status(200).json({ success: true, partner: newPartner, code: newCode });
     }
 
-    // ── NOUVEAU : Lister les codes partenaires ──
     if (action === 'list_partners') {
       const { data, error } = await supabase
         .from('beta_testers')
@@ -66,7 +60,31 @@ export default async function handler(req, res) {
       return res.status(200).json({ partners: data || [] });
     }
 
-    // Toggle active status
+    // ── NOUVEAU : Lister les annonces FB d'un partenaire ──
+    if (action === 'list_partner_listings') {
+      const { partner_code } = actionData || {};
+      const query = supabase
+        .from('facebook_listings')
+        .select('id, title, price, district, area, url, thumbnail, created_at, is_active')
+        .order('created_at', { ascending: false });
+      if (partner_code) query.eq('beta_code', partner_code);
+      const { data, error } = await query;
+      if (error) throw error;
+      return res.status(200).json({ listings: data || [] });
+    }
+
+    // ── NOUVEAU : Masquer une annonce FB (is_active = false) ──
+    if (action === 'delete_listing') {
+      const { listing_id } = actionData || {};
+      if (!listing_id) return res.status(400).json({ error: 'listing_id required' });
+      const { error } = await supabase
+        .from('facebook_listings')
+        .update({ is_active: false })
+        .eq('id', listing_id);
+      if (error) throw error;
+      return res.status(200).json({ success: true });
+    }
+
     if (action === 'toggle') {
       const { data: tester } = await supabase
         .from('beta_testers')
@@ -81,7 +99,6 @@ export default async function handler(req, res) {
       return res.status(200).json({ success: true });
     }
 
-    // Extend expiration
     if (action === 'extend') {
       const days = actionData?.days || 180;
       const { error } = await supabase
@@ -95,7 +112,6 @@ export default async function handler(req, res) {
       return res.status(200).json({ success: true });
     }
 
-    // Add note
     if (action === 'note') {
       const { error } = await supabase
         .from('beta_testers')
@@ -105,7 +121,6 @@ export default async function handler(req, res) {
       return res.status(200).json({ success: true });
     }
 
-    // Reset search count
     if (action === 'reset') {
       const { error } = await supabase
         .from('beta_testers')
@@ -115,7 +130,6 @@ export default async function handler(req, res) {
       return res.status(200).json({ success: true });
     }
 
-    // Reset complet d'un testeur
     if (action === 'reset_full') {
       const { error } = await supabase
         .from('beta_testers')
@@ -130,7 +144,6 @@ export default async function handler(req, res) {
       return res.status(200).json({ success: true });
     }
 
-    // Liste tous les feedbacks
     if (action === 'list_feedbacks') {
       const { data, error } = await supabase
         .from('feedbacks')
@@ -140,7 +153,6 @@ export default async function handler(req, res) {
       return res.status(200).json({ feedbacks: data || [] });
     }
 
-    // RAZ générale
     if (action === 'reset_all_test_data') {
       const { error: e1 } = await supabase.from('feedbacks').delete().neq('id', '00000000-0000-0000-0000-000000000000');
       if (e1) throw e1;
@@ -155,7 +167,7 @@ export default async function handler(req, res) {
           registered_at: null, expires_at: null,
           notes: null, feedback: null, status: 'active', is_active: true,
         })
-        .eq('code_type', 'beta') // ne touche PAS aux partenaires ni aux admins
+        .eq('code_type', 'beta')
         .neq('code', 'KTRIX-ADMIN0');
       if (e3) throw e3;
       return res.status(200).json({ success: true, message: 'RAZ complète effectuée' });
