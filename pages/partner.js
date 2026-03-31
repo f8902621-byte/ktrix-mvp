@@ -18,6 +18,7 @@ export default function PartnerPage() {
   const [listings, setListings] = useState([EMPTY_LISTING()]);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
 
   const t = {
     vn: {
@@ -58,6 +59,9 @@ export default function PartnerPage() {
       error_empty: 'Vui lòng điền nội dung và URL bài đăng.',
       error_group: 'Vui lòng điền link nhóm Facebook.',
       expiry_note: 'Tin đăng sẽ tự động hết hạn sau 30 ngày.',
+      delete_listing: 'Ẩn tin này',
+      delete_confirm: 'Ẩn tin này khỏi kết quả tìm kiếm?',
+      deleted_label: 'Đã ẩn',
     },
     en: {
       hero_badge: 'Partner Program', hero_title: "Expand your group's reach",
@@ -97,6 +101,9 @@ export default function PartnerPage() {
       error_empty: 'Please fill in the post content and URL.',
       error_group: 'Please enter your Facebook group URL.',
       expiry_note: 'Listings automatically expire after 30 days.',
+      delete_listing: 'Hide this listing',
+      delete_confirm: 'Hide this listing from search results?',
+      deleted_label: 'Hidden',
     },
     fr: {
       hero_badge: 'Programme Partenaire', hero_title: 'Élargissez la portée de votre groupe',
@@ -136,6 +143,9 @@ export default function PartnerPage() {
       error_empty: "Veuillez remplir le contenu et l'URL du post.",
       error_group: "Veuillez entrer l'URL de votre groupe Facebook.",
       expiry_note: 'Les annonces expirent automatiquement après 30 jours.',
+      delete_listing: 'Masquer cette annonce',
+      delete_confirm: 'Masquer cette annonce des résultats de recherche ?',
+      deleted_label: 'Masquée',
     },
   }[language];
 
@@ -194,6 +204,32 @@ export default function PartnerPage() {
   const removeListing = (index) => {
     if (listings.length === 1) return;
     setListings(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // ── NOUVEAU : Masquer une annonce publiée ──
+  const handleDeleteListing = async (index) => {
+    const listing = listings[index];
+    if (!listing.result?.id) return;
+    if (!confirm(t.delete_confirm)) return;
+
+    setDeletingId(listing.result.id);
+    try {
+      const res = await fetch('/api/delete-listing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ listing_id: listing.result.id, beta_code: code }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setListings(prev => prev.map((l, i) => i === index
+          ? { ...l, status: 'deleted' }
+          : l
+        ));
+      }
+    } catch (err) {
+      console.error('Delete error:', err);
+    }
+    setDeletingId(null);
   };
 
   const handleSubmitAll = async () => {
@@ -265,7 +301,7 @@ export default function PartnerPage() {
       <header className="bg-gray-950/90 backdrop-blur-md border-b border-gray-800 sticky top-0 z-50">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => router.push('/')}>
-            <img src="https://raw.githubusercontent.com/f8902621-byte/traxhome-mvp/main/Ktrixlogo.png" alt="K Trix" className="w-16 h-16 object-contain" />
+            <img src="/Ktrixlogo.png" alt="K Trix" className="w-16 h-16 object-contain" />
             <div>
               <span className="text-white font-bold text-lg">K Trix</span>
               <span className="ml-2 text-xs bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full border border-blue-500/30">Partner</span>
@@ -382,6 +418,7 @@ export default function PartnerPage() {
                   {listings.map((listing, index) => (
                     <div key={index} className={`border rounded-xl p-5 transition-all duration-300 ${
                       listing.status === 'success' ? 'border-emerald-500/40 bg-emerald-500/5' :
+                      listing.status === 'deleted' ? 'border-gray-700/40 bg-gray-800/20 opacity-50' :
                       listing.status === 'error' ? 'border-red-500/40 bg-red-500/5' :
                       listing.status === 'processing' ? 'border-blue-400/50 bg-blue-500/5' :
                       'border-gray-700 bg-gray-800/40'
@@ -403,6 +440,9 @@ export default function PartnerPage() {
                               ✅ {listing.result?.title?.slice(0, 35)}{listing.result?.title?.length > 35 ? '...' : ''}
                             </span>
                           )}
+                          {listing.status === 'deleted' && (
+                            <span className="text-gray-500 text-xs font-bold">🚫 {t.deleted_label}</span>
+                          )}
                           {listing.status === 'error' && (
                             <span className="text-red-400 text-xs font-bold">❌ {listing.error}</span>
                           )}
@@ -415,7 +455,7 @@ export default function PartnerPage() {
                         )}
                       </div>
 
-                      {/* Success mini-card */}
+                      {/* Success mini-card + bouton delete */}
                       {listing.status === 'success' && listing.result && (
                         <div className="flex items-center gap-3 p-3 bg-emerald-500/10 rounded-lg border border-emerald-500/20 mb-3">
                           {listing.result.thumbnail && (
@@ -429,15 +469,28 @@ export default function PartnerPage() {
                               {listing.result.district && <span><MapPin className="w-3 h-3 inline mr-0.5" />{listing.result.district}</span>}
                             </div>
                           </div>
-                          <a href={listing.listingUrl} target="_blank" rel="noopener noreferrer"
-                            className="text-blue-400 text-xs hover:underline flex-shrink-0 font-medium">FB →</a>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <a href={listing.listingUrl} target="_blank" rel="noopener noreferrer"
+                              className="text-blue-400 text-xs hover:underline font-medium">FB →</a>
+                            {/* ── BOUTON DELETE ── */}
+                            <button
+                              onClick={() => handleDeleteListing(index)}
+                              disabled={deletingId === listing.result?.id}
+                              title={t.delete_listing}
+                              className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition disabled:opacity-50"
+                            >
+                              {deletingId === listing.result?.id
+                                ? <Loader className="w-4 h-4 animate-spin" />
+                                : <Trash2 className="w-4 h-4" />
+                              }
+                            </button>
+                          </div>
                         </div>
                       )}
 
                       {/* Input fields */}
-                      {listing.status !== 'success' && (
+                      {listing.status !== 'success' && listing.status !== 'deleted' && (
                         <div className="space-y-3">
-                          {/* Post text */}
                           <div>
                             <label className="block text-xs font-semibold text-gray-400 mb-1.5">{t.post_text}</label>
                             <textarea
@@ -452,8 +505,6 @@ export default function PartnerPage() {
                               <p className="text-gray-600 text-xs mt-1 text-right">{listing.postText.length} chars</p>
                             )}
                           </div>
-
-                          {/* URL */}
                           <div>
                             <label className="block text-xs font-semibold text-gray-400 mb-1.5">{t.listing_url}</label>
                             <input
@@ -466,8 +517,6 @@ export default function PartnerPage() {
                             />
                             <p className="text-gray-600 text-xs mt-1">💡 {t.listing_url_hint}</p>
                           </div>
-
-                          {/* Photo upload */}
                           <div>
                             <label className="block text-xs font-semibold text-gray-400 mb-1.5">
                               📷 {t.photo}
@@ -504,7 +553,6 @@ export default function PartnerPage() {
                   ))}
                 </div>
 
-                {/* Add listing */}
                 {!submitting && !done && (
                   <button onClick={addListing}
                     className="mt-4 w-full py-3 border-2 border-dashed border-gray-700 text-gray-500 rounded-xl hover:border-blue-500/50 hover:text-blue-400 hover:bg-blue-500/5 transition text-sm font-medium flex items-center justify-center gap-2">
@@ -512,7 +560,6 @@ export default function PartnerPage() {
                   </button>
                 )}
 
-                {/* Progress */}
                 {submitting && (
                   <div className="mt-6 p-4 bg-blue-500/5 border border-blue-500/20 rounded-xl">
                     <div className="flex justify-between text-xs text-gray-400 mb-2">
@@ -530,7 +577,6 @@ export default function PartnerPage() {
                   </div>
                 )}
 
-                {/* Done */}
                 {done && (
                   <div className="mt-6 p-6 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-center">
                     <p className="text-3xl mb-3">🎉</p>
@@ -543,7 +589,6 @@ export default function PartnerPage() {
                   </div>
                 )}
 
-                {/* Submit */}
                 {!done && (
                   <button onClick={handleSubmitAll} disabled={submitting}
                     className="mt-5 w-full py-4 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl font-bold text-lg flex items-center justify-center gap-3 shadow-lg shadow-blue-500/20 hover:from-blue-500 hover:to-cyan-400 disabled:opacity-50 disabled:cursor-not-allowed transition">
