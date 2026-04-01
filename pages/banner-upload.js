@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { Upload, CheckCircle, Loader, X, Monitor, Smartphone } from 'lucide-react';
 
-function UploadZone({ preview, label, hint, warning, dims, onSelect, onRemove }) {
+function UploadZone({ preview, label, hint, warning, onSelect, onRemove }) {
   return (
     <div>
       <label className="block text-sm font-semibold text-gray-300 mb-2">{label}</label>
@@ -35,7 +35,7 @@ function UploadZone({ preview, label, hint, warning, dims, onSelect, onRemove })
   );
 }
 
-export default function BannerUploadPage() {
+function BannerUploadPage() {
   const router = useRouter();
   const [language, setLanguage] = useState('vn');
   const [code, setCode] = useState('');
@@ -49,24 +49,22 @@ export default function BannerUploadPage() {
   const [uploading, setUploading] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState('');
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
 
   const t = {
     vn: {
       title: 'Upload bannière quảng cáo',
       subtitle: 'Nhập mã đối tác để tải lên bannière của bạn',
-      code_label: 'Mã đối tác *',
-      code_ph: 'KTRIX-FB-XXXX',
-      verify: 'Xác minh',
-      verifying: 'Đang xác minh...',
-      code_error: 'Mã không hợp lệ hoặc đã hết hạn.',
-      code_success: 'Mã hợp lệ!',
+      code_label: 'Mã đối tác *', code_ph: 'KTRIX-FB-XXXX',
+      verify: 'Xác minh', verifying: 'Đang xác minh...',
+      code_error: 'Mã không hợp lệ hoặc đã hết hạn.', code_success: 'Mã hợp lệ!',
       desktop_label: 'Bannière Desktop (728×90 px) *',
       mobile_label: 'Bannière Mobile (320×100 px) *',
       upload_hint: 'JPG, PNG, WebP — tối đa 5MB',
-      size_d: '⚠️ Khuyến nghị: 728×90 px',
-      size_m: '⚠️ Khuyến nghị: 320×100 px',
-      submit: 'Tải lên bannière',
-      uploading: 'Đang tải lên...',
+      size_d: '⚠️ Khuyến nghị: 728×90 px', size_m: '⚠️ Khuyến nghị: 320×100 px',
+      submit: 'Tải lên bannière', uploading: 'Đang tải lên...',
       done_title: '✅ Bannière đã được tải lên!',
       done_desc: 'Bannière của bạn sẽ xuất hiện trên K Trix trong vài phút.',
       done_back: 'Về trang chủ',
@@ -74,19 +72,14 @@ export default function BannerUploadPage() {
     en: {
       title: 'Upload your ad banner',
       subtitle: 'Enter your partner code to upload your banners',
-      code_label: 'Partner code *',
-      code_ph: 'KTRIX-FB-XXXX',
-      verify: 'Verify',
-      verifying: 'Verifying...',
-      code_error: 'Invalid or expired partner code.',
-      code_success: 'Valid code!',
+      code_label: 'Partner code *', code_ph: 'KTRIX-FB-XXXX',
+      verify: 'Verify', verifying: 'Verifying...',
+      code_error: 'Invalid or expired partner code.', code_success: 'Valid code!',
       desktop_label: 'Desktop banner (728×90 px) *',
       mobile_label: 'Mobile banner (320×100 px) *',
       upload_hint: 'JPG, PNG, WebP — max 5MB',
-      size_d: '⚠️ Recommended: 728×90 px',
-      size_m: '⚠️ Recommended: 320×100 px',
-      submit: 'Upload banners',
-      uploading: 'Uploading...',
+      size_d: '⚠️ Recommended: 728×90 px', size_m: '⚠️ Recommended: 320×100 px',
+      submit: 'Upload banners', uploading: 'Uploading...',
       done_title: '✅ Banners uploaded!',
       done_desc: 'Your banners will appear on K Trix within a few minutes.',
       done_back: 'Back to home',
@@ -94,19 +87,14 @@ export default function BannerUploadPage() {
     fr: {
       title: 'Uploader votre bannière publicitaire',
       subtitle: 'Entrez votre code partenaire pour uploader vos bannières',
-      code_label: 'Code partenaire *',
-      code_ph: 'KTRIX-FB-XXXX',
-      verify: 'Vérifier',
-      verifying: 'Vérification...',
-      code_error: 'Code partenaire invalide ou expiré.',
-      code_success: 'Code valide !',
+      code_label: 'Code partenaire *', code_ph: 'KTRIX-FB-XXXX',
+      verify: 'Vérifier', verifying: 'Vérification...',
+      code_error: 'Code partenaire invalide ou expiré.', code_success: 'Code valide !',
       desktop_label: 'Bannière Desktop (728×90 px) *',
       mobile_label: 'Bannière Mobile (320×100 px) *',
       upload_hint: 'JPG, PNG, WebP — max 5MB',
-      size_d: '⚠️ Recommandé : 728×90 px',
-      size_m: '⚠️ Recommandé : 320×100 px',
-      submit: 'Uploader les bannières',
-      uploading: 'Upload en cours...',
+      size_d: '⚠️ Recommandé : 728×90 px', size_m: '⚠️ Recommandé : 320×100 px',
+      submit: 'Uploader les bannières', uploading: 'Upload en cours...',
       done_title: '✅ Bannières uploadées !',
       done_desc: 'Vos bannières apparaîtront sur K Trix dans quelques minutes.',
       done_back: "Retour à l'accueil",
@@ -115,20 +103,15 @@ export default function BannerUploadPage() {
 
   const verifyCode = async () => {
     if (!code.trim()) return;
-    setVerifying(true);
-    setCodeError('');
+    setVerifying(true); setCodeError('');
     try {
       const res = await fetch('/api/verify-beta', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code: code.trim().toUpperCase() }),
       });
       const data = await res.json();
-      if (data.valid && data.isPartner) {
-        setCodeValid(true);
-      } else {
-        setCodeError(t.code_error);
-      }
+      if (data.valid && data.isPartner) { setCodeValid(true); }
+      else { setCodeError(t.code_error); }
     } catch { setCodeError(t.code_error); }
     setVerifying(false);
   };
@@ -146,12 +129,10 @@ export default function BannerUploadPage() {
 
   const handleSubmit = async () => {
     if (!desktopFile || !mobileFile) { setError('Please upload both images.'); return; }
-    setUploading(true);
-    setError('');
+    setUploading(true); setError('');
     try {
       const res = await fetch('/api/banner-upload', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           beta_code: code.toUpperCase(),
           image_desktop_base64: desktopPreview,
@@ -164,11 +145,13 @@ export default function BannerUploadPage() {
       if (data.success) { setDone(true); }
       else {
         const errMap = { invalid_code: t.code_error, expired_code: 'Partner code expired.' };
-        setError(errMap[data.error] || 'Upload failed. Please try again.');
+        setError(errMap[data.error] || 'Upload failed.');
       }
-    } catch { setError('Network error. Please try again.'); }
+    } catch { setError('Network error.'); }
     setUploading(false);
   };
+
+  if (!mounted) return null;
 
   const expiryDate = new Date(Date.now() + 6 * 30 * 24 * 60 * 60 * 1000).toLocaleDateString('fr-FR');
 
@@ -209,7 +192,6 @@ export default function BannerUploadPage() {
               <p className="text-gray-400">{t.subtitle}</p>
             </div>
 
-            {/* Code verification */}
             <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
               <label className="block text-sm font-semibold text-gray-300 mb-2">{t.code_label}</label>
               <div className="flex gap-3">
@@ -233,7 +215,6 @@ export default function BannerUploadPage() {
               )}
             </div>
 
-            {/* Upload zones */}
             {codeValid && (
               <div className="bg-gray-900 border border-blue-500/30 rounded-xl p-6 space-y-6">
                 <div className="grid grid-cols-2 gap-4">
@@ -252,7 +233,6 @@ export default function BannerUploadPage() {
                   label={t.desktop_label}
                   hint={t.upload_hint}
                   warning={t.size_d}
-                  dims="desktop"
                   onSelect={file => handleFileSelect(file, 'desktop')}
                   onRemove={() => { setDesktopFile(null); setDesktopPreview(null); }}
                 />
@@ -262,7 +242,6 @@ export default function BannerUploadPage() {
                   label={t.mobile_label}
                   hint={t.upload_hint}
                   warning={t.size_m}
-                  dims="mobile"
                   onSelect={file => handleFileSelect(file, 'mobile')}
                   onRemove={() => { setMobileFile(null); setMobilePreview(null); }}
                 />
@@ -272,9 +251,7 @@ export default function BannerUploadPage() {
                 <button type="button" onClick={handleSubmit}
                   disabled={uploading || !desktopFile || !mobileFile}
                   className="w-full py-4 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl font-bold text-base flex items-center justify-center gap-3 hover:from-blue-500 hover:to-cyan-400 disabled:opacity-50 transition shadow-lg shadow-blue-500/20">
-                  {uploading
-                    ? <><Loader className="w-5 h-5 animate-spin" />{t.uploading}</>
-                    : t.submit}
+                  {uploading ? <><Loader className="w-5 h-5 animate-spin" />{t.uploading}</> : t.submit}
                 </button>
 
                 <p className="text-center text-xs text-gray-600">
@@ -292,3 +269,5 @@ export default function BannerUploadPage() {
     </div>
   );
 }
+
+export default BannerUploadPage;
