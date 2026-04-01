@@ -29,6 +29,8 @@ export default async function handler(req, res) {
       }
       const suffix = Math.random().toString(36).substring(2, 6).toUpperCase();
       const newCode = `KTRIX-FB-${suffix}`;
+      const expiresAt = new Date();
+      expiresAt.setFullYear(expiresAt.getFullYear() + 1);
       const { data: newPartner, error } = await supabase
         .from('beta_testers')
         .insert({
@@ -42,7 +44,7 @@ export default async function handler(req, res) {
           email: 'PARTNER',
           first_name: group_name,
           registered_at: new Date().toISOString(),
-          expires_at: null,
+          expires_at: expiresAt.toISOString(),
         })
         .select()
         .single();
@@ -60,7 +62,28 @@ export default async function handler(req, res) {
       return res.status(200).json({ partners: data || [] });
     }
 
-    // ── NOUVEAU : Lister les annonces FB d'un partenaire ──
+    // ── Lister les demandes en attente ──
+    if (action === 'list_pending_partners') {
+      const { data, error } = await supabase
+        .from('beta_testers')
+        .select('*')
+        .eq('code_type', 'partner_pending')
+        .order('registered_at', { ascending: false });
+      if (error) throw error;
+      return res.status(200).json({ partners: data || [] });
+    }
+
+    // ── Refuser une demande ──
+    if (action === 'reject_partner') {
+      const { error } = await supabase
+        .from('beta_testers')
+        .delete()
+        .eq('code', code)
+        .eq('code_type', 'partner_pending');
+      if (error) throw error;
+      return res.status(200).json({ success: true });
+    }
+
     if (action === 'list_partner_listings') {
       const { partner_code } = actionData || {};
       const query = supabase
@@ -73,7 +96,6 @@ export default async function handler(req, res) {
       return res.status(200).json({ listings: data || [] });
     }
 
-    // ── NOUVEAU : Masquer une annonce FB (is_active = false) ──
     if (action === 'delete_listing') {
       const { listing_id } = actionData || {};
       if (!listing_id) return res.status(400).json({ error: 'listing_id required' });
