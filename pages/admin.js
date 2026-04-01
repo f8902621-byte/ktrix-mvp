@@ -1,6 +1,6 @@
 import * as XLSX from 'xlsx';
 import { useState, useEffect } from 'react';
-import { Lock, RefreshCw, ToggleLeft, ToggleRight, Clock, MessageSquare, Shield, AlertCircle, Check, X, Facebook } from 'lucide-react';
+import { Lock, RefreshCw, ToggleLeft, ToggleRight, Clock, MessageSquare, Shield, AlertCircle, Check, X, Facebook, Loader } from 'lucide-react';
 
 export default function AdminPage() {
   const [password, setPassword] = useState('');
@@ -14,12 +14,12 @@ export default function AdminPage() {
   const [feedbackView, setFeedbackView] = useState({ code: null, text: '' });
   const [feedbacks, setFeedbacks] = useState([]);
   const [loadingFeedbacks, setLoadingFeedbacks] = useState(false);
-
-  // ── NOUVEAUX ÉTATS PARTENAIRES ──
   const [partners, setPartners] = useState([]);
   const [showCreatePartner, setShowCreatePartner] = useState(false);
   const [newPartner, setNewPartner] = useState({ group_name: '', group_url: '', city: '', notes: '' });
   const [createdCode, setCreatedCode] = useState('');
+  const [pendingPartners, setPendingPartners] = useState([]);
+  const [approvingCode, setApprovingCode] = useState(null);
 
   useEffect(() => {
     const savedPwd = localStorage.getItem('ktrix_admin_pwd');
@@ -29,20 +29,17 @@ export default function AdminPage() {
       fetchSavedSearches(savedPwd);
       fetchFeedbacks(savedPwd);
       fetchPartners(savedPwd);
+      fetchPendingPartners(savedPwd);
     }
   }, []);
 
   const fetchSavedSearches = async (pwd) => {
     setLoadingSearches(true);
     try {
-      const res = await fetch('/api/saved-searches?all=true', {
-        headers: { 'x-admin-pwd': pwd || password }
-      });
+      const res = await fetch('/api/saved-searches?all=true', { headers: { 'x-admin-pwd': pwd || password } });
       const data = await res.json();
       if (Array.isArray(data)) setSavedSearches(data);
-    } catch (err) {
-      console.error('Error fetching saved searches:', err);
-    }
+    } catch (err) { console.error(err); }
     setLoadingSearches(false);
   };
 
@@ -50,44 +47,43 @@ export default function AdminPage() {
     setLoadingFeedbacks(true);
     try {
       const res = await fetch('/api/admin-data', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password: pwd || password, action: 'list_feedbacks' }),
       });
       const data = await res.json();
       if (Array.isArray(data.feedbacks)) setFeedbacks(data.feedbacks);
-    } catch (err) {
-      console.error('Error fetching feedbacks:', err);
-    }
+    } catch (err) { console.error(err); }
     setLoadingFeedbacks(false);
   };
 
-  // ── NOUVEAU : Fetch partenaires ──
   const fetchPartners = async (pwd) => {
     try {
       const res = await fetch('/api/admin-data', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password: pwd || password, action: 'list_partners' }),
       });
       const data = await res.json();
       if (Array.isArray(data.partners)) setPartners(data.partners);
-    } catch (err) {
-      console.error('Error fetching partners:', err);
-    }
+    } catch (err) { console.error(err); }
   };
 
-  // ── NOUVEAU : Créer un partenaire ──
+  const fetchPendingPartners = async (pwd) => {
+    try {
+      const res = await fetch('/api/admin-data', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: pwd || password, action: 'list_pending_partners' }),
+      });
+      const data = await res.json();
+      if (Array.isArray(data.partners)) setPendingPartners(data.partners);
+    } catch (err) { console.error(err); }
+  };
+
   const handleCreatePartner = async () => {
-    if (!newPartner.group_name || !newPartner.group_url) {
-      alert('Nom du groupe et URL sont requis');
-      return;
-    }
+    if (!newPartner.group_name || !newPartner.group_url) { alert('Nom du groupe et URL sont requis'); return; }
     const pwd = password || localStorage.getItem('ktrix_admin_pwd');
     try {
       const res = await fetch('/api/admin-data', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password: pwd, action: 'create_partner', data: newPartner }),
       });
       const data = await res.json();
@@ -95,37 +91,53 @@ export default function AdminPage() {
         setCreatedCode(data.code);
         fetchPartners(pwd);
         setNewPartner({ group_name: '', group_url: '', city: '', notes: '' });
-      } else {
-        alert('Erreur : ' + (data.error || 'inconnue'));
-      }
-    } catch (err) {
-      console.error('Error creating partner:', err);
-    }
+      } else { alert('Erreur : ' + (data.error || 'inconnue')); }
+    } catch (err) { console.error(err); }
+  };
+
+  const handleApprove = async (pendingCode) => {
+    if (!confirm('Approuver cette demande et envoyer le code par email ?')) return;
+    const pwd = password || localStorage.getItem('ktrix_admin_pwd');
+    setApprovingCode(pendingCode);
+    try {
+      const res = await fetch('/api/approve-partner', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: pwd, pending_code: pendingCode }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(`✅ Approuvé ! Code ${data.code} envoyé par email.`);
+        fetchPendingPartners(pwd);
+        fetchPartners(pwd);
+      } else { alert('Erreur : ' + (data.error || 'inconnue')); }
+    } catch { alert('Erreur réseau'); }
+    setApprovingCode(null);
+  };
+
+  const handleReject = async (pendingCode) => {
+    if (!confirm('Refuser et supprimer cette demande ?')) return;
+    const pwd = password || localStorage.getItem('ktrix_admin_pwd');
+    await fetch('/api/admin-data', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: pwd, action: 'reject_partner', code: pendingCode }),
+    });
+    fetchPendingPartners(pwd);
   };
 
   const fetchTesters = async (pwd) => {
-    setLoading(true);
-    setError('');
+    setLoading(true); setError('');
     try {
       const res = await fetch('/api/admin-data', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password: pwd || password, action: 'list' }),
       });
       const data = await res.json();
-      if (data.error === 'Unauthorized') {
-        setError('Wrong password');
-        setAuthenticated(false);
-      } else if (data.testers) {
-        setTesters(data.testers);
-        setAuthenticated(true);
-        fetchSavedSearches(pwd);
-        fetchFeedbacks(pwd);
-        fetchPartners(pwd);
+      if (data.error === 'Unauthorized') { setError('Wrong password'); setAuthenticated(false); }
+      else if (data.testers) {
+        setTesters(data.testers); setAuthenticated(true);
+        fetchSavedSearches(pwd); fetchFeedbacks(pwd); fetchPartners(pwd); fetchPendingPartners(pwd);
       }
-    } catch (err) {
-      setError('Connection error');
-    }
+    } catch { setError('Connection error'); }
     setLoading(false);
   };
 
@@ -138,20 +150,17 @@ export default function AdminPage() {
   const handleToggle = async (code) => {
     const pwd = password || localStorage.getItem('ktrix_admin_pwd');
     await fetch('/api/admin-data', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ password: pwd, action: 'toggle', code }),
     });
-    fetchTesters(pwd);
-    fetchPartners(pwd);
+    fetchTesters(pwd); fetchPartners(pwd);
   };
 
   const handleReset = async (code) => {
     if (!confirm(`⚠️ RESET COMPLET de ${code}\n\nCeci va effacer :\n- Nom et email\n- Dates d'inscription et d'expiration\n- Compteur de recherches\n\nLe code sera remis à disposition.\n\nConfirmer ?`)) return;
     const pwd = password || localStorage.getItem('ktrix_admin_pwd');
     await fetch('/api/admin-data', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ password: pwd, action: 'reset_full', code }),
     });
     fetchTesters(pwd);
@@ -160,8 +169,7 @@ export default function AdminPage() {
   const handleExtend = async (code, days) => {
     const pwd = password || localStorage.getItem('ktrix_admin_pwd');
     await fetch('/api/admin-data', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ password: pwd, action: 'extend', code, data: { days } }),
     });
     fetchTesters(pwd);
@@ -172,25 +180,18 @@ export default function AdminPage() {
     if (!confirm('DERNIÈRE CONFIRMATION\n\nVous êtes sur le point de remettre à zéro toutes les données de test.\n\nContinuer ?')) return;
     const pwd = password || localStorage.getItem('ktrix_admin_pwd');
     const res = await fetch('/api/admin-data', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ password: pwd, action: 'reset_all_test_data' }),
     });
     const data = await res.json();
-    if (data.success) {
-      alert('✅ RAZ complète effectuée avec succès.');
-      fetchTesters(pwd);
-      fetchFeedbacks(pwd);
-    } else {
-      alert('❌ Erreur lors de la RAZ : ' + (data.error || 'inconnue'));
-    }
+    if (data.success) { alert('✅ RAZ complète effectuée avec succès.'); fetchTesters(pwd); fetchFeedbacks(pwd); }
+    else { alert('❌ Erreur lors de la RAZ : ' + (data.error || 'inconnue')); }
   };
 
   const handleNote = async (code) => {
     const pwd = password || localStorage.getItem('ktrix_admin_pwd');
     await fetch('/api/admin-data', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ password: pwd, action: 'note', code, data: { note: noteEdit.text } }),
     });
     setNoteEdit({ code: null, text: '' });
@@ -229,17 +230,12 @@ export default function AdminPage() {
       }
       const ws = XLSX.utils.aoa_to_sheet(rows);
       ws['!cols'] = [{ wch: 22 }, { wch: 70 }, { wch: 30 }];
-      const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
-      for (let R = range.s.r; R <= range.e.r; R++) {
-        const cellAddr = XLSX.utils.encode_cell({ r: R, c: 1 });
-        if (ws[cellAddr] && ws[cellAddr].v) { if (!ws[cellAddr].s) ws[cellAddr].s = {}; ws[cellAddr].s.alignment = { wrapText: true }; }
-      }
       XLSX.utils.book_append_sheet(wb, ws, (tester.first_name || tester.code).slice(0, 31));
     });
     XLSX.writeFile(wb, `ktrix-beta-${new Date().toISOString().slice(0, 10)}.xlsx`);
   };
 
-  const betaTesters = testers.filter(t => t.code_type !== 'partner');
+  const betaTesters = testers.filter(t => t.code_type !== 'partner' && t.code_type !== 'partner_pending');
   const registered = betaTesters.filter(t => t.email && t.email !== '' && t.email !== 'EMPTY');
   const available = betaTesters.filter(t => !t.email || t.email === '' || t.email === 'EMPTY');
   const expired = betaTesters.filter(t => t.expires_at && new Date(t.expires_at) < new Date());
@@ -248,11 +244,9 @@ export default function AdminPage() {
   const isExpired = (d) => d && new Date(d) < new Date();
   const getDaysLeft = (expires_at) => {
     if (!expires_at) return null;
-    const diff = new Date(expires_at) - new Date();
-    return Math.ceil(diff / (1000 * 60 * 60 * 24));
+    return Math.ceil((new Date(expires_at) - new Date()) / (1000 * 60 * 60 * 24));
   };
 
-  // Login screen
   if (!authenticated) {
     return (
       <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
@@ -265,16 +259,19 @@ export default function AdminPage() {
             <p className="text-gray-500 text-sm mt-1">Beta Testers Management</p>
           </div>
           <div className="bg-gray-900 rounded-xl border border-gray-800 p-6">
-            <input type="password" value={password} onChange={(e) => { setPassword(e.target.value); setError(''); }} onKeyDown={(e) => e.key === 'Enter' && handleLogin()} placeholder="Admin password" className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white text-center focus:outline-none focus:border-red-500 transition mb-4" autoFocus />
-            {error && (<div className="flex items-center gap-2 text-red-400 text-sm mb-4 justify-center"><AlertCircle className="w-4 h-4" /><span>{error}</span></div>)}
-            <button onClick={handleLogin} disabled={loading} className="w-full py-3 bg-red-500 text-white font-bold rounded-lg hover:bg-red-600 transition disabled:opacity-50">{loading ? 'Loading...' : 'Access'}</button>
+            <input type="password" value={password} onChange={(e) => { setPassword(e.target.value); setError(''); }}
+              onKeyDown={(e) => e.key === 'Enter' && handleLogin()} placeholder="Admin password"
+              className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white text-center focus:outline-none focus:border-red-500 transition mb-4" autoFocus />
+            {error && <div className="flex items-center gap-2 text-red-400 text-sm mb-4 justify-center"><AlertCircle className="w-4 h-4" /><span>{error}</span></div>}
+            <button onClick={handleLogin} disabled={loading} className="w-full py-3 bg-red-500 text-white font-bold rounded-lg hover:bg-red-600 transition disabled:opacity-50">
+              {loading ? 'Loading...' : 'Access'}
+            </button>
           </div>
         </div>
       </div>
     );
   }
 
-  // Dashboard
   return (
     <div className="min-h-screen bg-gray-950 text-gray-100">
       <header className="bg-gray-950/90 backdrop-blur-md border-b border-gray-800 sticky top-0 z-50">
@@ -284,7 +281,8 @@ export default function AdminPage() {
             <h1 className="text-lg font-bold text-white">K Trix Admin</h1>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={() => { const pwd = password || localStorage.getItem('ktrix_admin_pwd'); fetchTesters(pwd); fetchFeedbacks(pwd); fetchPartners(pwd); }} className="flex items-center gap-2 px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-300 hover:bg-gray-700 transition">
+            <button onClick={() => { const pwd = password || localStorage.getItem('ktrix_admin_pwd'); fetchTesters(pwd); fetchFeedbacks(pwd); fetchPartners(pwd); fetchPendingPartners(pwd); }}
+              className="flex items-center gap-2 px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-300 hover:bg-gray-700 transition">
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />Refresh
             </button>
             <button onClick={handleResetAll} className="flex items-center gap-2 px-4 py-2 bg-red-900 border border-red-700 rounded-lg text-sm text-red-300 hover:bg-red-800 transition">🗑️ RAZ Données</button>
@@ -296,7 +294,7 @@ export default function AdminPage() {
       <main className="max-w-7xl mx-auto px-4 py-6">
 
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-7 gap-4 mb-8">
           <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
             <p className="text-2xl font-bold text-white">{betaTesters.length}</p>
             <p className="text-gray-500 text-sm">Total Codes</p>
@@ -321,81 +319,123 @@ export default function AdminPage() {
             <p className="text-2xl font-bold text-blue-400">{partners.length}</p>
             <p className="text-gray-500 text-sm">Partenaires FB</p>
           </div>
+          <div className="bg-gray-900 border border-amber-500/20 rounded-xl p-4">
+            <p className="text-2xl font-bold text-amber-400">{pendingPartners.length}</p>
+            <p className="text-gray-500 text-sm">En attente</p>
+          </div>
         </div>
 
-        {/* ── SECTION PARTENAIRES FB ── */}
+        {/* ── DEMANDES EN ATTENTE ── */}
+        {pendingPartners.length > 0 && (
+          <div className="bg-gray-900 border border-amber-500/30 rounded-xl overflow-hidden mb-8">
+            <div className="p-4 border-b border-amber-500/20 flex items-center gap-3">
+              <span className="w-2.5 h-2.5 bg-amber-400 rounded-full animate-pulse inline-block"></span>
+              <h2 className="text-white font-bold">Demandes partenaires en attente ({pendingPartners.length})</h2>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-800 text-gray-400">
+                    <th className="text-left p-3 font-medium">Groupe</th>
+                    <th className="text-left p-3 font-medium">URL</th>
+                    <th className="text-left p-3 font-medium">Admin</th>
+                    <th className="text-left p-3 font-medium">Email</th>
+                    <th className="text-left p-3 font-medium">Ville</th>
+                    <th className="text-left p-3 font-medium">Membres</th>
+                    <th className="text-left p-3 font-medium">Date</th>
+                    <th className="text-left p-3 font-medium">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pendingPartners.map(p => (
+                    <tr key={p.id} className="border-b border-gray-800/50 hover:bg-gray-800/20">
+                      <td className="p-3 text-white font-medium">{p.partner_group_name}</td>
+                      <td className="p-3">
+                        <a href={p.partner_group_url} target="_blank" rel="noopener noreferrer"
+                          className="text-blue-400 hover:underline text-xs truncate block max-w-40">{p.partner_group_url}</a>
+                      </td>
+                      <td className="p-3 text-gray-300 text-sm">{p.first_name}</td>
+                      <td className="p-3">
+                        <a href={`mailto:${p.email}`} className="text-blue-400 hover:underline text-xs">{p.email}</a>
+                      </td>
+                      <td className="p-3 text-gray-500 text-xs">{p.city || '—'}</td>
+                      <td className="p-3 text-gray-400 text-xs font-medium">{p.notes?.replace('Membres: ', '') || '—'}</td>
+                      <td className="p-3 text-gray-500 text-xs whitespace-nowrap">{formatDate(p.registered_at)}</td>
+                      <td className="p-3">
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => handleApprove(p.code)} disabled={approvingCode === p.code}
+                            className="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-bold hover:bg-emerald-500 transition disabled:opacity-50 flex items-center gap-1">
+                            {approvingCode === p.code ? <><Loader className="w-3 h-3 animate-spin" />...</> : '✅ Approuver'}
+                          </button>
+                          <button onClick={() => handleReject(p.code)}
+                            className="px-3 py-1.5 bg-red-900/50 text-red-400 rounded-lg text-xs font-bold hover:bg-red-900 transition border border-red-700">
+                            ❌ Refuser
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* ── PARTENAIRES FB ACTIFS ── */}
         <div className="bg-gray-900 border border-blue-500/20 rounded-xl overflow-hidden mb-8">
           <div className="p-4 border-b border-blue-500/20 flex items-center justify-between">
             <h2 className="text-white font-bold flex items-center gap-2">
               <Facebook className="w-4 h-4 text-blue-400" />
               Partenaires Facebook ({partners.length})
             </h2>
-            <button onClick={() => { setShowCreatePartner(!showCreatePartner); setCreatedCode(''); }} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-500 transition">
+            <button onClick={() => { setShowCreatePartner(!showCreatePartner); setCreatedCode(''); }}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-500 transition">
               + Nouveau partenaire
             </button>
           </div>
 
-          {/* Formulaire création */}
           {showCreatePartner && (
             <div className="p-4 bg-blue-500/5 border-b border-blue-500/20 space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs text-gray-400 mb-1">Nom du groupe *</label>
-                  <input
-                    placeholder="Cộng đồng BĐS Hồ Chí Minh"
-                    value={newPartner.group_name}
+                  <input placeholder="Cộng đồng BĐS Hồ Chí Minh" value={newPartner.group_name}
                     onChange={e => setNewPartner({ ...newPartner, group_name: e.target.value })}
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:border-blue-500 focus:outline-none"
-                  />
+                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:border-blue-500 focus:outline-none" />
                 </div>
                 <div>
                   <label className="block text-xs text-gray-400 mb-1">URL du groupe *</label>
-                  <input
-                    placeholder="https://www.facebook.com/groups/..."
-                    value={newPartner.group_url}
+                  <input placeholder="https://www.facebook.com/groups/..." value={newPartner.group_url}
                     onChange={e => setNewPartner({ ...newPartner, group_url: e.target.value })}
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:border-blue-500 focus:outline-none"
-                  />
+                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:border-blue-500 focus:outline-none" />
                 </div>
                 <div>
                   <label className="block text-xs text-gray-400 mb-1">Ville</label>
-                  <input
-                    placeholder="Hồ Chí Minh"
-                    value={newPartner.city}
+                  <input placeholder="Hồ Chí Minh" value={newPartner.city}
                     onChange={e => setNewPartner({ ...newPartner, city: e.target.value })}
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:border-blue-500 focus:outline-none"
-                  />
+                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:border-blue-500 focus:outline-none" />
                 </div>
                 <div>
                   <label className="block text-xs text-gray-400 mb-1">Notes (admin)</label>
-                  <input
-                    placeholder="Ex: 248K membres, admin: Hoài Hồ"
-                    value={newPartner.notes}
+                  <input placeholder="Ex: 248K membres, admin: Hoài Hồ" value={newPartner.notes}
                     onChange={e => setNewPartner({ ...newPartner, notes: e.target.value })}
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:border-blue-500 focus:outline-none"
-                  />
+                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:border-blue-500 focus:outline-none" />
                 </div>
               </div>
-              <button
-                onClick={handleCreatePartner}
-                disabled={!newPartner.group_name || !newPartner.group_url}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-500 transition disabled:opacity-50"
-              >
+              <button onClick={handleCreatePartner} disabled={!newPartner.group_name || !newPartner.group_url}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-500 transition disabled:opacity-50">
                 Créer le code partenaire
               </button>
-
-              {/* Code généré */}
               {createdCode && (
                 <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl">
                   <p className="text-emerald-400 font-bold mb-1">✅ Code partenaire créé :</p>
                   <p className="font-mono text-2xl text-white font-bold tracking-wider">{createdCode}</p>
-                  <p className="text-gray-500 text-xs mt-2">→ Accès permanent · À envoyer à l'admin du groupe</p>
+                  <p className="text-gray-500 text-xs mt-2">→ Accès 1 an · À envoyer à l'admin du groupe</p>
                 </div>
               )}
             </div>
           )}
 
-          {/* Table partenaires */}
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -405,6 +445,7 @@ export default function AdminPage() {
                   <th className="text-left p-3 font-medium">URL</th>
                   <th className="text-left p-3 font-medium">Ville</th>
                   <th className="text-center p-3 font-medium">Recherches</th>
+                  <th className="text-left p-3 font-medium">Expiration</th>
                   <th className="text-left p-3 font-medium">Notes</th>
                   <th className="text-center p-3 font-medium">Statut</th>
                   <th className="text-left p-3 font-medium">Actions</th>
@@ -412,35 +453,40 @@ export default function AdminPage() {
               </thead>
               <tbody>
                 {partners.length === 0 ? (
-                  <tr><td colSpan={8} className="p-6 text-center text-gray-500">Aucun partenaire pour l'instant — cliquez sur "+ Nouveau partenaire" pour en créer un</td></tr>
-                ) : (
-                  partners.map(p => (
-                    <tr key={p.id} className={`border-b border-gray-800/50 hover:bg-gray-800/20 transition ${!p.is_active ? 'opacity-40' : ''}`}>
-                      <td className="p-3 font-mono text-xs text-blue-400">{p.code}</td>
-                      <td className="p-3 text-white font-medium">{p.partner_group_name}</td>
-                      <td className="p-3">
-                        <a href={p.partner_group_url} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline text-xs truncate block max-w-48">
-                          {p.partner_group_url}
-                        </a>
-                      </td>
-                      <td className="p-3 text-gray-400 text-xs">{p.city || '—'}</td>
-                      <td className="p-3 text-center">
-                        <span className={`font-bold ${p.search_count > 0 ? 'text-emerald-400' : 'text-gray-600'}`}>{p.search_count || 0}</span>
-                      </td>
-                      <td className="p-3 text-gray-500 text-xs max-w-[160px] truncate">{p.notes || '—'}</td>
-                      <td className="p-3 text-center">
-                        {p.is_active
-                          ? <span className="inline-block w-2.5 h-2.5 bg-emerald-400 rounded-full"></span>
-                          : <span className="inline-block w-2.5 h-2.5 bg-red-400 rounded-full"></span>}
-                      </td>
-                      <td className="p-3">
-                        <button onClick={() => handleToggle(p.code)} className="px-3 py-1 bg-gray-800 text-gray-400 rounded-lg text-xs hover:bg-gray-700 transition border border-gray-700">
-                          {p.is_active ? 'Désactiver' : 'Activer'}
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
+                  <tr><td colSpan={9} className="p-6 text-center text-gray-500">Aucun partenaire actif</td></tr>
+                ) : partners.map(p => (
+                  <tr key={p.id} className={`border-b border-gray-800/50 hover:bg-gray-800/20 transition ${!p.is_active ? 'opacity-40' : ''}`}>
+                    <td className="p-3 font-mono text-xs text-blue-400">{p.code}</td>
+                    <td className="p-3 text-white font-medium">{p.partner_group_name}</td>
+                    <td className="p-3">
+                      <a href={p.partner_group_url} target="_blank" rel="noopener noreferrer"
+                        className="text-blue-400 hover:underline text-xs truncate block max-w-48">{p.partner_group_url}</a>
+                    </td>
+                    <td className="p-3 text-gray-400 text-xs">{p.city || '—'}</td>
+                    <td className="p-3 text-center">
+                      <span className={`font-bold ${p.search_count > 0 ? 'text-emerald-400' : 'text-gray-600'}`}>{p.search_count || 0}</span>
+                    </td>
+                    <td className="p-3 text-xs">
+                      {p.expires_at ? (
+                        <span className={isExpired(p.expires_at) ? 'text-red-400 font-bold' : 'text-gray-500'}>
+                          {formatDate(p.expires_at)}{isExpired(p.expires_at) ? ' ⚠️' : ''}
+                        </span>
+                      ) : <span className="text-gray-600">—</span>}
+                    </td>
+                    <td className="p-3 text-gray-500 text-xs max-w-[160px] truncate">{p.notes || '—'}</td>
+                    <td className="p-3 text-center">
+                      {p.is_active
+                        ? <span className="inline-block w-2.5 h-2.5 bg-emerald-400 rounded-full"></span>
+                        : <span className="inline-block w-2.5 h-2.5 bg-red-400 rounded-full"></span>}
+                    </td>
+                    <td className="p-3">
+                      <button onClick={() => handleToggle(p.code)}
+                        className="px-3 py-1 bg-gray-800 text-gray-400 rounded-lg text-xs hover:bg-gray-700 transition border border-gray-700">
+                        {p.is_active ? 'Désactiver' : 'Activer'}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
@@ -495,19 +541,22 @@ export default function AdminPage() {
                       <td className="p-3 max-w-[160px]">
                         {noteEdit.code === tester.code ? (
                           <div className="flex items-center gap-1">
-                            <input type="text" value={noteEdit.text} onChange={(e) => setNoteEdit({ ...noteEdit, text: e.target.value })} onKeyDown={(e) => e.key === 'Enter' && handleNote(tester.code)} className="flex-1 px-2 py-1 bg-gray-800 border border-blue-500 rounded text-white text-xs focus:outline-none" autoFocus />
+                            <input type="text" value={noteEdit.text} onChange={(e) => setNoteEdit({ ...noteEdit, text: e.target.value })}
+                              onKeyDown={(e) => e.key === 'Enter' && handleNote(tester.code)}
+                              className="flex-1 px-2 py-1 bg-gray-800 border border-blue-500 rounded text-white text-xs focus:outline-none" autoFocus />
                             <button onClick={() => handleNote(tester.code)} className="p-1 text-emerald-400 hover:text-emerald-300"><Check className="w-3 h-3" /></button>
                             <button onClick={() => setNoteEdit({ code: null, text: '' })} className="p-1 text-gray-500 hover:text-gray-300"><X className="w-3 h-3" /></button>
                           </div>
                         ) : (
-                          <span onClick={() => setNoteEdit({ code: tester.code, text: tester.notes || '' })} className="text-xs text-gray-400 cursor-pointer hover:text-white transition truncate block" title={tester.notes || 'Cliquer pour ajouter une note'}>
+                          <span onClick={() => setNoteEdit({ code: tester.code, text: tester.notes || '' })}
+                            className="text-xs text-gray-400 cursor-pointer hover:text-white transition truncate block" title={tester.notes || 'Cliquer pour ajouter une note'}>
                             {tester.notes || <span className="text-gray-700 italic">+ note</span>}
                           </span>
                         )}
                       </td>
                       <td className="p-3 max-w-[160px]">
                         {hasFeedback ? (
-                          <button onClick={() => setFeedbackView({ code: tester.code, text: latestFeedback })} className="flex items-center gap-1.5 text-left group" title="Voir le feedback complet">
+                          <button onClick={() => setFeedbackView({ code: tester.code, text: latestFeedback })} className="flex items-center gap-1.5 text-left group">
                             <span className="inline-block w-2 h-2 bg-purple-400 rounded-full flex-shrink-0"></span>
                             {testerFeedbacks.length > 1 && <span className="text-purple-500 text-xs font-bold">{testerFeedbacks.length}</span>}
                             <span className="text-purple-300 text-xs truncate max-w-28 group-hover:text-purple-200 transition">{latestFeedback.slice(0, 35)}…</span>
@@ -516,7 +565,9 @@ export default function AdminPage() {
                       </td>
                       <td className="p-3">
                         <div className="flex items-center gap-1">
-                          <button onClick={() => handleToggle(tester.code)} title={tester.is_active ? 'Désactiver' : 'Activer'} className="p-1.5 rounded hover:bg-gray-800 transition">{tester.is_active ? <ToggleRight className="w-4 h-4 text-emerald-400" /> : <ToggleLeft className="w-4 h-4 text-gray-500" />}</button>
+                          <button onClick={() => handleToggle(tester.code)} title={tester.is_active ? 'Désactiver' : 'Activer'} className="p-1.5 rounded hover:bg-gray-800 transition">
+                            {tester.is_active ? <ToggleRight className="w-4 h-4 text-emerald-400" /> : <ToggleLeft className="w-4 h-4 text-gray-500" />}
+                          </button>
                           <button onClick={() => handleExtend(tester.code, 180)} title="Prolonger 6 mois" className="p-1.5 rounded hover:bg-gray-800 transition"><Clock className="w-4 h-4 text-blue-400" /></button>
                           <button onClick={() => setNoteEdit({ code: tester.code, text: tester.notes || '' })} title="Note" className="p-1.5 rounded hover:bg-gray-800 transition"><MessageSquare className="w-4 h-4 text-gray-400" /></button>
                           <button onClick={() => handleReset(tester.code)} title="Reset" className="p-1.5 rounded hover:bg-gray-800 transition"><RefreshCw className="w-4 h-4 text-orange-400" /></button>
@@ -556,22 +607,20 @@ export default function AdminPage() {
                   <tr><td colSpan={4} className="p-6 text-center text-gray-500">Chargement...</td></tr>
                 ) : feedbacks.length === 0 ? (
                   <tr><td colSpan={4} className="p-6 text-center text-gray-500">Aucun feedback pour l'instant</td></tr>
-                ) : (
-                  feedbacks.map((fb) => (
-                    <tr key={fb.id} className="border-b border-gray-800/50 hover:bg-gray-800/30">
-                      <td className="p-3 font-mono text-xs text-cyan-400">{fb.beta_code}</td>
-                      <td className="p-3 text-white max-w-md"><p className="text-sm leading-relaxed">{fb.message}</p></td>
-                      <td className="p-3 text-xs">
-                        {fb.reply_email && fb.reply_email !== 'EMPTY' ? (
-                          <a href={`mailto:${fb.reply_email}`} className="text-blue-400 hover:text-blue-300 transition">✉️ {fb.reply_email}</a>
-                        ) : <span className="text-gray-600">—</span>}
-                      </td>
-                      <td className="p-3 text-gray-500 text-xs whitespace-nowrap">
-                        {new Date(fb.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                      </td>
-                    </tr>
-                  ))
-                )}
+                ) : feedbacks.map((fb) => (
+                  <tr key={fb.id} className="border-b border-gray-800/50 hover:bg-gray-800/30">
+                    <td className="p-3 font-mono text-xs text-cyan-400">{fb.beta_code}</td>
+                    <td className="p-3 text-white max-w-md"><p className="text-sm leading-relaxed">{fb.message}</p></td>
+                    <td className="p-3 text-xs">
+                      {fb.reply_email && fb.reply_email !== 'EMPTY'
+                        ? <a href={`mailto:${fb.reply_email}`} className="text-blue-400 hover:text-blue-300 transition">✉️ {fb.reply_email}</a>
+                        : <span className="text-gray-600">—</span>}
+                    </td>
+                    <td className="p-3 text-gray-500 text-xs whitespace-nowrap">
+                      {new Date(fb.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
@@ -600,24 +649,22 @@ export default function AdminPage() {
                   <tr><td colSpan={4} className="p-6 text-center text-gray-500">Chargement...</td></tr>
                 ) : savedSearches.length === 0 ? (
                   <tr><td colSpan={4} className="p-6 text-center text-gray-500">Aucune recherche sauvegardée</td></tr>
-                ) : (
-                  savedSearches.map((s) => (
-                    <tr key={s.id} className="border-b border-gray-800/50 hover:bg-gray-800/30">
-                      <td className="p-3 font-mono text-xs text-cyan-400">{s.beta_code}</td>
-                      <td className="p-3 text-white">{s.name || '—'}</td>
-                      <td className="p-3 text-gray-400 text-xs max-w-xs truncate">
-                        {s.params ? (
-                          <span title={JSON.stringify(s.params, null, 2)}>
-                            {Object.entries(s.params).filter(([, v]) => v && v !== '' && v !== 'all').map(([k, v]) => `${k}: ${v}`).join(' · ') || '—'}
-                          </span>
-                        ) : '—'}
-                      </td>
-                      <td className="p-3 text-gray-500 text-xs whitespace-nowrap">
-                        {new Date(s.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                      </td>
-                    </tr>
-                  ))
-                )}
+                ) : savedSearches.map((s) => (
+                  <tr key={s.id} className="border-b border-gray-800/50 hover:bg-gray-800/30">
+                    <td className="p-3 font-mono text-xs text-cyan-400">{s.beta_code}</td>
+                    <td className="p-3 text-white">{s.name || '—'}</td>
+                    <td className="p-3 text-gray-400 text-xs max-w-xs truncate">
+                      {s.params ? (
+                        <span title={JSON.stringify(s.params, null, 2)}>
+                          {Object.entries(s.params).filter(([, v]) => v && v !== '' && v !== 'all').map(([k, v]) => `${k}: ${v}`).join(' · ') || '—'}
+                        </span>
+                      ) : '—'}
+                    </td>
+                    <td className="p-3 text-gray-500 text-xs whitespace-nowrap">
+                      {new Date(s.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
