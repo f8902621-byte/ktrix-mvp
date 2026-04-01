@@ -21,17 +21,15 @@ export default async function handler(req, res) {
       .select('id, code_type')
       .or(`email.eq.${email},partner_group_url.eq.${group_url}`)
       .in('code_type', ['partner', 'partner_pending'])
-      .single();
+      .maybeSingle();
 
     if (existing) {
       return res.status(409).json({ error: 'already_applied' });
     }
 
-    // Générer un code temporaire pour référence interne
     const suffix = Math.random().toString(36).substring(2, 6).toUpperCase();
     const pendingCode = `PENDING-FB-${suffix}`;
 
-    // Stocker la demande avec code_type = 'partner_pending'
     const { error: insertError } = await supabase
       .from('beta_testers')
       .insert({
@@ -39,10 +37,10 @@ export default async function handler(req, res) {
         code_type: 'partner_pending',
         partner_group_name: group_name,
         partner_group_url: group_url,
-        partner_group_name: group_name,
         first_name: admin_name,
         email: email,
         city: city || null,
+        language: language || 'en',
         notes: `Membres: ${member_count}`,
         is_active: false,
         registered_at: new Date().toISOString(),
