@@ -532,19 +532,19 @@ const [zoomOpen, setZoomOpen] = useState(false);
                     </div>
                   </div>
                 ))}
-                <button onClick={() => router.push(`/beta?lang=${language}`)}
-                  className="w-full py-4 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl font-bold text-base flex items-center justify-center gap-2 hover:from-blue-500 hover:to-cyan-400 transition shadow-lg shadow-blue-500/20">
-                  {t.tryBeta} <ChevronRight className="w-5 h-5" />
-                </button>
-              </div>
-</RevealOnScroll>
+<button onClick={() => router.push(`/beta?lang=${language}`)} className="w-full py-4 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl font-bold text-base flex items-center justify-center gap-2 hover:from-blue-500 hover:to-cyan-400 transition shadow-lg shadow-blue-500/20">
+            {t.tryBeta} <ChevronRight className="w-5 h-5" />
+          </button>
         </div>
-      </section>
+      </RevealOnScroll>
+    </div>
+  </section>
 
-      {zoomOpen && (
-        <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4" onClick={() => setZoomOpen(false)}>
-          <img src="/ai-report-preview.png" alt="K Trix AI Report" className="max-w-5xl w-full rounded-2xl shadow-2xl border border-gray-700" />
-        </div>
+  {zoomOpen && (
+    <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4" onClick={() => setZoomOpen(false)}>
+      <img src="/ai-report-preview.png" alt="K Trix AI Report" className="max-w-5xl w-full rounded-2xl shadow-2xl border border-gray-700" />
+    </div>
+  )}
       )}
 
       {/* FAQ */}
