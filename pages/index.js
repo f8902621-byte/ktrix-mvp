@@ -540,10 +540,9 @@ const [zoomOpen, setZoomOpen] = useState(false);
             </div>
 {zoomOpen && (
 <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 cursor-zoom-out" onClick={() => setZoomOpen(false)}>
-      <button onClick={() => setZoomOpen(false)}
-        className="absolute -top-10 right-0 text-white/70 hover:text-white text-sm">
-        ✕ Close
-      </button>
+<button onClick={() => setZoomOpen(false)} className="absolute -top-10 right-0 text-white/70 hover:text-white text-sm">
+  ✕ Close
+</button>
       <img src="/ai-report-preview.png" alt="K Trix AI Report"
         className="w-full rounded-2xl shadow-2xl border border-gray-700" />
     </div>
