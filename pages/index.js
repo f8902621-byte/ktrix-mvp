@@ -539,18 +539,10 @@ const [zoomOpen, setZoomOpen] = useState(false);
               </div>
             </div>
 {zoomOpen && (
-  <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 cursor-zoom-out" onClick={() => setZoomOpen(false)}>
-    <div className="relative max-w-5xl w-full" onClick={e => e.stopPropagation()}>
-      <button onClick={() => setZoomOpen(false)} className="absolute -top-10 right-0 text-white/70 hover:text-white text-sm">✕ Close</button>
-      <img src="/ai-report-preview.png" alt="K Trix AI Report" className="w-full rounded-2xl shadow-2xl border border-gray-700" />
-    </div>
+  <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4" onClick={() => setZoomOpen(false)}>
+    <img src="/ai-report-preview.png" alt="K Trix AI Report" className="max-w-5xl w-full rounded-2xl shadow-2xl border border-gray-700" onClick={() => setZoomOpen(false)} />
   </div>
 )}
-          </RevealOnScroll>
-        </div>
-      </section>
-      {/* Roadmap */}
-      <section className="py-16 sm:py-20 px-4 sm:px-6 bg-gray-900/50">
         <div className="max-w-6xl mx-auto">
           <RevealOnScroll>
             <div className="text-center mb-12">
