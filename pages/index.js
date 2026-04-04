@@ -547,34 +547,8 @@ const [zoomOpen, setZoomOpen] = useState(false);
         </div>
       )}
 
-      {/* Roadmap */}
-      <section className="py-16 sm:py-20 px-4 sm:px-6 bg-gray-900/50">
-        <div className="max-w-6xl mx-auto">
-          <RevealOnScroll>
+      {/* FAQ */}
       <section id="faq" className="py-16 sm:py-20 px-4 sm:px-6">
-        <div className="max-w-3xl mx-auto">
-          <RevealOnScroll>
-            <div className="flex items-center gap-2 text-blue-400 text-xs font-semibold uppercase tracking-wider mb-4">
-              <div className="w-6 h-0.5 bg-blue-400"></div>FAQ
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-8">{t.faqTitle}</h2>
-            <div className="space-y-3">
-              {t.faqs.map((item, i) => (<FaqItem key={i} question={item.q} answer={item.a} />))}
-            </div>
-          </RevealOnScroll>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="py-16 sm:py-20 px-4 sm:px-6 bg-gray-900/50">
-        <div className="max-w-2xl mx-auto">
-          <RevealOnScroll>
-            <div className="bg-gradient-to-br from-blue-600 to-cyan-500 rounded-3xl p-8 sm:p-12 text-center relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2"></div>
-              <div className="relative">
-                <div className="inline-flex items-center gap-2 bg-white/20 text-white px-4 py-2 rounded-full text-sm font-medium mb-6 backdrop-blur-sm">
-                  <Users className="w-4 h-4" />Beta Program
-                </div>
                 <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">{t.ctaTitle}</h2>
                 <p className="text-blue-100 text-base sm:text-lg mb-8">{t.ctaDesc}</p>
                 <button onClick={() => router.push(`/beta?lang=${language}`)}
