@@ -537,43 +537,20 @@ const [zoomOpen, setZoomOpen] = useState(false);
                   {t.tryBeta} <ChevronRight className="w-5 h-5" />
                 </button>
               </div>
-            </div>
-{zoomOpen && (
-  <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4" onClick={() => setZoomOpen(false)}>
-    <img src="/ai-report-preview.png" alt="K Trix AI Report" className="max-w-5xl w-full rounded-2xl shadow-2xl border border-gray-700" onClick={() => setZoomOpen(false)} />
-  </div>
-)}
-        <div className="max-w-6xl mx-auto">
-          <RevealOnScroll>
-            <div className="text-center mb-12">
-              <div className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 text-blue-400 px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider mb-4">
-                🚀 {t.roadmapTitle}
-              </div>
-              <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">{t.roadmapDesc}</h2>
-            </div>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {[
-                { icon: '📱', title: t.roadmapFacebook, desc: t.roadmapFacebookDesc },
-                { icon: '🔔', title: t.roadmapAlerts, desc: t.roadmapAlertsDesc },
-                { icon: '🇨🇳', title: t.roadmapChinese, desc: t.roadmapChineseDesc },
-                { icon: '🇰🇷', title: t.roadmapKorean, desc: t.roadmapKoreanDesc },
-                { icon: '📈', title: t.roadmapHistory, desc: t.roadmapHistoryDesc },
-                { icon: '✨', title: t.roadmapMore, desc: '' },
-              ].map((item, i) => (
-                <div key={i} className="bg-gray-900 border border-gray-800 rounded-2xl p-5 sm:p-6 hover:border-gray-700 transition relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 w-20 h-20 bg-white/2 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-150 transition-transform duration-500"></div>
-                  <span className="text-3xl mb-3 block">{item.icon}</span>
-                  <h4 className="font-bold text-white mb-2">{item.title}</h4>
-                  <p className="text-gray-500 text-sm leading-relaxed">{item.desc}</p>
-                  <span className="inline-block mt-3 text-xs bg-gray-800 text-gray-500 px-2 py-1 rounded-full border border-gray-700">{t.sourceComingSoon}</span>
-                </div>
-              ))}
-            </div>
-          </RevealOnScroll>
+</RevealOnScroll>
         </div>
       </section>
 
-      {/* FAQ */}
+      {zoomOpen && (
+        <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4" onClick={() => setZoomOpen(false)}>
+          <img src="/ai-report-preview.png" alt="K Trix AI Report" className="max-w-5xl w-full rounded-2xl shadow-2xl border border-gray-700" />
+        </div>
+      )}
+
+      {/* Roadmap */}
+      <section className="py-16 sm:py-20 px-4 sm:px-6 bg-gray-900/50">
+        <div className="max-w-6xl mx-auto">
+          <RevealOnScroll>
       <section id="faq" className="py-16 sm:py-20 px-4 sm:px-6">
         <div className="max-w-3xl mx-auto">
           <RevealOnScroll>
