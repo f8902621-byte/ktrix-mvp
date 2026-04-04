@@ -538,7 +538,7 @@ const [zoomOpen, setZoomOpen] = useState(false);
                 </button>
               </div>
             </div>
-                    {zoomOpen && (
+{zoomOpen && (
   <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 cursor-zoom-out"
     onClick={() => setZoomOpen(false)}>
     <div className="relative max-w-5xl w-full" onClick={e => e.stopPropagation()}>
