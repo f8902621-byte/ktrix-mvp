@@ -56,7 +56,7 @@ export default function Landing() {
     }, 16);
     return () => clearInterval(timer);
   }, [stats]);
-
+const [zoomOpen, setZoomOpen] = useState(false);
   useEffect(() => {
     fetch('/api/monitoring').then(r => r.json()).then(d => setStats(d.stats)).catch(() => {});
   }, []);
@@ -501,14 +501,14 @@ export default function Landing() {
               {/* Screenshot */}
               <div className="relative">
                 <div className="absolute -inset-1 bg-gradient-to-r from-blue-600/20 to-cyan-500/20 rounded-2xl blur-sm"></div>
-                <div className="relative bg-gray-900 rounded-2xl border border-gray-700 overflow-hidden shadow-2xl">
+                <div className="relative cursor-zoom-in" onClick={() => setZoomOpen(true)}>
                   <div className="flex items-center gap-2 px-4 py-3 bg-gray-800 border-b border-gray-700">
                     <div className="flex gap-1.5">
                       <div className="w-3 h-3 rounded-full bg-red-500/60"></div>
                       <div className="w-3 h-3 rounded-full bg-yellow-500/60"></div>
                       <div className="w-3 h-3 rounded-full bg-green-500/60"></div>
                     </div>
-                    <span className="text-gray-500 text-xs ml-2">K Trix — AI Report</span>
+                    <span className="text-gray-500 text-xs ml-2">K Trix — AI Report</span><span className="ml-auto text-gray-600 text-xs">🔍 Click to zoom</span>
                   </div>
                   <img src="/ai-report-preview.png" alt="K Trix AI Report — Negotiation Score, Price vs Market, Property Analysis"
                     className="w-full object-contain" style={{ maxHeight: 580 }} />
@@ -538,6 +538,19 @@ export default function Landing() {
                 </button>
               </div>
             </div>
+                    {zoomOpen && (
+  <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 cursor-zoom-out"
+    onClick={() => setZoomOpen(false)}>
+    <div className="relative max-w-5xl w-full" onClick={e => e.stopPropagation()}>
+      <button onClick={() => setZoomOpen(false)}
+        className="absolute -top-10 right-0 text-white/70 hover:text-white text-sm">
+        ✕ Close
+      </button>
+      <img src="/ai-report-preview.png" alt="K Trix AI Report"
+        className="w-full rounded-2xl shadow-2xl border border-gray-700" />
+    </div>
+  </div>
+)}
           </RevealOnScroll>
         </div>
       </section>
