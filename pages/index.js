@@ -43,6 +43,7 @@ export default function Landing() {
   const router = useRouter();
   const [stats, setStats] = useState(null);
   const [animatedCount, setAnimatedCount] = useState(0);
+  const [zoomOpen, setZoomOpen] = useState(false);
 
   useEffect(() => {
     const target = stats?.total_listings || 21147;
@@ -56,7 +57,7 @@ export default function Landing() {
     }, 16);
     return () => clearInterval(timer);
   }, [stats]);
-const [zoomOpen, setZoomOpen] = useState(false);
+
   useEffect(() => {
     fetch('/api/monitoring').then(r => r.json()).then(d => setStats(d.stats)).catch(() => {});
   }, []);
@@ -272,8 +273,7 @@ const [zoomOpen, setZoomOpen] = useState(false);
             <span className="text-xs bg-emerald-500/20 text-emerald-400 px-2.5 py-0.5 rounded-full font-medium border border-emerald-500/30">BETA</span>
           </div>
           <div className="flex items-center gap-2 sm:gap-4">
-            <select value={language} onChange={(e) => setLanguage(e.target.value)}
-              className="px-2 sm:px-3 py-2 text-sm border border-gray-700 rounded-lg bg-gray-900 text-gray-300 hover:border-gray-600 transition cursor-pointer focus:outline-none focus:border-blue-500">
+            <select value={language} onChange={(e) => setLanguage(e.target.value)} className="px-2 sm:px-3 py-2 text-sm border border-gray-700 rounded-lg bg-gray-900 text-gray-300 hover:border-gray-600 transition cursor-pointer focus:outline-none focus:border-blue-500">
               <option value="vn">🇻🇳 VN</option>
               <option value="en">🇬🇧 EN</option>
               <option value="fr">🇫🇷 FR</option>
@@ -281,8 +281,7 @@ const [zoomOpen, setZoomOpen] = useState(false);
             <button onClick={() => router.push(`/login?lang=${language}`)} className="hidden sm:flex items-center gap-2 px-4 py-2 text-sm text-gray-400 hover:text-white border border-gray-700 rounded-lg hover:border-gray-600 transition">
               <LogIn className="w-4 h-4" />{t.login}
             </button>
-            <button onClick={() => router.push(`/beta?lang=${language}`)}
-              className="px-4 sm:px-5 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-lg font-medium hover:from-blue-500 hover:to-cyan-400 transition shadow-lg shadow-blue-500/20 flex items-center gap-2 text-sm">
+            <button onClick={() => router.push(`/beta?lang=${language}`)} className="px-4 sm:px-5 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-lg font-medium hover:from-blue-500 hover:to-cyan-400 transition shadow-lg shadow-blue-500/20 flex items-center gap-2 text-sm">
               <Search className="w-4 h-4" />
               <span className="hidden sm:inline">{t.tryBeta}</span>
               <span className="sm:hidden">Go</span>
@@ -291,7 +290,7 @@ const [zoomOpen, setZoomOpen] = useState(false);
         </div>
       </header>
 
-     <div style={{paddingTop: 70}}></div>
+      <div style={{paddingTop: 70}}></div>
 
       {/* Hero */}
       <section className="relative pt-28 sm:pt-32 pb-20 px-4 sm:px-6 overflow-hidden">
@@ -311,8 +310,7 @@ const [zoomOpen, setZoomOpen] = useState(false);
               </h1>
               <p className="text-base sm:text-lg text-gray-400 mb-8 leading-relaxed">{t.heroDesc}</p>
               <div className="flex flex-wrap gap-3 sm:gap-4">
-                <button onClick={() => router.push(`/beta?lang=${language}`)}
-                  className="px-6 sm:px-8 py-3.5 sm:py-4 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl font-semibold hover:from-blue-500 hover:to-cyan-400 transition shadow-xl shadow-blue-500/25 flex items-center gap-2 text-base sm:text-lg">
+                <button onClick={() => router.push(`/beta?lang=${language}`)} className="px-6 sm:px-8 py-3.5 sm:py-4 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl font-semibold hover:from-blue-500 hover:to-cyan-400 transition shadow-xl shadow-blue-500/25 flex items-center gap-2 text-base sm:text-lg">
                   {t.tryBeta}<ChevronRight className="w-5 h-5" />
                 </button>
                 <a href="#what-is-ktrix" className="px-6 sm:px-8 py-3.5 sm:py-4 bg-gray-800 text-gray-300 rounded-xl font-semibold hover:bg-gray-700 transition border border-gray-700 flex items-center gap-2">
@@ -488,7 +486,7 @@ const [zoomOpen, setZoomOpen] = useState(false);
         </div>
       </section>
 
-      {/* ── AI REPORT ── */}
+      {/* AI REPORT */}
       <section id="ai-report" className="py-16 sm:py-20 px-4 sm:px-6 bg-gray-900/30">
         <div className="max-w-6xl mx-auto">
           <RevealOnScroll>
@@ -498,23 +496,21 @@ const [zoomOpen, setZoomOpen] = useState(false);
             <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">{t.aiReportTitle}</h2>
             <p className="text-gray-400 text-base sm:text-lg mb-10">{t.aiReportDesc}</p>
             <div className="grid lg:grid-cols-2 gap-8 items-start">
-              {/* Screenshot */}
               <div className="relative">
                 <div className="absolute -inset-1 bg-gradient-to-r from-blue-600/20 to-cyan-500/20 rounded-2xl blur-sm"></div>
-                <div className="relative cursor-zoom-in" onClick={() => setZoomOpen(true)}>
+                <div className="relative bg-gray-900 rounded-2xl border border-gray-700 overflow-hidden shadow-2xl cursor-zoom-in" onClick={() => setZoomOpen(true)}>
                   <div className="flex items-center gap-2 px-4 py-3 bg-gray-800 border-b border-gray-700">
                     <div className="flex gap-1.5">
                       <div className="w-3 h-3 rounded-full bg-red-500/60"></div>
                       <div className="w-3 h-3 rounded-full bg-yellow-500/60"></div>
                       <div className="w-3 h-3 rounded-full bg-green-500/60"></div>
                     </div>
-                    <span className="text-gray-500 text-xs ml-2">K Trix — AI Report</span><span className="ml-auto text-gray-600 text-xs">🔍 Click to zoom</span>
+                    <span className="text-gray-500 text-xs ml-2">K Trix — AI Report</span>
+                    <span className="ml-auto text-gray-600 text-xs">🔍 Click to zoom</span>
                   </div>
-                  <img src="/ai-report-preview.png" alt="K Trix AI Report — Negotiation Score, Price vs Market, Property Analysis"
-                    className="w-full object-contain" style={{ maxHeight: 580 }} />
+                  <img src="/ai-report-preview.png" alt="K Trix AI Report — Negotiation Score, Price vs Market, Property Analysis" className="w-full object-contain" style={{ maxHeight: 580 }} />
                 </div>
               </div>
-              {/* Explications */}
               <div className="space-y-5">
                 {[
                   { icon: '🎯', color: 'border-cyan-500/30 bg-cyan-500/5', iconBg: 'bg-cyan-500/10', title: t.aiScoreTitle, desc: t.aiScoreDesc, badge: t.aiScoreBadge, badgeColor: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20' },
@@ -532,27 +528,81 @@ const [zoomOpen, setZoomOpen] = useState(false);
                     </div>
                   </div>
                 ))}
-<button onClick={() => router.push(`/beta?lang=${language}`)} className="w-full py-4 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl font-bold text-base flex items-center justify-center gap-2 hover:from-blue-500 hover:to-cyan-400 transition shadow-lg shadow-blue-500/20">
-            {t.tryBeta} <ChevronRight className="w-5 h-5" />
-          </button>
+                <button onClick={() => router.push(`/beta?lang=${language}`)} className="w-full py-4 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl font-bold text-base flex items-center justify-center gap-2 hover:from-blue-500 hover:to-cyan-400 transition shadow-lg shadow-blue-500/20">
+                  {t.tryBeta} <ChevronRight className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          </RevealOnScroll>
         </div>
-      </RevealOnScroll>
-    </div>
-  </section>
+      </section>
 
-  {zoomOpen && (
-    <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4" onClick={() => setZoomOpen(false)}>
-      <img src="/ai-report-preview.png" alt="K Trix AI Report" className="max-w-5xl w-full rounded-2xl shadow-2xl border border-gray-700" />
-    </div>
-  )}
+      {zoomOpen && (
+        <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4" onClick={() => setZoomOpen(false)}>
+          <img src="/ai-report-preview.png" alt="K Trix AI Report" className="max-w-5xl w-full rounded-2xl shadow-2xl border border-gray-700" />
+        </div>
       )}
+
+      {/* Roadmap */}
+      <section className="py-16 sm:py-20 px-4 sm:px-6 bg-gray-900/50">
+        <div className="max-w-6xl mx-auto">
+          <RevealOnScroll>
+            <div className="text-center mb-12">
+              <div className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 text-blue-400 px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider mb-4">
+                🚀 {t.roadmapTitle}
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">{t.roadmapDesc}</h2>
+            </div>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[
+                { icon: '📱', title: t.roadmapFacebook, desc: t.roadmapFacebookDesc },
+                { icon: '🔔', title: t.roadmapAlerts, desc: t.roadmapAlertsDesc },
+                { icon: '🇨🇳', title: t.roadmapChinese, desc: t.roadmapChineseDesc },
+                { icon: '🇰🇷', title: t.roadmapKorean, desc: t.roadmapKoreanDesc },
+                { icon: '📈', title: t.roadmapHistory, desc: t.roadmapHistoryDesc },
+                { icon: '✨', title: t.roadmapMore, desc: '' },
+              ].map((item, i) => (
+                <div key={i} className="bg-gray-900 border border-gray-800 rounded-2xl p-5 sm:p-6 hover:border-gray-700 transition relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 w-20 h-20 bg-white/2 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-150 transition-transform duration-500"></div>
+                  <span className="text-3xl mb-3 block">{item.icon}</span>
+                  <h4 className="font-bold text-white mb-2">{item.title}</h4>
+                  <p className="text-gray-500 text-sm leading-relaxed">{item.desc}</p>
+                  <span className="inline-block mt-3 text-xs bg-gray-800 text-gray-500 px-2 py-1 rounded-full border border-gray-700">{t.sourceComingSoon}</span>
+                </div>
+              ))}
+            </div>
+          </RevealOnScroll>
+        </div>
+      </section>
 
       {/* FAQ */}
       <section id="faq" className="py-16 sm:py-20 px-4 sm:px-6">
+        <div className="max-w-3xl mx-auto">
+          <RevealOnScroll>
+            <div className="flex items-center gap-2 text-blue-400 text-xs font-semibold uppercase tracking-wider mb-4">
+              <div className="w-6 h-0.5 bg-blue-400"></div>FAQ
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-8">{t.faqTitle}</h2>
+            <div className="space-y-3">
+              {t.faqs.map((item, i) => (<FaqItem key={i} question={item.q} answer={item.a} />))}
+            </div>
+          </RevealOnScroll>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="py-16 sm:py-20 px-4 sm:px-6 bg-gray-900/50">
+        <div className="max-w-2xl mx-auto">
+          <RevealOnScroll>
+            <div className="bg-gradient-to-br from-blue-600 to-cyan-500 rounded-3xl p-8 sm:p-12 text-center relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+              <div className="relative">
+                <div className="inline-flex items-center gap-2 bg-white/20 text-white px-4 py-2 rounded-full text-sm font-medium mb-6 backdrop-blur-sm">
+                  <Users className="w-4 h-4" />Beta Program
+                </div>
                 <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">{t.ctaTitle}</h2>
                 <p className="text-blue-100 text-base sm:text-lg mb-8">{t.ctaDesc}</p>
-                <button onClick={() => router.push(`/beta?lang=${language}`)}
-                  className="px-10 py-4 bg-white text-blue-600 rounded-xl font-bold hover:bg-blue-50 transition shadow-lg text-lg mb-6">
+                <button onClick={() => router.push(`/beta?lang=${language}`)} className="px-10 py-4 bg-white text-blue-600 rounded-xl font-bold hover:bg-blue-50 transition shadow-lg text-lg mb-6">
                   {t.ctaButton} →
                 </button>
                 <div className="flex items-center justify-center gap-2 text-blue-100">
