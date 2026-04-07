@@ -367,7 +367,9 @@ export default function PartnerDetail() {
             <div className="text-center py-8 text-gray-500">
               <Image className="w-10 h-10 mx-auto mb-3 opacity-30" />
               <p>Aucune bannière uploadée</p>
-              <p className="text-xs mt-1">Le partenaire peut uploader via <span className="text-blue-400">/banner-upload</span></p>
+              <a href={`/banner-upload`} target="_blank" className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-500 transition">
+  Uploader une bannière →
+</a>
             </div>
           )}
         </div>
