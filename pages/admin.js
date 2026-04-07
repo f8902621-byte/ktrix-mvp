@@ -487,7 +487,7 @@ const handleDeletePartner = async (code) => {
                     </td>
 <td className="p-3">
                       <div className="flex gap-1">
-                        <button onClick={() => handleToggle(p.code)} className="px-3 py-1 bg-gray-800 text-gray-400 rounded-lg text-xs hover:bg-gray-700 transition border border-gray-700">{p.is_active ? 'Désactiver' : 'Activer'}</button>
+                        <button onClick={() => router.push(`/admin/partner/${p.code}`)} className="px-3 py-1 bg-blue-600 text-white rounded-lg text-xs hover:bg-blue-500 transition">Voir fiche →</button>
                         <button onClick={() => handleDeletePartner(p.code)} className="px-3 py-1 bg-red-900/50 text-red-400 rounded-lg text-xs hover:bg-red-900 transition border border-red-700">🗑️</button>
                       </div>
                     </td>
