@@ -84,6 +84,38 @@ export default async function handler(req, res) {
       return res.status(200).json({ success: true });
     }
 if (action === 'delete_partner') {
+  if (action === 'get_partner_banner') {
+  const { data, error } = await supabase
+    .from('ad_banners')
+    .select('*')
+    .eq('partner_code', code)
+    .single();
+  if (error) return res.status(200).json({ banner: null });
+  return res.status(200).json({ banner: data });
+}
+
+if (action === 'delete_banner') {
+  await supabase.from('ad_banners').delete().eq('partner_code', code);
+  return res.status(200).json({ success: true });
+}
+
+if (action === 'update_fb_posts') {
+  const { error } = await supabase
+    .from('beta_testers')
+    .update({ fb_posts_count: actionData?.fb_posts_count || 0 })
+    .eq('code', code);
+  if (error) throw error;
+  return res.status(200).json({ success: true });
+}
+
+if (action === 'convert_permanent') {
+  const { error } = await supabase
+    .from('beta_testers')
+    .update({ expires_at: null })
+    .eq('code', code);
+  if (error) throw error;
+  return res.status(200).json({ success: true });
+}
       await supabase.from('beta_testers').delete().eq('code', code);
       await supabase.from('ad_banners').delete().eq('partner_code', code);
       return res.status(200).json({ success: true });
