@@ -49,7 +49,7 @@ export default function SearchPage() {
         sessionStorage.setItem('ktrix_beta_code', localStorage.getItem('ktrix_beta_code'));
       }
       const betaCode = sessionStorage.getItem('ktrix_beta_code');
-      if (!betaCode) { router.push('/beta'); return; }
+      if (!betaCode) { setAuthReady(true); return; }
       try {
         const res = await fetch('/api/verify-beta', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: betaCode }) });
         const data = await res.json();
@@ -471,6 +471,27 @@ const handleSearch = async () => {
   };
 
   if (!authReady) { return <div className="min-h-screen bg-gray-950 flex items-center justify-center"><Loader className="w-8 h-8 animate-spin text-blue-400" /></div>; }
+
+if (typeof window !== 'undefined' && !sessionStorage.getItem('ktrix_beta_code')) {
+  return (
+    <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
+      <div className="text-center max-w-lg">
+        <img src="/Ktrixlogo.png" alt="K Trix" className="w-24 h-24 object-contain mx-auto mb-6" />
+        <h1 className="text-3xl font-bold text-white mb-4">K Trix — AI Real Estate Search</h1>
+        <p className="text-gray-400 mb-8 text-lg">Trouvez les meilleures opportunités immobilières au Vietnam grâce à l'IA.</p>
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <button onClick={() => router.push('/beta')} className="px-8 py-4 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl font-bold text-lg hover:from-blue-500 hover:to-cyan-400 transition shadow-xl shadow-blue-500/25">
+            Accéder à la Beta →
+          </button>
+          <button onClick={() => router.push('/')} className="px-8 py-4 bg-gray-800 text-gray-300 rounded-xl font-bold text-lg hover:bg-gray-700 transition border border-gray-700">
+            En savoir plus
+          </button>
+        </div>
+        <p className="text-gray-600 text-sm mt-6">Accès sur invitation uniquement · Beta gratuite</p>
+      </div>
+    </div>
+  );
+}
 
   return (
     <div className="min-h-screen bg-gray-950">
