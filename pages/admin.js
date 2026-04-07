@@ -474,24 +474,23 @@ const handleDeletePartner = async (code) => {
                     <td className="p-3 text-center">
                       <span className={`font-bold ${p.search_count > 0 ? 'text-emerald-400' : 'text-gray-600'}`}>{p.search_count || 0}</span>
                     </td>
-                    <td className="p-3 text-xs">
+<td className="p-3 text-xs">
                       {p.expires_at ? (
                         <span className={isExpired(p.expires_at) ? 'text-red-400 font-bold' : 'text-gray-500'}>
                           {formatDate(p.expires_at)}{isExpired(p.expires_at) ? ' ⚠️' : ''}
                         </span>
-<td className="p-3">
-                      <div className="flex gap-1">
-                        <button onClick={() => handleToggle(p.code)} className="px-3 py-1 bg-gray-800 text-gray-400 rounded-lg text-xs hover:bg-gray-700 transition border border-gray-700">
-                          {p.is_active ? 'Désactiver' : 'Activer'}
-                        </button>
-                        <button onClick={() => handleDeletePartner(p.code)} className="px-3 py-1 bg-red-900/50 text-red-400 rounded-lg text-xs hover:bg-red-900 transition border border-red-700">
-                          🗑️
-                        </button>
-                      </div>
+                      ) : <span className="text-gray-600">—</span>}
                     </td>
-                        : <span className="inline-block w-2.5 h-2.5 bg-red-400 rounded-full"></span>}
+                    <td className="p-3 text-gray-500 text-xs max-w-[160px] truncate">{p.notes || '—'}</td>
+                    <td className="p-3 text-center">
+                      {p.is_active ? <span className="inline-block w-2.5 h-2.5 bg-emerald-400 rounded-full"></span> : <span className="inline-block w-2.5 h-2.5 bg-red-400 rounded-full"></span>}
                     </td>
                     <td className="p-3">
+                      <div className="flex gap-1">
+                        <button onClick={() => handleToggle(p.code)} className="px-3 py-1 bg-gray-800 text-gray-400 rounded-lg text-xs hover:bg-gray-700 transition border border-gray-700">{p.is_active ? 'Désactiver' : 'Activer'}</button>
+                        <button onClick={() => handleDeletePartner(p.code)} className="px-3 py-1 bg-red-900/50 text-red-400 rounded-lg text-xs hover:bg-red-900 transition border border-red-700">🗑️</button>
+                      </div>
+                    </td>
                       <button onClick={() => handleToggle(p.code)}
                         className="px-3 py-1 bg-gray-800 text-gray-400 rounded-lg text-xs hover:bg-gray-700 transition border border-gray-700">
                         {p.is_active ? 'Désactiver' : 'Activer'}
