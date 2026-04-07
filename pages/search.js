@@ -477,17 +477,19 @@ if (typeof window !== 'undefined' && !sessionStorage.getItem('ktrix_beta_code'))
     <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
       <div className="text-center max-w-lg">
         <img src="/Ktrixlogo.png" alt="K Trix" className="w-24 h-24 object-contain mx-auto mb-6" />
-        <h1 className="text-3xl font-bold text-white mb-4">K Trix — AI Real Estate Search</h1>
-        <p className="text-gray-400 mb-8 text-lg">Trouvez les meilleures opportunités immobilières au Vietnam grâce à l'IA.</p>
+<h1 className="text-3xl font-bold text-white mb-4">K Trix — AI Real Estate Search</h1>
+<p className="text-gray-400 mb-8 text-lg">
+  {language === 'vn' ? 'Tìm kiếm bất động sản thông minh tại Việt Nam với AI.' : language === 'fr' ? "Trouvez les meilleures opportunités immobilières au Vietnam grâce à l'IA." : 'Find the best real estate opportunities in Vietnam with AI.'}
+</p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <button onClick={() => router.push('/beta')} className="px-8 py-4 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl font-bold text-lg hover:from-blue-500 hover:to-cyan-400 transition shadow-xl shadow-blue-500/25">
-            Accéder à la Beta →
-          </button>
-          <button onClick={() => router.push('/')} className="px-8 py-4 bg-gray-800 text-gray-300 rounded-xl font-bold text-lg hover:bg-gray-700 transition border border-gray-700">
-            En savoir plus
-          </button>
+         <button onClick={() => router.push('/beta')} className="px-8 py-4 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl font-bold text-lg hover:from-blue-500 hover:to-cyan-400 transition shadow-xl shadow-blue-500/25">
+                  {language === 'vn' ? 'Truy cập Beta →' : language === 'fr' ? 'Accéder à la Beta →' : 'Access Beta →'}
+                </button>
+                <button onClick={() => router.push('/')} className="px-8 py-4 bg-gray-800 text-gray-300 rounded-xl font-bold text-lg hover:bg-gray-700 transition border border-gray-700">
+                  {language === 'vn' ? 'Tìm hiểu thêm' : language === 'fr' ? 'En savoir plus' : 'Learn more'}
+                </button>
         </div>
-        <p className="text-gray-600 text-sm mt-6">Accès sur invitation uniquement · Beta gratuite</p>
+       <p className="text-gray-600 text-sm mt-6">{language === 'vn' ? 'Chỉ dành cho người được mời · Beta miễn phí' : language === 'fr' ? 'Accès sur invitation uniquement · Beta gratuite' : 'Invitation only · Free Beta'}</p>
       </div>
     </div>
   );
