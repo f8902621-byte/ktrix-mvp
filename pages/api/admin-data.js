@@ -83,7 +83,11 @@ export default async function handler(req, res) {
       if (error) throw error;
       return res.status(200).json({ success: true });
     }
-
+if (action === 'delete_partner') {
+      await supabase.from('beta_testers').delete().eq('code', code);
+      await supabase.from('ad_banners').delete().eq('partner_code', code);
+      return res.status(200).json({ success: true });
+    }
     if (action === 'list_partner_listings') {
       const { partner_code } = actionData || {};
       const query = supabase
