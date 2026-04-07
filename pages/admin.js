@@ -1,3 +1,4 @@
+import { useRouter } from 'next/router';
 import * as XLSX from 'xlsx';
 import { useState, useEffect } from 'react';
 import { Lock, RefreshCw, ToggleLeft, ToggleRight, Clock, MessageSquare, Shield, AlertCircle, Check, X, Facebook, Loader } from 'lucide-react';
@@ -19,6 +20,7 @@ export default function AdminPage() {
   const [newPartner, setNewPartner] = useState({ group_name: '', group_url: '', city: '', notes: '' });
   const [createdCode, setCreatedCode] = useState('');
   const [pendingPartners, setPendingPartners] = useState([]);
+  const router = useRouter();
   const [approvingCode, setApprovingCode] = useState(null);
 
   useEffect(() => {
