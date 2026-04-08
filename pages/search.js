@@ -476,7 +476,7 @@ if (typeof window !== 'undefined' && !sessionStorage.getItem('ktrix_beta_code'))
   return (
     <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
       <div className="text-center max-w-lg">
-        <img src="/Ktrixlogo.png" alt="K Trix" className="w-24 h-24 object-contain mx-auto mb-6" />
+        <img src="https://raw.githubusercontent.com/f8902621-byte/traxhome-mvp/main/Ktrixlogo.png" alt="K Trix" className="w-24 h-24 object-contain mx-auto mb-6" />
 <h1 className="text-3xl font-bold text-white mb-4">K Trix — AI Real Estate Search</h1>
 <p className="text-gray-400 mb-8 text-lg">
   {language === 'vn' ? 'Tìm kiếm bất động sản thông minh tại Việt Nam với AI.' : language === 'fr' ? "Trouvez les meilleures opportunités immobilières au Vietnam grâce à l'IA." : 'Find the best real estate opportunities in Vietnam with AI.'}
