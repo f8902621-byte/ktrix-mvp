@@ -322,8 +322,7 @@ export default function Landing() {
               {[
                 { icon: <BarChart3 className="w-6 h-6 text-cyan-400" />, value: '2', label: t.statSources, bg: 'bg-cyan-500/10', border: 'border-cyan-500/20' },
                 { icon: <TrendingUp className="w-6 h-6 text-orange-400" />, value: animatedCount > 0 ? animatedCount.toLocaleString('fr-FR') : '21,000+', label: t.statListings, bg: 'bg-orange-500/10', border: 'border-orange-500/20' },
-                { icon: <Shield className="w-6 h-6 text-blue-400" />, value: '2+', label: t.statSources, bg: 'bg-blue-500/10', border: 'border-blue-500/20', gradient: true },
-                { icon: <Globe className="w-6 h-6 text-emerald-400" />, value: '12+', label: t.statCities, bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
+                               { icon: <Globe className="w-6 h-6 text-emerald-400" />, value: '12+', label: t.statCities, bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
               ].map((stat, i) => (
                 <div key={i} className={`bg-gray-900/80 rounded-2xl p-5 sm:p-6 border ${stat.border} backdrop-blur-sm hover:bg-gray-800/80 transition`}>
                   <div className={`w-11 h-11 ${stat.bg} rounded-xl flex items-center justify-center mb-4`}>{stat.icon}</div>
