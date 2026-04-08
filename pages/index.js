@@ -65,7 +65,7 @@ export default function Landing() {
   const T = {
     vn: {
       tagline: 'Nền tảng Tìm kiếm BĐS Thông minh', login: 'Đăng nhập',
-      heroTitle: 'Tìm kiếm BĐS trên', heroHighlight: '65% thị trường', heroSubtitle: 'Việt Nam',
+      heroTitle: 'Tìm kiếm BĐS trên', heroHighlight: 'Chotot + Alonhadat', heroSubtitle: '+ Facebook',
       heroDesc: 'K Trix tổng hợp dữ liệu từ nhiều nguồn uy tín, giúp môi giới tiết kiệm thời gian và không bỏ lỡ cơ hội.',
       tryBeta: 'Dùng thử miễn phí', learnMore: 'Tìm hiểu thêm',
       statSources: 'Nguồn dữ liệu', statListings: 'Tin đăng trong cơ sở dữ liệu', statCoverage: 'Độ phủ thị trường', statCities: 'Tỉnh thành',
@@ -127,7 +127,7 @@ export default function Landing() {
     },
     en: {
       tagline: 'Smart Real Estate Search Platform', login: 'Login',
-      heroTitle: 'Search properties across', heroHighlight: '65% of the market', heroSubtitle: 'in Vietnam',
+      heroTitle: 'Search properties across', heroHighlight: 'Chotot + Alonhadat', heroSubtitle: '+ Facebook',
       heroDesc: 'K Trix aggregates data from multiple trusted sources, helping agents save time and never miss an opportunity.',
       tryBeta: 'Try for free', learnMore: 'Learn more',
       statSources: 'Data sources', statListings: 'Listings in database', statCoverage: 'Market coverage', statCities: 'Provinces',
@@ -189,7 +189,7 @@ export default function Landing() {
     },
     fr: {
       tagline: 'Plateforme de Recherche Immobilière Intelligente', login: 'Connexion',
-      heroTitle: 'Recherchez sur', heroHighlight: '65% du marché', heroSubtitle: 'immobilier au Vietnam',
+      heroTitle: 'Recherchez sur', heroHighlight: 'Chotot + Alonhadat', heroSubtitle: '+ Facebook',
       heroDesc: "K Trix agrège les données de multiples sources fiables, aidant les agents à gagner du temps et ne jamais manquer une opportunité.",
       tryBeta: 'Essai gratuit', learnMore: 'En savoir plus',
       statSources: 'Sources de données', statListings: 'Annonces en base', statCoverage: 'Couverture marché', statCities: 'Provinces',
@@ -322,7 +322,7 @@ export default function Landing() {
               {[
                 { icon: <BarChart3 className="w-6 h-6 text-cyan-400" />, value: '2', label: t.statSources, bg: 'bg-cyan-500/10', border: 'border-cyan-500/20' },
                 { icon: <TrendingUp className="w-6 h-6 text-orange-400" />, value: animatedCount > 0 ? animatedCount.toLocaleString('fr-FR') : '21,000+', label: t.statListings, bg: 'bg-orange-500/10', border: 'border-orange-500/20' },
-                { icon: <Shield className="w-6 h-6 text-blue-400" />, value: '65%', label: t.statCoverage, bg: 'bg-blue-500/10', border: 'border-blue-500/20', gradient: true },
+                { icon: <Shield className="w-6 h-6 text-blue-400" />, value: '2+', label: t.statSources, bg: 'bg-blue-500/10', border: 'border-blue-500/20', gradient: true },
                 { icon: <Globe className="w-6 h-6 text-emerald-400" />, value: '12+', label: t.statCities, bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
               ].map((stat, i) => (
                 <div key={i} className={`bg-gray-900/80 rounded-2xl p-5 sm:p-6 border ${stat.border} backdrop-blur-sm hover:bg-gray-800/80 transition`}>
