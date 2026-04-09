@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/router';
-import { Facebook, Users, TrendingUp, Languages, ArrowRight, CheckCircle, Star, Loader, MapPin, Plus, Trash2, Upload, X } from 'lucide-react';
+import { Facebook, Users, TrendingUp, Languages, ArrowRight, CheckCircle, Star, Loader, MapPin, Plus, Trash2, Upload, X, ChevronDown, ChevronUp } from 'lucide-react';
 
 const EMPTY_LISTING = () => ({ postText: '', listingUrl: '', imageBase64: null, imagePreview: null, status: 'idle', result: null, error: null });
 
@@ -19,133 +19,198 @@ export default function PartnerPage() {
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
+  const [showTutorial, setShowTutorial] = useState(true);
+  const [showExample, setShowExample] = useState(false);
 
   const t = {
     vn: {
-      hero_badge: 'Chương trình Đối tác', hero_title: 'Mở rộng tầm với của nhóm bạn',
-      hero_subtitle: 'K Trix giúp tin đăng của nhóm bạn tiếp cận hàng nghìn người mua — và quốc tế.',
-      benefit1_title: 'Khán giả rộng hơn', benefit1_desc: 'Tin đăng hiển thị cho người dùng K Trix ngoài nhóm Facebook.',
-      benefit2_title: '3 ngôn ngữ (sắp có 5)', benefit2_desc: 'Tự động dịch VN / EN / FR.',
+      hero_badge: 'Chương trình Đối tác',
+      hero_title: 'Đăng tin BĐS lên K Trix',
+      hero_subtitle: 'Chỉ cần dán nội dung bài đăng Facebook — AI của K Trix sẽ tự động phân tích và hiển thị tin của bạn cho hàng nghìn người mua.',
+      benefit1_title: 'Tiếp cận rộng hơn', benefit1_desc: 'Tin đăng hiển thị cho người dùng K Trix ngoài nhóm Facebook.',
+      benefit2_title: '3 ngôn ngữ', benefit2_desc: 'Tự động dịch VN / EN / FR.',
       benefit3_title: 'Giữ toàn quyền sở hữu', benefit3_desc: 'K Trix luôn chuyển hướng người dùng về nhóm của bạn.',
-      benefit4_title: 'Miễn phí', benefit4_desc: 'Hoàn toàn miễn phí trong giai đoạn ra mắt.',
-      cta: 'Bắt đầu ngay',
-      step2_title: 'Nhập mã đối tác', step2_desc: 'Bạn đã nhận được mã riêng từ K Trix.',
-      code_placeholder: 'KTRIX-FB-XXXX', code_verify: 'Xác minh', code_verifying: 'Đang xác minh...',
-      code_error: 'Mã không hợp lệ.', code_success: 'Mã hợp lệ! Chào mừng bạn đến với K Trix.',
-      form_title: 'Đăng nhiều tin cùng lúc',
-      form_desc: 'Dán nội dung, URL và ảnh cho từng bài đăng. Thêm bao nhiêu tin cũng được.',
-      group_url: 'Link nhóm Facebook *', group_placeholder: 'https://www.facebook.com/groups/...',
+      benefit4_title: 'Hoàn toàn miễn phí', benefit4_desc: 'Miễn phí trong giai đoạn ra mắt.',
+      cta: 'Bắt đầu đăng tin',
+      step2_title: 'Nhập mã đối tác',
+      step2_desc: 'Bạn đã nhận được mã riêng từ K Trix qua email.',
+      code_placeholder: 'KTRIX-FB-XXXX',
+      code_verify: 'Xác minh',
+      code_verifying: 'Đang xác minh...',
+      code_error: 'Mã không hợp lệ. Vui lòng kiểm tra lại.',
+      code_success: 'Xác minh thành công! Chào mừng bạn.',
+      form_title: 'Đăng tin BĐS',
+      form_desc: 'Mỗi tin đăng = 1 bài viết Facebook. Bạn có thể đăng nhiều tin cùng lúc.',
+      group_url: 'Link nhóm Facebook của bạn *',
+      group_placeholder: 'https://www.facebook.com/groups/...',
       group_promo: '🎁 Nhóm của bạn sẽ được hiển thị trên K Trix — quảng bá miễn phí!',
-      group_name: 'Tên nhóm (tùy chọn)', group_name_placeholder: 'Cộng đồng BĐS Hồ Chí Minh',
+      group_name: 'Tên nhóm (tùy chọn)',
+      group_name_placeholder: 'Ví dụ: Hội Mua Bán Nhà Đất TP.HCM',
       listing_label: 'Tin đăng',
       post_text: 'Nội dung bài đăng *',
-      post_text_placeholder: 'Dán toàn bộ nội dung bài đăng Facebook vào đây...',
-      listing_url: 'URL bài đăng *',
+      post_text_placeholder: 'Sao chép và dán toàn bộ nội dung bài đăng Facebook vào đây...\n\nVí dụ:\nCHÍNH CHỦ CẦN BÁN GẤP nhà 2 tầng, 4x15m, hẻm 5m, Quận Bình Thạnh\nGiá: 4,5 tỷ (thương lượng)\nLH: 0901...',
+      listing_url: 'Link bài đăng Facebook *',
       listing_url_placeholder: 'https://www.facebook.com/groups/.../posts/...',
-      listing_url_hint: 'Clik chuột phải vào thời gian đăng → "Sao chép địa chỉ liên kết"',
-      photo: 'Ảnh đại diện (tùy chọn)',
+      listing_url_hint: 'Cách lấy link: Nhấp vào ngày/giờ đăng bài → Sao chép URL trên thanh địa chỉ',
+      photo: 'Ảnh bìa (tùy chọn)',
       photo_hint: 'JPG, PNG, WebP — tối đa 5MB',
-      photo_upload: 'Tải ảnh lên',
+      photo_upload: 'Chọn ảnh',
       photo_change: 'Đổi ảnh',
-      add_listing: '+ Thêm tin đăng',
+      add_listing: '+ Thêm tin đăng khác',
       submit_all: '✨ Phân tích & Đăng tất cả',
       submitting_label: 'Đang xử lý...',
       progress_label: 'Đang phân tích',
-      no_code: 'Chưa có mã đối tác?', no_code_link: 'Liên hệ với chúng tôi',
+      no_code: 'Chưa có mã đối tác?',
+      no_code_link: 'Liên hệ với chúng tôi',
       back: 'Quay lại',
-      done_title: '✅ Hoàn tất!',
-      done_desc: (ok, fail) => `${ok} tin đã đăng${fail > 0 ? `, ${fail} thất bại` : ''}.`,
+      done_title: '✅ Đăng tin thành công!',
+      done_desc: (ok, fail) => `${ok} tin đã được đăng${fail > 0 ? `, ${fail} thất bại` : ''}.`,
       publish_more: 'Đăng thêm tin',
-      error_empty: 'Vui lòng điền nội dung và URL bài đăng.',
+      error_empty: 'Vui lòng điền nội dung và link bài đăng.',
       error_group: 'Vui lòng điền link nhóm Facebook.',
-      expiry_note: 'Tin đăng sẽ tự động hết hạn sau 30 ngày.',
+      expiry_note: '⏱ Tin đăng tự động hết hạn sau 30 ngày.',
       delete_listing: 'Ẩn tin này',
       delete_confirm: 'Ẩn tin này khỏi kết quả tìm kiếm?',
       deleted_label: 'Đã ẩn',
+      tutorial_title: 'Hướng dẫn đăng tin (3 bước)',
+      tutorial_hide: 'Ẩn hướng dẫn',
+      tutorial_show: 'Xem hướng dẫn',
+      tutorial_step1_title: 'Bước 1 — Sao chép nội dung bài đăng',
+      tutorial_step1_desc: 'Mở bài đăng BĐS trên Facebook → Nhấn "Xem thêm" → Chọn tất cả văn bản → Sao chép (Ctrl+A, Ctrl+C)',
+      tutorial_step2_title: 'Bước 2 — Lấy link bài đăng',
+      tutorial_step2_desc: 'Nhấp vào ngày/giờ đăng bài (ví dụ: "2 giờ trước") → Thanh địa chỉ sẽ hiển thị link → Sao chép link đó',
+      tutorial_step3_title: 'Bước 3 — Dán vào form và nhấn Đăng',
+      tutorial_step3_desc: 'Dán nội dung vào ô "Nội dung bài đăng", dán link vào ô "Link bài đăng", thêm ảnh nếu có → Nhấn "Phân tích & Đăng"',
+      example_show: 'Xem ví dụ mẫu',
+      example_hide: 'Ẩn ví dụ',
+      example_text: 'CHÍNH CHỦ CẦN BÁN GẤP\nNhà 2 tầng đúc, 4x15m, hẻm xe hơi 5m thông\nQuận Bình Thạnh, TP.HCM\nGiá: 4,5 tỷ (còn thương lượng)\nPháp lý: Sổ hồng riêng\nLiên hệ: 0901 234 567',
+      welcome_msg: 'Chào mừng! Bạn đã sẵn sàng đăng tin.',
     },
     en: {
-      hero_badge: 'Partner Program', hero_title: "Expand your group's reach",
-      hero_subtitle: 'K Trix helps your listings reach thousands of buyers across Vietnam — and internationally.',
+      hero_badge: 'Partner Program',
+      hero_title: 'Post Real Estate Listings on K Trix',
+      hero_subtitle: "Just paste your Facebook post content — K Trix's AI will automatically analyze and display your listings to thousands of buyers.",
       benefit1_title: 'Wider audience', benefit1_desc: 'Your listings appear to K Trix users beyond your Facebook group.',
-      benefit2_title: '3 languages (5 coming)', benefit2_desc: 'Auto-translated VN / EN / FR.',
+      benefit2_title: '3 languages', benefit2_desc: 'Auto-translated VN / EN / FR.',
       benefit3_title: 'Keep full ownership', benefit3_desc: 'K Trix always redirects users back to your Facebook group.',
-      benefit4_title: 'Free', benefit4_desc: 'Completely free during the launch period.',
-      cta: 'Get started',
-      step2_title: 'Enter your partner code', step2_desc: 'You received a unique partner code from K Trix.',
-      code_placeholder: 'KTRIX-FB-XXXX', code_verify: 'Verify', code_verifying: 'Verifying...',
-      code_error: 'Invalid code.', code_success: 'Valid code! Welcome to K Trix.',
-      form_title: 'Bulk listing import',
-      form_desc: 'Paste content, URL and photo for each post. Add as many as you want.',
-      group_url: 'Your Facebook group URL *', group_placeholder: 'https://www.facebook.com/groups/...',
+      benefit4_title: 'Completely free', benefit4_desc: 'Free during the launch period.',
+      cta: 'Start posting',
+      step2_title: 'Enter your partner code',
+      step2_desc: 'You received a unique partner code from K Trix by email.',
+      code_placeholder: 'KTRIX-FB-XXXX',
+      code_verify: 'Verify',
+      code_verifying: 'Verifying...',
+      code_error: 'Invalid code. Please check again.',
+      code_success: 'Verified! Welcome to K Trix.',
+      form_title: 'Post Real Estate Listings',
+      form_desc: 'Each listing = 1 Facebook post. You can post multiple listings at once.',
+      group_url: 'Your Facebook group URL *',
+      group_placeholder: 'https://www.facebook.com/groups/...',
       group_promo: '🎁 Your group will be displayed on K Trix — free promotion!',
-      group_name: 'Group name (optional)', group_name_placeholder: 'Ho Chi Minh Real Estate Community',
+      group_name: 'Group name (optional)',
+      group_name_placeholder: 'E.g.: Ho Chi Minh Real Estate Community',
       listing_label: 'Listing',
       post_text: 'Post content *',
-      post_text_placeholder: 'Paste the full Facebook post text here...',
-      listing_url: 'Post URL *',
+      post_text_placeholder: 'Copy and paste the full Facebook post content here...',
+      listing_url: 'Facebook post URL *',
       listing_url_placeholder: 'https://www.facebook.com/groups/.../posts/...',
-      listing_url_hint: 'Right-click the post timestamp → "Copy link address"',
+      listing_url_hint: 'How to get the link: Click on the post date/time → Copy the URL from the address bar',
       photo: 'Cover photo (optional)',
       photo_hint: 'JPG, PNG, WebP — max 5MB',
-      photo_upload: 'Upload photo',
+      photo_upload: 'Choose photo',
       photo_change: 'Change photo',
       add_listing: '+ Add another listing',
       submit_all: '✨ Analyze & Publish all',
       submitting_label: 'Processing...',
       progress_label: 'Analyzing',
-      no_code: "Don't have a partner code?", no_code_link: 'Contact us',
+      no_code: "Don't have a partner code?",
+      no_code_link: 'Contact us',
       back: 'Back',
-      done_title: '✅ All done!',
+      done_title: '✅ Published successfully!',
       done_desc: (ok, fail) => `${ok} listing${ok !== 1 ? 's' : ''} published${fail > 0 ? `, ${fail} failed` : ''}.`,
-      publish_more: 'Import more listings',
+      publish_more: 'Post more listings',
       error_empty: 'Please fill in the post content and URL.',
       error_group: 'Please enter your Facebook group URL.',
-      expiry_note: 'Listings automatically expire after 30 days.',
+      expiry_note: '⏱ Listings automatically expire after 30 days.',
       delete_listing: 'Hide this listing',
       delete_confirm: 'Hide this listing from search results?',
       deleted_label: 'Hidden',
+      tutorial_title: 'How to post (3 steps)',
+      tutorial_hide: 'Hide guide',
+      tutorial_show: 'Show guide',
+      tutorial_step1_title: 'Step 1 — Copy the post content',
+      tutorial_step1_desc: 'Open the real estate post on Facebook → Click "See more" → Select all text → Copy (Ctrl+A, Ctrl+C)',
+      tutorial_step2_title: 'Step 2 — Get the post link',
+      tutorial_step2_desc: 'Click on the post date/time (e.g. "2 hours ago") → The address bar will show the link → Copy that link',
+      tutorial_step3_title: 'Step 3 — Paste into the form and post',
+      tutorial_step3_desc: 'Paste content into "Post content", paste link into "Post URL", add photo if available → Click "Analyze & Publish"',
+      example_show: 'See example',
+      example_hide: 'Hide example',
+      example_text: 'URGENT SALE - Owner selling directly\n2-storey house, 4x15m, 5m car alley\nBinh Thanh District, Ho Chi Minh City\nPrice: 4.5 billion VND (negotiable)\nLegal: Separate pink book\nContact: 0901 234 567',
+      welcome_msg: 'Welcome! You are ready to post.',
     },
     fr: {
-      hero_badge: 'Programme Partenaire', hero_title: 'Élargissez la portée de votre groupe',
-      hero_subtitle: "K Trix aide vos annonces à toucher des milliers d'acheteurs à travers le Vietnam.",
+      hero_badge: 'Programme Partenaire',
+      hero_title: 'Publiez vos annonces sur K Trix',
+      hero_subtitle: "Collez simplement votre post Facebook — l'IA de K Trix analysera et affichera vos annonces à des milliers d'acheteurs.",
       benefit1_title: 'Audience élargie', benefit1_desc: 'Vos annonces sont visibles aux utilisateurs K Trix au-delà de votre groupe.',
-      benefit2_title: '3 langues (5 bientôt)', benefit2_desc: 'Traduction automatique VN / EN / FR.',
-      benefit3_title: 'Paternité conservée', benefit3_desc: 'K Trix redirige toujours les utilisateurs vers votre groupe.',
-      benefit4_title: 'Gratuit', benefit4_desc: 'Entièrement gratuit pendant la période de lancement.',
-      cta: 'Commencer',
-      step2_title: 'Entrez votre code partenaire', step2_desc: 'Vous avez reçu un code unique de K Trix.',
-      code_placeholder: 'KTRIX-FB-XXXX', code_verify: 'Vérifier', code_verifying: 'Vérification...',
-      code_error: 'Code invalide.', code_success: 'Code valide ! Bienvenue sur K Trix.',
-      form_title: "Import groupé d'annonces",
-      form_desc: "Collez le contenu, l'URL et la photo de chaque post. Ajoutez autant d'annonces que vous voulez.",
-      group_url: 'URL de votre groupe *', group_placeholder: 'https://www.facebook.com/groups/...',
+      benefit2_title: '3 langues', benefit2_desc: 'Traduction automatique VN / EN / FR.',
+      benefit3_title: 'Paternité conservée', benefit3_desc: 'K Trix redirige toujours vers votre groupe.',
+      benefit4_title: 'Entièrement gratuit', benefit4_desc: 'Gratuit pendant la période de lancement.',
+      cta: 'Commencer à publier',
+      step2_title: 'Entrez votre code partenaire',
+      step2_desc: 'Vous avez reçu un code unique de K Trix par email.',
+      code_placeholder: 'KTRIX-FB-XXXX',
+      code_verify: 'Vérifier',
+      code_verifying: 'Vérification...',
+      code_error: 'Code invalide. Veuillez vérifier.',
+      code_success: 'Vérifié ! Bienvenue sur K Trix.',
+      form_title: 'Publier des annonces',
+      form_desc: 'Chaque annonce = 1 post Facebook. Vous pouvez en publier plusieurs à la fois.',
+      group_url: 'URL de votre groupe Facebook *',
+      group_placeholder: 'https://www.facebook.com/groups/...',
       group_promo: '🎁 Votre groupe sera affiché sur K Trix — promotion gratuite !',
-      group_name: 'Nom du groupe (optionnel)', group_name_placeholder: 'Communauté Immobilière Ho Chi Minh',
+      group_name: 'Nom du groupe (optionnel)',
+      group_name_placeholder: 'Ex : Communauté Immobilière Ho Chi Minh',
       listing_label: 'Annonce',
       post_text: 'Contenu du post *',
-      post_text_placeholder: 'Collez ici le texte complet du post Facebook...',
-      listing_url: 'URL du post *',
+      post_text_placeholder: 'Copiez-collez ici le texte complet du post Facebook...',
+      listing_url: 'URL du post Facebook *',
       listing_url_placeholder: 'https://www.facebook.com/groups/.../posts/...',
-      listing_url_hint: "Clic droit sur l'horodatage → \"Copier l'adresse du lien\"",
+      listing_url_hint: "Comment obtenir le lien : Cliquez sur la date/heure du post → Copiez l'URL dans la barre d'adresse",
       photo: 'Photo de couverture (optionnel)',
       photo_hint: 'JPG, PNG, WebP — max 5MB',
-      photo_upload: 'Charger une photo',
+      photo_upload: 'Choisir une photo',
       photo_change: 'Changer la photo',
       add_listing: '+ Ajouter une annonce',
       submit_all: '✨ Analyser & Publier tout',
       submitting_label: 'Traitement en cours...',
       progress_label: 'Analyse',
-      no_code: "Pas de code partenaire ?", no_code_link: 'Contactez-nous',
+      no_code: "Pas de code partenaire ?",
+      no_code_link: 'Contactez-nous',
       back: 'Retour',
-      done_title: '✅ Terminé !',
+      done_title: '✅ Publié avec succès !',
       done_desc: (ok, fail) => `${ok} annonce${ok !== 1 ? 's' : ''} publiée${ok !== 1 ? 's' : ''}${fail > 0 ? `, ${fail} échouée${fail !== 1 ? 's' : ''}` : ''}.`,
-      publish_more: "Importer d'autres annonces",
+      publish_more: "Publier d'autres annonces",
       error_empty: "Veuillez remplir le contenu et l'URL du post.",
       error_group: "Veuillez entrer l'URL de votre groupe Facebook.",
-      expiry_note: 'Les annonces expirent automatiquement après 30 jours.',
+      expiry_note: '⏱ Les annonces expirent automatiquement après 30 jours.',
       delete_listing: 'Masquer cette annonce',
       delete_confirm: 'Masquer cette annonce des résultats de recherche ?',
       deleted_label: 'Masquée',
+      tutorial_title: 'Comment publier (3 étapes)',
+      tutorial_hide: 'Masquer le guide',
+      tutorial_show: 'Voir le guide',
+      tutorial_step1_title: 'Étape 1 — Copiez le contenu du post',
+      tutorial_step1_desc: "Ouvrez le post immobilier sur Facebook → Cliquez sur \"Voir plus\" → Sélectionnez tout le texte → Copiez (Ctrl+A, Ctrl+C)",
+      tutorial_step2_title: "Étape 2 — Obtenez le lien du post",
+      tutorial_step2_desc: "Cliquez sur la date/heure du post (ex : \"il y a 2 heures\") → La barre d'adresse affiche le lien → Copiez ce lien",
+      tutorial_step3_title: 'Étape 3 — Collez dans le formulaire et publiez',
+      tutorial_step3_desc: 'Collez le contenu dans "Contenu du post", le lien dans "URL du post", ajoutez une photo si disponible → Cliquez sur "Analyser & Publier"',
+      example_show: 'Voir un exemple',
+      example_hide: "Masquer l'exemple",
+      example_text: 'VENTE URGENTE - Propriétaire direct\nMaison 2 étages, 4x15m, ruelle voiture 5m\nDistrict Binh Thanh, Ho Chi Minh Ville\nPrix : 4,5 milliards VND (négociable)\nStatut légal : Livre rose individuel\nContact : 0901 234 567',
+      welcome_msg: 'Bienvenue ! Vous êtes prêt à publier.',
     },
   }[language];
 
@@ -184,19 +249,13 @@ export default function PartnerPage() {
     const reader = new FileReader();
     reader.onload = (e) => {
       const base64 = e.target.result;
-      setListings(prev => prev.map((l, i) => i === index
-        ? { ...l, imageBase64: base64, imagePreview: base64 }
-        : l
-      ));
+      setListings(prev => prev.map((l, i) => i === index ? { ...l, imageBase64: base64, imagePreview: base64 } : l));
     };
     reader.readAsDataURL(file);
   };
 
   const removeImage = (index) => {
-    setListings(prev => prev.map((l, i) => i === index
-      ? { ...l, imageBase64: null, imagePreview: null }
-      : l
-    ));
+    setListings(prev => prev.map((l, i) => i === index ? { ...l, imageBase64: null, imagePreview: null } : l));
   };
 
   const addListing = () => setListings(prev => [...prev, EMPTY_LISTING()]);
@@ -206,12 +265,10 @@ export default function PartnerPage() {
     setListings(prev => prev.filter((_, i) => i !== index));
   };
 
-  // ── NOUVEAU : Masquer une annonce publiée ──
   const handleDeleteListing = async (index) => {
     const listing = listings[index];
     if (!listing.result?.id) return;
     if (!confirm(t.delete_confirm)) return;
-
     setDeletingId(listing.result.id);
     try {
       const res = await fetch('/api/delete-listing', {
@@ -221,14 +278,9 @@ export default function PartnerPage() {
       });
       const data = await res.json();
       if (data.success) {
-        setListings(prev => prev.map((l, i) => i === index
-          ? { ...l, status: 'deleted' }
-          : l
-        ));
+        setListings(prev => prev.map((l, i) => i === index ? { ...l, status: 'deleted' } : l));
       }
-    } catch (err) {
-      console.error('Delete error:', err);
-    }
+    } catch (err) { console.error('Delete error:', err); }
     setDeletingId(null);
   };
 
@@ -240,14 +292,11 @@ export default function PartnerPage() {
         return;
       }
     }
-
     setSubmitting(true);
     setDone(false);
     setListings(prev => prev.map(l => ({ ...l, status: 'pending', result: null, error: null })));
-
     for (let i = 0; i < listings.length; i++) {
       setListings(prev => prev.map((l, idx) => idx === i ? { ...l, status: 'processing' } : l));
-
       try {
         const res = await fetch('/api/import-fb-listing', {
           method: 'POST',
@@ -262,7 +311,6 @@ export default function PartnerPage() {
           }),
         });
         const data = await res.json();
-
         if (data.success) {
           setListings(prev => prev.map((l, idx) => idx === i ? { ...l, status: 'success', result: data.listing } : l));
         } else {
@@ -276,10 +324,8 @@ export default function PartnerPage() {
       } catch {
         setListings(prev => prev.map((l, idx) => idx === i ? { ...l, status: 'error', error: 'Network error' } : l));
       }
-
       if (i < listings.length - 1) await new Promise(r => setTimeout(r, 600));
     }
-
     setSubmitting(false);
     setDone(true);
   };
@@ -331,6 +377,8 @@ export default function PartnerPage() {
               <Facebook className="w-5 h-5" />{t.cta}<ArrowRight className="w-5 h-5" />
             </button>
           </section>
+
+          {/* Bénéfices */}
           <section className="max-w-5xl mx-auto px-4 pb-16">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {[
@@ -356,6 +404,8 @@ export default function PartnerPage() {
 
       {step === 2 && (
         <div className="max-w-2xl mx-auto px-4 py-12 space-y-5">
+
+          {/* Code verification */}
           {!codeValid && (
             <div className="bg-gray-900 border border-blue-500/30 rounded-xl p-8">
               <div className="flex items-center gap-3 mb-4">
@@ -366,12 +416,14 @@ export default function PartnerPage() {
               </div>
               <p className="text-gray-500 text-sm mb-6">{t.step2_desc}</p>
               <div className="flex gap-3">
-                <input type="text" value={code} onChange={e => { setCode(e.target.value.toUpperCase()); setCodeError(''); }}
-                  onKeyDown={e => e.key === 'Enter' && verifyCode()} placeholder={t.code_placeholder}
+                <input type="text" value={code}
+                  onChange={e => { setCode(e.target.value.toUpperCase()); setCodeError(''); }}
+                  onKeyDown={e => e.key === 'Enter' && verifyCode()}
+                  placeholder={t.code_placeholder}
                   className="flex-1 px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white font-mono text-lg tracking-wider focus:border-blue-500 focus:outline-none transition placeholder-gray-600" />
                 <button onClick={verifyCode} disabled={verifying || !code.trim()}
                   className="px-6 py-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-500 disabled:opacity-50 transition">
-                  {verifying ? t.code_verifying : t.code_verify}
+                  {verifying ? <Loader className="w-4 h-4 animate-spin" /> : t.code_verify}
                 </button>
               </div>
               {codeError && <p className="mt-3 text-red-400 text-sm">⚠️ {codeError}</p>}
@@ -383,12 +435,63 @@ export default function PartnerPage() {
 
           {codeValid && (
             <>
+              {/* Welcome message */}
               <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl px-5 py-4 flex items-center gap-3">
                 <CheckCircle className="w-5 h-5 text-emerald-400 flex-shrink-0" />
                 <div>
                   <p className="text-emerald-400 font-bold text-sm">{t.code_success}</p>
-                  {partnerData?.partner_group_name && <p className="text-gray-400 text-xs mt-0.5">{partnerData.partner_group_name}</p>}
+                  {partnerData?.partner_group_name && (
+                    <p className="text-gray-400 text-xs mt-0.5">👥 {partnerData.partner_group_name}</p>
+                  )}
                 </div>
+              </div>
+
+              {/* Tutorial */}
+              <div className="bg-blue-500/5 border border-blue-500/20 rounded-xl overflow-hidden">
+                <button
+                  onClick={() => setShowTutorial(!showTutorial)}
+                  className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-blue-500/10 transition">
+                  <span className="text-blue-400 font-bold text-sm flex items-center gap-2">
+                    📖 {t.tutorial_title}
+                  </span>
+                  {showTutorial ? <ChevronUp className="w-4 h-4 text-blue-400" /> : <ChevronDown className="w-4 h-4 text-blue-400" />}
+                </button>
+                {showTutorial && (
+                  <div className="px-5 pb-5 space-y-4">
+                    {[
+                      { num: '1', title: t.tutorial_step1_title, desc: t.tutorial_step1_desc, color: 'bg-blue-500' },
+                      { num: '2', title: t.tutorial_step2_title, desc: t.tutorial_step2_desc, color: 'bg-cyan-500' },
+                      { num: '3', title: t.tutorial_step3_title, desc: t.tutorial_step3_desc, color: 'bg-emerald-500' },
+                    ].map((step, i) => (
+                      <div key={i} className="flex items-start gap-3">
+                        <div className={`w-7 h-7 ${step.color} rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mt-0.5`}>
+                          {step.num}
+                        </div>
+                        <div>
+                          <p className="text-white font-semibold text-sm mb-1">{step.title}</p>
+                          <p className="text-gray-400 text-xs leading-relaxed">{step.desc}</p>
+                        </div>
+                      </div>
+                    ))}
+
+                    {/* Exemple */}
+                    <div className="mt-2 pt-3 border-t border-blue-500/20">
+                      <button
+                        onClick={() => setShowExample(!showExample)}
+                        className="text-blue-400 text-xs font-medium hover:text-blue-300 transition flex items-center gap-1">
+                        {showExample ? <><ChevronUp className="w-3 h-3" />{t.example_hide}</> : <><ChevronDown className="w-3 h-3" />{t.example_show}</>}
+                      </button>
+                      {showExample && (
+                        <div className="mt-3 p-3 bg-gray-800 rounded-lg border border-gray-700">
+                          <p className="text-gray-500 text-xs mb-2 font-medium">
+                            {language === 'vn' ? 'Ví dụ nội dung bài đăng tốt:' : language === 'fr' ? 'Exemple de bon contenu :' : 'Example of good post content:'}
+                          </p>
+                          <pre className="text-gray-300 text-xs leading-relaxed whitespace-pre-wrap font-mono">{t.example_text}</pre>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Group info */}
@@ -408,11 +511,11 @@ export default function PartnerPage() {
                 </div>
               </div>
 
-              {/* Bulk listings */}
+              {/* Listings */}
               <div className="bg-gray-900 border border-blue-500/30 rounded-xl p-6">
                 <h2 className="text-xl font-bold text-white mb-1">{t.form_title}</h2>
                 <p className="text-gray-500 text-sm mb-1">{t.form_desc}</p>
-                <p className="text-amber-500/80 text-xs mb-6">⏱ {t.expiry_note}</p>
+                <p className="text-amber-500/80 text-xs mb-6">{t.expiry_note}</p>
 
                 <div className="space-y-5">
                   {listings.map((listing, index) => (
@@ -423,7 +526,6 @@ export default function PartnerPage() {
                       listing.status === 'processing' ? 'border-blue-400/50 bg-blue-500/5' :
                       'border-gray-700 bg-gray-800/40'
                     }`}>
-                      {/* Block header */}
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="w-6 h-6 rounded-full bg-blue-600/20 border border-blue-500/30 text-blue-400 text-xs font-bold flex items-center justify-center flex-shrink-0">
@@ -455,7 +557,6 @@ export default function PartnerPage() {
                         )}
                       </div>
 
-                      {/* Success mini-card + bouton delete */}
                       {listing.status === 'success' && listing.result && (
                         <div className="flex items-center gap-3 p-3 bg-emerald-500/10 rounded-lg border border-emerald-500/20 mb-3">
                           {listing.result.thumbnail && (
@@ -472,23 +573,16 @@ export default function PartnerPage() {
                           <div className="flex items-center gap-2 flex-shrink-0">
                             <a href={listing.listingUrl} target="_blank" rel="noopener noreferrer"
                               className="text-blue-400 text-xs hover:underline font-medium">FB →</a>
-                            {/* ── BOUTON DELETE ── */}
-                            <button
-                              onClick={() => handleDeleteListing(index)}
+                            <button onClick={() => handleDeleteListing(index)}
                               disabled={deletingId === listing.result?.id}
                               title={t.delete_listing}
-                              className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition disabled:opacity-50"
-                            >
-                              {deletingId === listing.result?.id
-                                ? <Loader className="w-4 h-4 animate-spin" />
-                                : <Trash2 className="w-4 h-4" />
-                              }
+                              className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition disabled:opacity-50">
+                              {deletingId === listing.result?.id ? <Loader className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                             </button>
                           </div>
                         </div>
                       )}
 
-                      {/* Input fields */}
                       {listing.status !== 'success' && listing.status !== 'deleted' && (
                         <div className="space-y-3">
                           <div>
@@ -497,12 +591,12 @@ export default function PartnerPage() {
                               value={listing.postText}
                               onChange={e => updateListing(index, 'postText', e.target.value)}
                               placeholder={t.post_text_placeholder}
-                              rows={4}
+                              rows={5}
                               disabled={submitting}
                               className="w-full px-3 py-2.5 bg-gray-900 border border-gray-700 rounded-lg text-gray-200 focus:border-blue-500 focus:outline-none transition resize-y placeholder-gray-600 text-sm leading-relaxed disabled:opacity-60"
                             />
                             {listing.postText.length > 0 && (
-                              <p className="text-gray-600 text-xs mt-1 text-right">{listing.postText.length} chars</p>
+                              <p className="text-gray-600 text-xs mt-1 text-right">{listing.postText.length} ký tự</p>
                             )}
                           </div>
                           <div>
@@ -515,19 +609,15 @@ export default function PartnerPage() {
                               disabled={submitting}
                               className="w-full px-3 py-2.5 bg-gray-900 border border-gray-700 rounded-lg text-gray-200 focus:border-blue-500 focus:outline-none transition placeholder-gray-600 text-sm disabled:opacity-60"
                             />
-                            <p className="text-gray-600 text-xs mt-1">💡 {t.listing_url_hint}</p>
+                            <p className="text-blue-400/70 text-xs mt-1">💡 {t.listing_url_hint}</p>
                           </div>
                           <div>
-                            <label className="block text-xs font-semibold text-gray-400 mb-1.5">
-                              📷 {t.photo}
-                            </label>
+                            <label className="block text-xs font-semibold text-gray-400 mb-1.5">📷 {t.photo}</label>
                             {listing.imagePreview ? (
-                              <div className="relative inline-block">
+                              <div className="relative inline-block w-full">
                                 <img src={listing.imagePreview} alt="preview"
                                   className="w-full h-40 object-cover rounded-lg border border-gray-700" />
-                                <button
-                                  onClick={() => removeImage(index)}
-                                  disabled={submitting}
+                                <button onClick={() => removeImage(index)} disabled={submitting}
                                   className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition disabled:opacity-50">
                                   <X className="w-3 h-3" />
                                 </button>
