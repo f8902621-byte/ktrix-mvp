@@ -193,7 +193,7 @@ export default async function handler(req, res) {
       return res.status(500).json({ success: false, error: 'Registration failed' });
     }
 
-    // ✅ ENVOI EMAIL AUTOMATIQUE
+// ✅ ENVOI EMAIL AUTOMATIQUE
     if (email) {
       const emailContent = getEmailContent(lang || 'en', first_name, available.code, expiresAt);
       await resend.emails.send({
@@ -202,6 +202,26 @@ export default async function handler(req, res) {
         subject: emailContent.subject,
         html: emailContent.html,
       }).catch(err => console.error('Resend error:', err));
+
+      // ✅ NOTIFICATION ADMIN
+      await resend.emails.send({
+        from: 'K Trix <contact@ktrix.ai>',
+        to: 'contact@ktrix.ai',
+        subject: `🆕 Nouveau beta-testeur : ${first_name} ${last_name || ''} — ${city}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; padding: 20px;">
+            <h2 style="color: #00d4ff;">🆕 Nouveau Beta-Testeur inscrit</h2>
+            <ul>
+              <li><strong>Nom :</strong> ${first_name} ${last_name || ''}</li>
+              <li><strong>Email :</strong> ${email}</li>
+              <li><strong>Ville :</strong> ${city}</li>
+              <li><strong>Secteur :</strong> ${sector}</li>
+              <li><strong>Code assigné :</strong> ${available.code}</li>
+              <li><strong>Expire le :</strong> ${new Date(expiresAt).toLocaleDateString('fr-FR')}</li>
+            </ul>
+          </div>
+        `,
+      }).catch(err => console.error('Admin notification error:', err));
     }
 
     return res.status(200).json({
